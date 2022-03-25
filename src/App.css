@@ -36,3 +36,51 @@
     transform: rotate(360deg);
   }
 }
+
+.nav-item.activePage {
+  background: linear-gradient(0deg,hsla(98, 46%, 15%, .4) 100%, hsla(98, 46%, 25%, .8) 0%);
+}
+
+.nav-item {
+  opacity:1;
+
+  display:inline;
+  height:100%;
+  overflow:auto;
+  transition-property: background, box-shadow;
+  transition: all .25s ease-out;
+  box-shadow:0px 0px 0 rgba(0,0,0,.5);
+  
+}
+
+.nav-item:hover,
+.nav-item:focus {
+  background: linear-gradient(0deg,hsla(98, 46%, 15%, .4) 100%, hsla(98, 46%, 25%, .8) 0%);
+  box-shadow:0px 3px .4em rgba(0,0,0,.5);
+  
+ 
+}
+.nav-link:active {
+  background: linear-gradient(0deg,hsla(98, 46%, 85%, .4) 100%, hsla(98, 46%, 95%, .8) 0%);
+  
+}
+
+.navBarMain {
+  background: 
+          radial-gradient(ellipse farthest-corner at left top,
+              hsla(98, 46%, 15%, .9) 0%,
+              hsla(98, 46%, 20%, .9) 15%,
+              hsla(98, 46%, 25%, .9) 35%,
+              hsla(98, 46%, 30%, .9) 45%,
+              hsla(98, 46%, 36%, .9) 90%) 10%, 
+          radial-gradient(ellipse farthest-corner at right top,
+              hsla(98, 46%, 75%, .15) 0%,
+              hsla(98, 46%, 60%, .35) 15%,
+              hsla(98, 46%, 50%, .55) 33%,
+              hsla(98, 46%, 25%, .55) 66%,
+              hsla(98, 46%, 25%, .55) 100%) 20%;
+ 
+  z-index:5;
+  box-shadow:0px 3px .4em rgba(0,0,0,.5);
+
+}

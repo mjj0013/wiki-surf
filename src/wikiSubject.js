@@ -1,7 +1,6 @@
 import React from 'react';
 import "regenerator-runtime/runtime";
-
-
+var convert = require('xml-js');
 //https://en.wikipedia.org/wiki/Special:Random/api.php?&origin=*
 // See also links: id="mw-content-text" --> class="mw-parser-output" --> <ul>
 
@@ -88,18 +87,34 @@ export class WikiSubject extends React.Component {
         
         for(let k=0; k < this.sourceObj.length; ++k) {
             // var xhr = new XMLHttpRequest()
+            for(let l=0; l < this.sourceObj[k].links.length;++l) {
+                //&pageids=${this.sourceObj[k].pageid}
+                var title = this.sourceObj[k].links[l].title;
+                title = title.replaceAll(" ", "%20")
+                // &prop=sections
+                var req = new Request(`http://en.wikipedia.org/w/api.php?action=parse&origin=*&format=json&page=${title}&prop=parsetree&formatversion=2`,
+                {
+                    method:'GET',
+                    mode:'cors'
+                })
             
-            var req = new Request(`http://en.wikipedia.org/?curid=${this.sourceObj[k].pageid}&action=query&format=json&origin=*`,{
-                method:'GET',
-                mode:'no-cors'
-               
-                
-            })
-          
-            fetch(req)
-            .then(response => {
-                console.log("response",response);
-            })
+                fetch(req)
+                .then(response => {
+                   
+                   return response.json()
+                })
+                .then(data => {
+                    console.log("data",data);
+                    //https://goessner.net/download/prj/jsonxml/
+                    
+                    var result = convert.xml2json(data.parse.parsetree, {compact: true, spaces: 4});
+                    console.log("result",result)
+                    // var dom = (new DOMParser()).parseFromString(, "text/xml")
+                    // console.log("dom",dom)
+                    
+                })
+            }
+            
         }
         
     }

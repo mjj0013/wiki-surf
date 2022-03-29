@@ -23,12 +23,12 @@ export const NavBar =(intUser) => {
           <button className="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <img src="./homeIcon.svg" />
           </button>
-          <div id="navbarNav " className="collapse navbar-collapse">
+          <div id="navbarNav" className="collapse navbar-collapse">
             <ul className="navbar-nav mr-auto" >
-              {/* <li className="nav-item ">
-                <a className="nav-link" href="#/CreateAccount/"   onMouseDown={(e)=>{changeCurrentPage(e)}}
-                  data-bs-trigger="hover" data-bs-toggle="popover" title="Create a new account to access your bank account">Create Account</a>
-              </li> */}
+              <li className="nav-item ">
+                <a className="nav-link" href="#/TrendsPage/"   onMouseDown={(e)=>{changeCurrentPage(e)}}
+                  data-bs-trigger="hover" data-bs-toggle="popover">TrendsPage</a>
+              </li>
               
             </ul>
             <span id="userGreeting" className="navbar-text"></span>    

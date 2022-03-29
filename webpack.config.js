@@ -70,7 +70,12 @@ module.exports = {
 	
 	plugins: [HTMLWebpackPluginConfig,],
 	resolve: {	
-        extensions: [".js", ".jsx"]
+        extensions: [".js", ".jsx"],
+		fallback: {
+			"https":require.resolve("https-browserify"),
+			"http":require.resolve("stream-http"),
+			"url":require.resolve("url/")
+		}
     },
 	
 	

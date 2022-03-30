@@ -56,26 +56,21 @@ function reformatURL(url) {
 export class WikiSubject extends React.Component {
     constructor(props) {
         super(props);
-        /*
+        /*  ORDER:
             initSubject()        :   subject is either generated randomly or is checked if exists
             extractSubjectData() :   data is extracted from page and stored in object
-            branchSubjectData()  :  branches are created from links in subject, creating new WikiSubject; if specified, a specific section from subject is 'branched' to create new WikiSubject object
+            branchSubjectData()  :   branches are created from links in subject, creating new WikiSubject; if specified, a specific section from subject is 'branched' to create new WikiSubject object
         */
 
         this.initSubject = this.initSubject.bind(this);
         this.extractSubjectData = this.extractSubjectData.bind(this);
         this.fetchSrc = this.fetchSrc.bind(this);
-        this.onFetchComplete = this.onFetchComplete.bind(this);
-        this.branchSubjectData = this.branchSubjectData.bind(this);
 
+        this.branchSubjectData = this.branchSubjectData.bind(this);
+        this.pagesInCategory = this.pagesInCategory.bind(this);
         this.data = [];
-        this.subjectNetwork = [];       // other WikiSubject objects that are linked to it. 
-        //should be formatted:
-        /*
-            [
-                {sectionName:<...>, objs:[]}
-            ]
-        */
+        this.subjectNetwork = [];       // other WikiSubject objects that are linked to it.  should be formatted:       [   {sectionName:<...>, objs:[]} , ...    ]
+
         this.wikiTitle = props.wikiTitle? props.wikiTitle : null;
         this.depth = props.depth? props.depth : -1;             // the 'depth' that the WikiSubject is brought to initialization; default is -1, which means only bring it to initSubject()
         
@@ -86,6 +81,17 @@ export class WikiSubject extends React.Component {
         else this.initSubject();
         
      
+    }
+
+    pagesInCategory(category, cmlimit="max") {
+        var url = `https://en.wikipedia.org/w/api.php?origin=*&action=query&list=categorymembers&cmtitle=${category}&format=json&cmlimit=${cmlimit}&cmnamespace=0&prop=info`;
+        var req = new Request(url,{method:'GET',mode:'cors'})
+        
+        fetch(req)
+        .then(response => {
+            return response.json();
+        })
+        .then(data=>{console.log("data",data)})
     }
 
     fetchSrc(req) {
@@ -102,9 +108,9 @@ export class WikiSubject extends React.Component {
                 for(let k=0; k < keys.length; ++k) {
                     results.push(data.query.pages[parseInt(keys[k])])
                 }
-                this.sourceObj = results 
-                console.log("this.sourceObj", this.sourceObj);
-                resolve();
+                
+               
+                resolve(results);
             })
 
         })
@@ -112,17 +118,7 @@ export class WikiSubject extends React.Component {
     }
 
 
-    async onFetchComplete(data) {
-        var results = []
-    
-        var keys = Object.keys(data.query.pages)
-        
-        for(let k=0; k < keys.length; ++k) {
-            results.push(data.query.pages[parseInt(keys[k])])
-        }
-        this.sourceObj = results 
-
-    }
+   
     
     
 
@@ -138,12 +134,14 @@ export class WikiSubject extends React.Component {
         else return "ERROR";
         //for testing purposes
         // url = `https://en.wikipedia.org/w/api.php?action=query&titles=Assets%20under%20management&format=json&origin=*&prop=links&pllimit=max&plnamespace=0`
-        //await getJSONP(this.wikiTitle? this.wikiTitle : url, this.onFetchComplete);
 
         var req = new Request(url,{method:'GET',mode:'cors'})
 
         if(this.depth==2) {
             this.fetchSrc(req).then(result=> {
+                this.sourceObj =  result;
+                console.log(this.sourceObj)
+                this.pagesInCategory("Category:American game show hosts")
                 this.extractSubjectData().then(result2=> {
                     this.branchSubjectData([this.data[0].sectionName], [1])
                 })
@@ -151,21 +149,10 @@ export class WikiSubject extends React.Component {
         }
         if(this.depth==1) {
             this.fetchSrc(req).then(result=> {
+                this.sourceObj =  result;
                 this.extractSubjectData()
             })
         }
-        
-        
-        
-
-        // if(this.depth > 1)  this.extractSubjectData();
-        // if(this.depth == 2) this.branchSubjectData(["Geography"], [1]);
-        
-        // setTimeout(()=>{
-        //     console.log(this.sourceObj);
-        //     if(this.depth > 1)  this.extractSubjectData();
-        //     if(this.depth == 2) this.branchSubjectData(["Geography"], [1]);
-        // }, 500);
 
     }
     

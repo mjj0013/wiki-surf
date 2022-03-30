@@ -17,7 +17,7 @@ function App() {
         <div className="container" style={{padding: "20px"}}>
           <Routes>
           <Route path="/TrendsPage" exact element={<TrendsPage />} />
-            <Route path="/" exact element={<Home />} />
+          <Route path="/" exact element={<Home />} />
            
           </Routes>
         </div>

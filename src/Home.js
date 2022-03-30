@@ -16,7 +16,7 @@ export const Home = () => {
     
     return (
         <div>
-            <WikiSubject/>
+            <WikiSubject depth={2}/>
            
            
             {/* <div id="map"></div>

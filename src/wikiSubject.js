@@ -117,11 +117,6 @@ export class WikiSubject extends React.Component {
         
     }
 
-
-   
-    
-    
-
     initSubject(random=false) {
         var url='';
 
@@ -153,10 +148,8 @@ export class WikiSubject extends React.Component {
                 this.extractSubjectData()
             })
         }
-
     }
     
-
      extractSubjectData() {
         return new Promise((resolve, reject)=> {
             for(let k=0; k < this.sourceObj.length; ++k) {

@@ -9,28 +9,9 @@ var convert = require('xml-js');
 
 //"https://en.wikipedia.org/w/api.php?&origin=*&action=opensearch&search=Belgium&limit=5"
 
-
-
-const getJSONP = async (url, success) =>{
-    var ud = '_' + +new Date
-    var script = document.createElement('script')
-    script.async = true;
-    var head = document.getElementsByTagName('head')[0] || document.documentElement;
-
-    window[ud] = function(data) {
-        head.removeChild(script);
-        success && success(data);
-    };
-    
-    script.src = url.replace('callback=?', 'callback=' + ud);
-    head.appendChild(script);
-}
-
 function findObjInArray(array, keyName, keyValue) {
     for(let item=0; item < array.length; ++item) {
-        if(array[item][keyName] == keyValue) {
-            return array[item];
-        }
+        if(array[item][keyName] == keyValue) return array[item];
     }
     return -1;
 }
@@ -83,18 +64,12 @@ export class WikiSubject extends React.Component {
      
     }
 
-
-    // api.php?action=query&generator=mostviewed&prop=pageviews
-
     pagesInCategory(category, cmlimit="max",getViews=false) {
         var url = `https://en.wikipedia.org/w/api.php?origin=*&action=query&list=categorymembers&cmtitle=${category}&format=json&cmlimit=${50}&cmnamespace=0&prop=info`;
         var req = new Request(url,{method:'GET',mode:'cors'})
         
         fetch(req)
-        .then(response => {
-            
-            return response.json();
-        })
+        .then(response => {    return response.json();})
         .then(data=>{
             console.log(data)
             if(getViews) {
@@ -104,15 +79,10 @@ export class WikiSubject extends React.Component {
                     titlesStr += reformatURL(categorymembers[i].title)
                     if(i<categorymembers.length-1) titlesStr+="|"
                 }
-                 
-                var url = `https://en.wikipedia.org/w/api.php?origin=*&titles=${titlesStr}&action=query&format=json&prop=pageviews`;
-                // var url = `https://en.wikipedia.org/w/api.php?origin=*&list=mostviewed&titles=${titlesStr}&action=query&format=json&prop=info`;
-                var req = new Request(url,{method:'GET',mode:'cors'})
+                var req = new Request(`https://en.wikipedia.org/w/api.php?origin=*&titles=${titlesStr}&action=query&format=json&prop=pageviews`,{method:'GET',mode:'cors'})
                 
                 fetch(req)
-                .then(response => {
-                    return response.json();
-                })
+                .then(response => {    return response.json();})
                 .then(data=>{console.log("views",data)})
             }
         })
@@ -123,9 +93,7 @@ export class WikiSubject extends React.Component {
     fetchSrc(req) {
         return new Promise((resolve, reject)=> {
             fetch(req)
-            .then(response => {
-                return response.json();
-            })
+            .then(response => {  return response.json();    })
             .then(data=> {
                 var results = []
                 var keys = Object.keys(data.query.pages)
@@ -133,12 +101,9 @@ export class WikiSubject extends React.Component {
                 for(let k=0; k < keys.length; ++k) {
                     results.push(data.query.pages[parseInt(keys[k])])
                 }
-                
                 resolve(results);
             })
-
         })
-        
     }
 
     initSubject(random=false) {
@@ -151,11 +116,8 @@ export class WikiSubject extends React.Component {
         if(random)              url=`https://en.wikipedia.org/w/api.php?action=query&generator=random&grnnamespace=0&format=json&origin=*&prop=categories`                    
         else if(this.wikiTitle) url=`http://en.wikipedia.org/w/api.php?action=query&origin=*&format=json&titles=${this.wikiTitle}&prop=categories`             //&prop=categories|categoryinfo`
         else return "ERROR";
-        //for testing purposes
-        // url = `https://en.wikipedia.org/w/api.php?action=query&titles=Assets%20under%20management&format=json&origin=*&prop=links&pllimit=max&plnamespace=0`
-
+    
         var req = new Request(url,{method:'GET',mode:'cors'})
-
         if(this.depth==2) {
             this.fetchSrc(req).then(result=> {
                 this.sourceObj =  result;
@@ -196,7 +158,6 @@ export class WikiSubject extends React.Component {
                         //if element has name "h", it's the header for the section following it
         
                         var introCompleted = false, introInProgress = false;
-                    
                         var currentSectionObj = this.data;
         
                         // \n* means it's a bullet point
@@ -239,8 +200,6 @@ export class WikiSubject extends React.Component {
                                     }
                                 }
                             }
-        
-        
                             else if(contentLevel[e].name=="h") {
                                 introCompleted = true;
                                 var headerLevel = parseInt(contentLevel[e].attributes.level);
@@ -275,32 +234,22 @@ export class WikiSubject extends React.Component {
                                         idx[idx.length-1] = idx[idx.length-1]+1;
                                         var element = {sectionName:headerName, text:'', idx:idx, sectionLevel:headerLevel, sectionOrder:headerOrder, children:[], links:[], tables:[]}
                                         currentSectionObj.children.push(element)
-
                                     }
-                                    
                                 }
-                                
                                 else {      //this header is a top level section
                                     idx = [this.data.length]
                                     var element = {sectionName:headerName, text:'', idx:idx, sectionLevel:headerLevel, sectionOrder:headerOrder, children:[], links:[], tables:[]}
-                                    this.data.push(element)
-                                    
+                                    this.data.push(element)   
                                     currentSectionObj = this.data[this.data.length-1]
                                 }
                             }
                         }
                         console.log("this.data", this.data)
                         resolve();
-                    }
-                    
-                    
+                    }  
                 })
-    
-            }
-            
+            }  
         })
-        
-        
     }
     branchSubjectData(targets, depths) {
         //targets   :   list of sections/links that will be branched into
@@ -316,7 +265,7 @@ export class WikiSubject extends React.Component {
                 if(path.length==1) {
                     var currentObj = findObjInArray(this.data,"sectionName",path[0])
                     if(currentObj.links.length==0) {
-                        console.log(`NOTE: section ${T} does contain any links`);
+                        console.log(`NOTE: section ${T} does not contain any links`);
                         continue;
                     }
                     this.subjectNetwork.push({sectionName:T, objs:[]})
@@ -325,7 +274,6 @@ export class WikiSubject extends React.Component {
                         if(pageTitle.substr(0,2)=="[[") pageTitle=pageTitle.substr(2);
                         if(pageTitle.substr(pageTitle.length-2)=="]]") pageTitle=pageTitle.substr(0,pageTitle.length-2);
                         var newObj = new WikiSubject({wikiTitle:pageTitle, depth:depths[t]==undefined? -1 : depths[t]});
-                        
                         this.subjectNetwork[this.subjectNetwork.length -1].objs.push(newObj);
                     }
                 }
@@ -337,9 +285,7 @@ export class WikiSubject extends React.Component {
                         if(path[i].includes(":LINK:")) {
                             link = path[i].replace(":LINK:","");
                             if(currentObj.links) {
-                                if(currentObj.links.includes(link)) {
-                                    isLink = true;
-                                }
+                                if(currentObj.links.includes(link)) isLink = true;
                                 else {
                                     console.log("ERROR: link not found", T);
                                     skipTarget = true;
@@ -387,14 +333,9 @@ export class WikiSubject extends React.Component {
     }
 
     render() {
-        
         return (
             <div>
-           
             </div>
-
-
         )
     }
-
 }

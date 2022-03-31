@@ -7,32 +7,10 @@ var countries= require('./countries.json')      //https://restcountries.com/#fil
 // const NodeGeocoder = require('node-geocoder')
 // const geocoder = NodeGeocoder({provider:'openstreetmap', formatter:null})
 
-
-
-//https://www.faa.gov/air_traffic/publications/atpubs/cnt_html/appendix_a.html
-var stateAbbreviations = {
-    "Alabama":"AL",
-    "Alaska":"AK",
-    "Arizona":"AZ",
-    "Arkansas":"AR",
-    "American Samoa":"AS",
-    "California":"CA",
-    "Colorado":"CO",
-    "Connecticut":"CT",
-    "Delaware":"DE",
-    "DC": "DC",
-    "Florida": "FL",
-    "Georgia": "GA"
-}
-
-
-
-
-
 const app = express();
 app.get('/', (req,res)=>{
     let countryIdx = 7
-    var localGeoCode = "US"
+    var localGeoCode = "BR"
     var geo = countries["0"][countryIdx]["cca2"]
     console.log(countries["0"][countryIdx]["name"]["common"])
     // geocoder.reverse({lat:45.288, lon:-60.983})
@@ -52,15 +30,13 @@ app.get('/', (req,res)=>{
         
         var dayStrings = `\n************************************\n`
         for(let d=0 ; d < days.length; ++d) {
-            
+
             var queries = `\n`
-            
             for(let s=0; s < days[d]["trendingSearches"].length; ++s) {
                 queries+=days[d]["trendingSearches"][s]["title"]["query"]+"\n"
             }
             dayStrings += days[d]["formattedDate"]+queries+`\n************************************\n`
-
-            
+  
         }
         console.log(dayStrings)
         res.send(dayStrings)
@@ -71,6 +47,5 @@ app.get('/', (req,res)=>{
 app.listen(PORT, ()=> {
     console.log("Server running");
     
-
 })
 

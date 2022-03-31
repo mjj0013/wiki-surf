@@ -102,19 +102,13 @@ module.exports =  [
 					   {	loader: 'svg-url-loader',options: {limit: 10000,},} ,
 				 ],
 			   },
-			   {
-				   test: /\.json$/,
-				   use:[{loader: 'json',}]
-			   }
+			//    {
+			// 	   test: /\.json$/,
+			// 	   use:[{loader: 'json',}]
+			//    }
 			]
 		},
-		devServer: {
-			host: 'localhost',
-			port: 3000,
-			historyApiFallback: true,
-			open: true,
-			hot: true,
-		},
+	
 	}
 	
 

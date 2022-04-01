@@ -37,9 +37,9 @@ function reformatURL(url) {
 
 
 
-export class WikiSubject extends React.Component {
+export class WikiSubject {      // extends React.Component
     constructor(props) {
-        super(props);
+        // super(props);
         /*  ORDER:
             initSubject()        :   subject is either generated randomly or is checked if exists
             extractSubjectData() :   data is extracted from page and stored in object
@@ -335,10 +335,10 @@ export class WikiSubject extends React.Component {
         
     }
 
-    render() {
-        return (
-            <div>
-            </div>
-        )
-    }
+    // render() {
+    //     return (
+    //         <div>
+    //         </div>
+    //     )
+    // }
 }

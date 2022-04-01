@@ -25,10 +25,10 @@ export const NavBar =(intUser) => {
           </button>
           <div id="navbarNav" className="collapse navbar-collapse">
             <ul className="navbar-nav mr-auto" >
-              {/* <li className="nav-item ">
-                <a className="nav-link" href="#/TrendsPage/"   onMouseDown={(e)=>{changeCurrentPage(e)}}
-                  data-bs-trigger="hover" data-bs-toggle="popover">TrendsPage</a>
-              </li> */}
+              <li className="nav-item ">
+                <a className="nav-link" href="#/WikiSearchPage/"   onMouseDown={(e)=>{changeCurrentPage(e)}}
+                  data-bs-trigger="hover" data-bs-toggle="popover">Wiki Search</a>
+              </li>
               
             </ul>
             <span id="userGreeting" className="navbar-text"></span>    

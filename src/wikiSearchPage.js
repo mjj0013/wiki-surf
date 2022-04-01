@@ -1,4 +1,4 @@
-
+import {WikiSubject} from './wikiSubject.js'
 import React from 'react';
 import {UserContext} from './App.js';
 import mapboxgl from 'mapbox-gl';
@@ -16,8 +16,7 @@ function sampleWikiSearch() {
 }
 
 
-
-export const Home = () => {
+export const WikiSearchPage = () => {
     
                 
     // This is the map instance
@@ -25,7 +24,7 @@ export const Home = () => {
     return (
         <div>
             {/* <WikiSubject depth={2}/> */}
-            
+            <button onClick={sampleWikiSearch} style={{display:"block",top:"25%", left:"25%",position:"absolute"}}>Search</button>
            
             {/* <div id="map"></div>
             <div className="map-overlay top">

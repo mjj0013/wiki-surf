@@ -1,6 +1,6 @@
 import {WikiSubject} from './wikiSubject.js'
 import React from 'react';
-import {UserContext} from './App.js';
+import {AppContext} from './AppContext.js';
 import mapboxgl from 'mapbox-gl';
 // mapboxgl.accessToken = 'pk.eyJ1IjoibWpqMDAxMyIsImEiOiJjbDE2bXg0YmYwODduM2RwbnJkcmQ1bnduIn0.IYgBcJUZkVwjjsdeD6F2Kw';
 // let map = new mapboxgl.Map({

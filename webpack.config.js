@@ -43,12 +43,17 @@ module.exports =  [
 			publicPath: '/',
 			clean: true
 		},
-		devServer: {
-			host: 'localhost',
-			port: 8080,
-			historyApiFallback: true,
-			open: true,
-			hot: true,
+		devServer:{
+			port:8080,
+			open:true,
+			hot:true,
+			proxy: {
+				secure:false,
+				'/server':{
+					target:"http://localhost:8080/",
+					router:()=>'http://localhost:3000/'
+				}
+			}
 		},
 		
 		plugins: [HTMLWebpackPluginConfig,],
@@ -61,14 +66,11 @@ module.exports =  [
 			}
 		},
 	},
-
-
-
 	// Server
 	{
-		entry: './src/server/index.js',
+
+		entry: './server/index.js',
 		target:'node',
-		
 		mode:'production',
 		output: {
 			libraryTarget:'commonjs',
@@ -80,85 +82,26 @@ module.exports =  [
 		module: {
 			rules: [
 				{
-					test: /\.(js|jsx)$/, exclude: /node_modules/, use: {	loader: 'babel-loader'},
+					test: /\.(js|jsx)$/, exclude: /node_modules/, use: {loader: 'babel-loader'},
 				},
 				{ 
 					test: /\.css$/, 
 					use: [
 						{  	loader: 'style-loader', options: {esModule: false}} ,
-						{	loader: 'css-loader',}
-				 ]
+						{	loader: 'css-loader',}	 ]
 				},
 				{
 				 test: /\.(png|jpe?g|gif)$/i,
 				 use: [
-					   {	loader: 'file-loader', 	options: {name: 'img/[name].[ext]'}} ,
-				 ],
+					   {	loader: 'file-loader', 	options: {name: 'img/[name].[ext]'}} ],
 			   },
 	 
 			   {
 				 test: /\.svg$/,
 				 use: [
-					   {	loader: 'svg-url-loader',options: {limit: 10000,},} ,
-				 ],
+					   {	loader: 'svg-url-loader',options: {limit: 10000,},} , ],
 			   },
-			//    {
-			// 	   test: /\.json$/,
-			// 	   use:[{loader: 'json',}]
-			//    }
 			]
 		},
-	
 	}
-	
-
-
-
 ];
-
-
-
-// module.exports = {
-// 	entry: './src/index.js',
-// 	mode: 'development',
-// 	module: {
-// 		rules: [
-// 		   {
-// 		   	test: /\.(js|jsx)$/,
-// 		   	exclude: /node_modules/,
-// 		   	use: {	loader: 'babel-loader'},
-// 		   },
-// 		   { 
-// 		   	test: /\.css$/, 
-// 		   	use: [
-// 		   		{  	loader: 'style-loader', options: {esModule: false}} ,
-// 			   	{	loader: 'css-loader',}
-// 			]
-// 		   },
-// 		   {
-// 			test: /\.(png|jpe?g|gif)$/i,
-// 			use: [
-// 			  	{	loader: 'file-loader', 	options: {name: 'img/[name].[ext]'}} ,
-// 			],
-// 		  },
-
-// 		  {
-// 			test: /\.svg$/,
-// 			use: [
-// 			  	{	loader: 'svg-url-loader',options: {limit: 10000,},} ,
-// 			],
-// 		  },
-// 		]	
-// 	},
-// 	output:{ filename:'transformed.js', path:path.resolve(__dirname, 'public'), publicPath:'/', clean: true },
-// 	devServer: {host: 'localhost', port:8080, historyApiFallback:true, open:true, hot:true,},
-// 	plugins: [HTMLWebpackPluginConfig,],
-// 	resolve: {	
-//         extensions: [".js", ".jsx"],
-// 		fallback: {
-// 			"https":require.resolve("https-browserify"),
-// 			"http":require.resolve("stream-http"),
-// 			"url":require.resolve("url/")
-// 		}
-//     },
-// };

@@ -1,5 +1,5 @@
 import React from 'react';
-import {UserContext} from './App.js';
+import {AppContext} from './AppContext.js';
 import './App.css'
 
 
@@ -14,7 +14,7 @@ function changeCurrentPage(e) {
 
 export const NavBar =(intUser) => {
 
-    const ctx = React.useContext(UserContext)
+    const ctx = React.useContext(AppContext)
 
     return(
         <nav className="navbar navbar-expand-lg navbar-dark bg-dark navBarMain">

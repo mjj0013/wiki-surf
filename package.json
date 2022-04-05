@@ -52,8 +52,7 @@
   },
   "scripts": {
     "build": "webpack",
-    "webpackStart": "webpack-dev-server",
-    "start":"concurrently",
+    "start": "webpack-dev-server",
     "serverStart": "nodemon ./server/index.js"
   },
   "eslintConfig": {

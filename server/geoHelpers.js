@@ -73,7 +73,7 @@ var getDateObj = (time) =>{
         date = new Date(date+ (yearOffset + dayOffset + hourOffset + minutesOffset))
     }
     if(Date.now() > date.getTime()) return date;
-    else new Date();
+    else return new Date();
 }
 
 

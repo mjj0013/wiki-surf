@@ -23,23 +23,13 @@ regionCodesReformatted.sort(function(a,b){
 })
 
 
-// import {sendRequestToBackend} from './frontEndHelpers.js';
-
-async function sendRequestToBackend(req) {
-
-    //'/server'
-    const response = await fetch(req);
-    const body = await response.json();
-    if(response.status!==200) throw Error(body.message);
-    return body;
-}
+import {sendRequestToBackend} from './frontEndHelpers.js';
 
 function searchClicked() {
     var moduleSelect = document.getElementById("moduleSelectElement").value
     
-    if(moduleSelect=="dailyTrends") {
-        listTrends();
-    }
+    if(moduleSelect=="dailyTrends") listTrends();
+    
 }
 
 function listTrends() {
@@ -60,13 +50,36 @@ function listTrends() {
         headers:headers,
         body: JSON.stringify(tempCriteria)
     })
-
-
+    // var itemList = document.getElementById("resultItemList");
+    // for(let i=0; i<itemList.children; ++i) {
+        
+    //     itemList.removeChild(itemList.children[i])
+    // }
     sendRequestToBackend(req).then(result=>{
-        console.log(result);
+        console.log(result.data.queries);
+        
+        displayResults(result.data.queries)
+
     })
 }
-export const Home = () => {          
+
+function displayResults(results) {
+    var resultItemList = document.getElementById("resultItemList")
+    while(resultItemList.firstChild) resultItemList.removeChild(resultItemList.firstChild);
+   
+    for(let i =0; i < results.length; ++i) {
+        var li = document.createElement("li");
+       
+        li.className = "list-group-item"
+        li.innerHTML = results[i];
+
+        resultItemList.appendChild(li)
+    }
+
+}
+export var Home = () => {      
+    var dataReady = false;
+    var listItems = []    
     // This is the map instance
     return (
         <div>
@@ -84,7 +97,16 @@ export const Home = () => {
                     regionCodesReformatted.map((obj,idx)=>{return (<option key={idx} value={obj.code}>{obj.name}</option>)})
                 }
             </select>
-            <button onClick={searchClicked} style={{display:"block",top:"25%", left:"25%",position:"absolute"}}>Search</button>
+            <button onClick={searchClicked} style={{display:"block",top:"25%", right:"25%",position:"absolute"}}>Search</button>
+           
+            <div className="card" style={{"width":"18rem"}}>
+                <div className="card-header">Results</div>
+                <ul id="resultItemList" className="list-group list-group-flush">
+                    
+
+                </ul>
+            </div>
+           
            
             {/* <div id="map"></div>
             <div className="map-overlay top">

@@ -58,8 +58,8 @@ var dailyTrendsModule = (req,res) =>{
 app.post('/server',(req,res)=>{
     res.setHeader("Accept", "application/json");
     res.setHeader("Content-Type", "application/json");
-
-    if(res.module=="dailyTrends") dailyTrendsModule(req,res)
+    
+    if(req.body.module=="dailyTrends") dailyTrendsModule(req,res)
 })
 
 

@@ -12,6 +12,22 @@ import {WikiSubject, wikiTitleSearch} from './wikiSubject.js';
 //     zoom: 14,
 // });
 
+
+
+// https://www.statista.com/statistics/262966/number-of-internet-users-in-selected-countries/
+// https://worldpopulationreview.com/countries
+//Internet users (2022)
+// US: 307.2 million internet users         ,       334805269 total         ,       36/km² population density
+// India: 658 million        internet users ,       1,406,631,776 total     ,       428/km² population density
+// China: 1000 million internet users       ,       1,448,471,400 total     ,       149/km² population density
+// Japan 118.3 million     internet users   ,       125,584,838 total       ,       332/km² population density
+// Mexico: 96.87 million   internet users          131,562,772 total               67/km² density
+// Russia: 129.8 million  internet users        145,912,025 total       ,       9/km² density
+// Germany: 78.02 million internet users         83,900,473 total,       ,       235/km² density
+// UK: 66.99 million      internet users       57,367,811 total,       ,       282/km²
+// Egypt: 75.66 million   internet users       106,156,692 total,              106/km² density
+// France: 60.92 million  internet users        65,426,179 total                119/km²
+
 import {regionCodes} from '../server/geoHelpers.js';
 
 const regions = Object.keys(regionCodes)
@@ -43,7 +59,6 @@ function getWikiData(queryName) {
 function searchClicked() {
     var moduleSelect = document.getElementById("moduleSelectElement").value
     if(moduleSelect=="dailyTrends") listTrends();
-    
 }
 
 

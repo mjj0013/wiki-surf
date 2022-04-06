@@ -1,3 +1,4 @@
+import "regenerator-runtime/runtime"
 export async function sendRequestToBackend(req) {
     const response = await fetch(req);
     const body = await response.json();

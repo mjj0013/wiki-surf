@@ -1,12 +1,6 @@
-import React from 'react';
-import { isElementOfType } from 'react-dom/test-utils';
-import "regenerator-runtime/runtime";
+const { isElementOfType } = require( 'react-dom/test-utils');
 var convert = require('xml-js');
-//https://en.wikipedia.org/wiki/Special:Random/api.php?&origin=*
-// See also links: id="mw-content-text" --> class="mw-parser-output" --> <ul>
-
-
-
+// const {fetch} = require('node-fetch');
 //"https://en.wikipedia.org/w/api.php?&origin=*&action=opensearch&search=Belgium&limit=5"
 
 function findObjInArray(array, keyName, keyValue) {
@@ -18,26 +12,45 @@ function findObjInArray(array, keyName, keyValue) {
 
 
 function reformatURL(url) {
-    url = url.replaceAll(/(\s)/gi, "%20")
-    url = url.replaceAll(/\"/gi, "%22")
-    url = url.replaceAll("'", "%27")
-    url = url.replaceAll(/\,/gi, "%2C")
-    url = url.replaceAll(/\</gi, "%3B")
-    url = url.replaceAll(/\>/gi, "%3E")
-    url = url.replaceAll(/\?/gi, "%3F")
-    url = url.replaceAll(/\[/gi, "%5B")
-    url = url.replaceAll(/\]/gi, "%5D")
-    url = url.replaceAll(/\{/gi, "%7B")
-    url = url.replaceAll(/\|/gi, "%7C")
-    url = url.replaceAll(/\}/gi, "%7D")
+    url = url.replace(/(\s)/gi, "%20")
+    url = url.replace(/\"/gi, "%22")
+    url = url.replace("'", "%27")
+    url = url.replace(/\,/gi, "%2C")
+    url = url.replace(/\</gi, "%3B")
+    url = url.replace(/\>/gi, "%3E")
+    url = url.replace(/\?/gi, "%3F")
+    url = url.replace(/\[/gi, "%5B")
+    url = url.replace(/\]/gi, "%5D")
+    url = url.replace(/\{/gi, "%7B")
+    url = url.replace(/\|/gi, "%7C")
+    url = url.replace(/\}/gi, "%7D")
 
     return url;
 }
+function wikiTitleSearch(queryName) {
+    return new Promise((resolve,reject)=>{
+        var url = `https://en.wikipedia.org/w/api.php?action=query&list=search&srwhat=text&srsearch=${reformatURL(queryName)}&srprop=categorysnippet&format=json&origin=*`;
+        var req = new Request(url,{method:'GET',mode:'cors'});
+        fetch(req)
+        .then(response => {    return response.json();})
+        .then(result=>{
+            
+            var query = result.query
+            // if(query.searchinfo) {
+            //     if(query.searchinfo.totalhits > 0) {
+            //         return 
+            //     }
+            // }
+            var topResult = query.search[0];
+           
+            resolve(topResult.title);
+        })
+    })
+    
 
+}
 
-
-
-export class WikiSubject {      // extends React.Component
+class WikiSubject {      // extends React.Component
     constructor(props) {
         // super(props);
         /*  ORDER:
@@ -119,7 +132,7 @@ export class WikiSubject {      // extends React.Component
         if(random)              url=`https://en.wikipedia.org/w/api.php?action=query&generator=random&grnnamespace=0&format=json&origin=*&prop=categories`                    
         else if(this.wikiTitle) url=`http://en.wikipedia.org/w/api.php?action=query&origin=*&format=json&titles=${this.wikiTitle}&prop=categories`             //&prop=categories|categoryinfo`
         else return "ERROR";
-    
+        
         var req = new Request(url,{method:'GET',mode:'cors'})
         if(this.depth==2) {
             this.fetchSrc(req).then(result=> {
@@ -334,11 +347,9 @@ export class WikiSubject {      // extends React.Component
         })
         
     }
-
-    // render() {
-    //     return (
-    //         <div>
-    //         </div>
-    //     )
-    // }
+}
+module.exports ={
+    WikiSubject:WikiSubject,
+    reformatURL:reformatURL,
+    wikiTitleSearch:wikiTitleSearch
 }

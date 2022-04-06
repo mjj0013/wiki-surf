@@ -1,7 +1,9 @@
-
+// import translate from 'translate';
+// translate.engine = "deepl"
 import React from 'react';
 import {AppContext} from './AppContext.js';
 import mapboxgl from 'mapbox-gl';
+import {WikiSubject, wikiTitleSearch} from './wikiSubject.js';
 // mapboxgl.accessToken = 'pk.eyJ1IjoibWpqMDAxMyIsImEiOiJjbDE2bXg0YmYwODduM2RwbnJkcmQ1bnduIn0.IYgBcJUZkVwjjsdeD6F2Kw';
 // let map = new mapboxgl.Map({
 //     container: 'map',
@@ -9,13 +11,11 @@ import mapboxgl from 'mapbox-gl';
 //     center: [-71.104081, 42.365554],
 //     zoom: 14,
 // });
+
 import {regionCodes} from '../server/geoHelpers.js';
 
 const regions = Object.keys(regionCodes)
-
-const regionCodesReformatted = regions.map(i=>{
-    return {name:i, code:regionCodes[i]}
-})
+const regionCodesReformatted = regions.map(i=>{return {name:i, code:regionCodes[i]}})
 regionCodesReformatted.sort(function(a,b){
     if(a.name < b.name) return -1;
     if(a.name > b.name) return 1;
@@ -24,13 +24,28 @@ regionCodesReformatted.sort(function(a,b){
 
 
 import {sendRequestToBackend} from './frontEndHelpers.js';
+function getWikiData(queryName) {
+    wikiTitleSearch(queryName)
+    .then(result=> {
+        console.log('result',result)
+        return result;
+        
+    })
+    .then(wikiTitle=> {
+        console.log(wikiTitle)
+        var wikiSubjObj = new WikiSubject({wikiTitle:wikiTitle, depth:1})
+        console.log("obj", wikiSubjObj)
+    })
+}
+            
+
 
 function searchClicked() {
     var moduleSelect = document.getElementById("moduleSelectElement").value
-    
     if(moduleSelect=="dailyTrends") listTrends();
     
 }
+
 
 function listTrends() {
 
@@ -45,41 +60,44 @@ function listTrends() {
         trendDate:trendDate? trendDate : null
     }
     var headers = {"Content-Type":"application/json", "Accept":"application/json"}
-    var req = new Request('/server', {
-        method:"POST", 
-        headers:headers,
-        body: JSON.stringify(tempCriteria)
-    })
-    // var itemList = document.getElementById("resultItemList");
-    // for(let i=0; i<itemList.children; ++i) {
-        
-    //     itemList.removeChild(itemList.children[i])
-    // }
+    var req = new Request('/server', {  method:"POST",  headers:headers,    body: JSON.stringify(tempCriteria)   })
+
     sendRequestToBackend(req).then(result=>{
-        console.log(result.data.queries);
+        console.log(result.data.searches);
         
-        displayResults(result.data.queries)
+        displayResults(result.data.searches)
 
     })
 }
 
-function displayResults(results) {
+async function displayResults(results) {
     var resultItemList = document.getElementById("resultItemList")
     while(resultItemList.firstChild) resultItemList.removeChild(resultItemList.firstChild);
-   
+    results.sort(function(a,b){
+        return parseInt(b.formattedTraffic) - parseInt(a.formattedTraffic)
+    })
     for(let i =0; i < results.length; ++i) {
         var li = document.createElement("li");
-       
         li.className = "list-group-item"
-        li.innerHTML = results[i];
+        
+        li.innerHTML =results[i].title.query + " | +" + results[i].formattedTraffic + " views";
+        getWikiData(results[i].title.query)
+        // translate(results[i].snippet,{to:'en'})
+        // .then(result=>{
+        //     console.log("snippet",result);
+            
+        // })
+
+        var img = document.createElement("img");
+        img.src = results[i].image.imageUrl
 
         resultItemList.appendChild(li)
+        li.appendChild(img)
+        
     }
 
 }
 export var Home = () => {      
-    var dataReady = false;
-    var listItems = []    
     // This is the map instance
     return (
         <div>
@@ -97,7 +115,7 @@ export var Home = () => {
                     regionCodesReformatted.map((obj,idx)=>{return (<option key={idx} value={obj.code}>{obj.name}</option>)})
                 }
             </select>
-            <button onClick={searchClicked} style={{display:"block",top:"25%", right:"25%",position:"absolute"}}>Search</button>
+            <button onClick={searchClicked} >Search</button>
            
             <div className="card" style={{"width":"18rem"}}>
                 <div className="card-header">Results</div>

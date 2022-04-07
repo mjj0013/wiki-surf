@@ -1,5 +1,4 @@
 const schedule = require('node-schedule')
-
 const ruleEastUS = new schedule.RecurrenceRule();
 const ruleCentUS = new schedule.RecurrenceRule();
 const ruleMountUS = new schedule.RecurrenceRule();
@@ -23,7 +22,3 @@ module.exports = {
     ruleMountUS:ruleMountUS,
     rulePacifUS:rulePacifUS
 }
-
-
-
-

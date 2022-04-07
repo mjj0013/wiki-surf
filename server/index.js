@@ -38,6 +38,7 @@ var usDailyTrendsJob = () => {
             for(let s=0; s < days[d]["trendingSearches"].length; ++s) {
                 var search = days[d]["trendingSearches"][s];
                 search.formattedTraffic = search.formattedTraffic.replace("K+","000" )
+                search.formattedTraffic = search.formattedTraffic.replace("M+","000000" )
                 resultData.searches.push({query:search.title.query, formattedTraffic:search.formattedTraffic});
             }
         }
@@ -45,15 +46,11 @@ var usDailyTrendsJob = () => {
         fs.readFile('./server/trendRecords/records.json', 'utf8', (error, data)=>{
             if(error) console.log(error)
             else {
-               
                 var OBJ = JSON.parse(data);
-               
                 OBJ["United States"]["trendData"].push(resultData)
                 var json = JSON.stringify(OBJ);
-                
                 fs.writeFile('./server/trendRecords/records.json',json,()=>{});
             }
-            
         })
     })
 }
@@ -75,9 +72,16 @@ var dateWithinRange = (dateObj) => {        //tests if specified date is more th
 var interestOverTimeModule = (req,res) =>{
     var query = req.body;
     var geo = query.region? query.region : regionCodes["United States"];
-    var startTime = query.startTime? new Date(query.startTime) : new Date();
+    var startTime = query.startTime? new Date(query.startTime) : new Date('2004-01-01');
     var endTime = query.endTime? new Date(query.endTime) : new Date();
-
+    var keyword = query.keyword;
+    googleTrends.interestOverTime({ keyword:keyword, startTime: startTime, endTime:endTime, geo:geo})
+    .then((results)=> {
+        var data = results.toString();
+        data = JSON.parse(data);
+        res.send({data:data.default, ok:true})
+    })
+    
 }
 
 var dailyTrendsModule = (req,res) =>{
@@ -107,23 +111,17 @@ var dailyTrendsModule = (req,res) =>{
                 days[d]["trendingSearches"][s].formattedTraffic = days[d]["trendingSearches"][s].formattedTraffic.replace("K+","000" )
                 resultData.searches.push(days[d]["trendingSearches"][s])
                 
-
-                
-                
-                
             }
         }
         res.send({data:resultData, ok:true})
     })
 }
 
-
-
-
 app.post('/server',(req,res)=>{
     res.setHeader("Accept", "application/json");
     res.setHeader("Content-Type", "application/json");
     if(req.body.module=="dailyTrends") dailyTrendsModule(req,res)
+    if(req.body.module=="interestOverTime") interestOverTimeModule(req,res)
 })
 
 

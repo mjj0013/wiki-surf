@@ -1,3 +1,4 @@
+@import url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css");
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -10,4 +11,32 @@ body {
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
+}
+
+#keywordEntrySection {
+  display:none;
+  align-items:center;
+
+}
+
+.search-container {
+  width:50%;
+  margin:50px;
+
+}
+.search-term-container {
+  border: 2px solid #bbb;
+  padding:8px;
+  border-radius: 3px;
+  display:flex;
+}
+
+.search-term-container .search-term {
+  padding:4px;
+  border: 1px solid #ccf;
+  margin:5px;
+  display:flex;
+  align-items:center;
+  border-radius:3px;
+  background:#f2f2f2;
 }

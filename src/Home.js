@@ -3,24 +3,16 @@
 import './index.css'
 import React from 'react';
 import {AppContext} from './AppContext.js';
-import mapboxgl from 'mapbox-gl';
+
+import {Chart} from 'react-google-charts';
 // import noUiSlider from 'nouislider';
 
 import {WikiSubject, wikiTitleSearch} from './wikiSubject.js';
 
-// mapboxgl.accessToken = 'pk.eyJ1IjoibWpqMDAxMyIsImEiOiJjbDE2bXg0YmYwODduM2RwbnJkcmQ1bnduIn0.IYgBcJUZkVwjjsdeD6F2Kw';
-// let map = new mapboxgl.Map({
-//     container: 'map',
-//     style: 'mapbox://styles/mapbox/streets-v11',
-//     center: [-71.104081, 42.365554],
-//     zoom: 14,
-// });
-
-
-
 // https://www.statista.com/statistics/262966/number-of-internet-users-in-selected-countries/
 // https://worldpopulationreview.com/countries
 // also, https://www.cia.gov/the-world-factbook/field/internet-users/country-comparison/
+
 //Internet users (2022)
 //  US: 307.2 million internet users         ,       334805269 total     , 91.75%      36/km² population density
 //  India: 658 million        internet users ,       1,406,631,776 total , 46.77%      428/km² population density
@@ -35,6 +27,22 @@ import {WikiSubject, wikiTitleSearch} from './wikiSubject.js';
 
 import {regionCodes} from '../server/geoHelpers.js';
 var searchTerms = [];
+
+
+var mapData = [
+    ["Country","Latitude"],
+    ["Algeria", 36],
+    ["Angola", -8]
+];
+var mapOptions = {
+    region:"002",
+    colorAxis:{colors:["#00853f", "green", "#e32325"]},
+    backgroundColor:"#81d4fa",
+    datalessRegionColor:"#f8bbd0",
+    defaultColor:"#f5f5f5"
+}
+
+
 const regions = Object.keys(regionCodes)
 const regionCodesReformatted = regions.map(i=>{return {name:i, code:regionCodes[i]}})
 regionCodesReformatted.sort(function(a,b){
@@ -68,19 +76,16 @@ function searchClicked() {
 
 
 function listTrends(moduleName) {
-
     // create form where the user inputs the search criteria (geo, time, phrase) for the trends. put that search criteria in the request body
     // other possible modules:    relatedQueries, relatedTopics, interestOverTime, interestByRegion
     
-    
     var region = document.getElementById("regionElement").value
-
 
     var tempCriteria = {
         module:moduleName,     
         region:region? region : null,
-        
     }
+
     if(moduleName=="dailyTrends") {
         var trendDate = document.getElementById("trendDateElement").value
         tempCriteria["trendDate"] = trendDate;
@@ -98,17 +103,13 @@ function listTrends(moduleName) {
         tempCriteria["keyword"] = searchTerms;
         tempCriteria["startTime"] = startDate;
         tempCriteria["endTime"] = endDate;
-
     }
     var headers = {"Content-Type":"application/json", "Accept":"application/json"}
     var req = new Request('/server', {  method:"POST",  headers:headers,    body: JSON.stringify(tempCriteria)   })
 
     sendRequestToBackend(req).then(result=>{
-        
         if(moduleName=="dailyTrends") displayResults(result.data.searches)
-        else {
-            console.log(result)
-        }
+        else {console.log(result)}
     })
 }
 
@@ -125,10 +126,7 @@ async function displayResults(results) {
         li.innerHTML =results[i].title.query + " | +" + results[i].formattedTraffic + " views";
         getWikiData(results[i].title.query)
         // translate(results[i].snippet,{to:'en'})
-        // .then(result=>{
-        //     console.log("snippet",result);
-            
-        // })
+        // .then(result=>{console.log("snippet",result);})
         var img = document.createElement("img");
         img.src = results[i].image.imageUrl
 
@@ -148,11 +146,7 @@ function addKeywordPressed() {
     item.className = "search-term";
     var icon = document.createElement('i');
     icon.className="bi bi-x";
-    icon.addEventListener("click", (e)=> {
-        termList.removeChild(item);
-
-        
-    })
+    icon.addEventListener("click", (e)=> {  termList.removeChild(item);  })
     var span = document.createElement("span");
     span.innerHTML = keywordInput.value;
     item.appendChild(span);
@@ -186,63 +180,66 @@ export var Home = () => {
     // This is the map instance
     return (
         <div>
-            <label htmlFor="moduleSelectElement">Module:</label>
-            <select id="moduleSelectElement" onChange={moduleChanged}>
-                <option value="dailyTrends">Daily Trends</option>
-                <option value="interestOverTime">Interest Over Time</option>
-            </select>
-            <div id="keywordEntrySection" >
-                <label htmlFor="keywordField">Keyword(s):</label>
-                <div id="keywordField" className="search-container">
-                    <div id="termList" className="search-term-container">
-                        <div>
-                            <input id='keywordInput' onKeyUp={(e)=> keyPressedOnKeywordInput(e)}/>
-                            <button id="addKeywordButton" onClick={addKeywordPressed} style={{display:'block'}}>
-                                <img src="plus.svg" width="25" height="25"></img>
-                            </button>
+            <nav>
+                <div className="nav nav-tabs" role="tablist">
+                    <button className="nav-link active" id="globalSearchTab" data-bs-toggle="tab" data-bs-target="#globalSearch" type="button" role="tab" aria-controls="globalSearch" aria-selected="true">Global</button>
+                    <button className="nav-link" id="byCountrySearchTab" data-bs-toggle="tab" data-bs-target="#byCountrySearch" type="button" role="tab" aria-controls="byCountrySearch" aria-selected="false">By Country</button>
+                </div>
+            </nav>
+            <div className="tab-content" id="tabContent">
+                {/* <div className="tab-pane fade show active" id="globalSearch" role="tabpanel" aria-labelledby='globalSearchTab'>
+                    <Chart className="map" chartType="GeoChart" data={mapData}/>
+                </div> */}
+                <div className="tab-pane fade show active" id="byCountrySearch" role="tabpanel" aria-labelledby='byCountrySearchTab'>
+                    <label htmlFor="moduleSelectElement">Module:</label>
+                    <select id="moduleSelectElement" onChange={moduleChanged}>
+                        <option value="dailyTrends">Daily Trends</option>
+                        <option value="interestOverTime">Interest Over Time</option>
+                    </select>
+                    <div id="keywordEntrySection" >
+                        <label htmlFor="keywordField">Keyword(s):</label>
+                        <div id="keywordField" className="search-container">
+                            <div id="termList" className="search-term-container">
+                                <div>
+                                    <input id='keywordInput' onKeyUp={(e)=> keyPressedOnKeywordInput(e)}/>
+                                    <button id="addKeywordButton" onClick={addKeywordPressed} style={{display:'block'}}>
+                                        <img src="plus.svg" width="25" height="25"></img>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
+                        
+                    </div>
+                    <div id="trendDateSection">
+                        <label htmlFor="trendDateElement">Trend date:</label>
+                        <input type="date" id="trendDateElement" min="2004-01-01"/>
+                    </div>
+                    
+                    <div id="dateRangeSection" style={{display:'none'}}>
+                        <label htmlFor="startDateElement">Start date:</label>
+                        <input type="date" id="startDateElement" min="2004-01-01"/>
+
+                        <label htmlFor="endDateElement">End date:</label>
+                        <input type="date" id="endDateElement" />
+                    </div>
+
+                    <label htmlFor="regionElement">Region:</label>
+                    <select id="regionElement">
+                        {
+                            regionCodesReformatted.map((obj,idx)=>{return (<option key={idx} value={obj.code}>{obj.name}</option>)})
+                        }
+                    </select>
+                    
+                    <button onClick={searchClicked} >Search</button>
+                
+                    
+
+                    <div className="card" style={{"width":"18rem"}}>
+                        <div className="card-header">Results</div>
+                        <ul id="resultItemList" className="list-group list-group-flush"></ul>
                     </div>
                 </div>
-                
-                
-                
-                
             </div>
-            <div id="trendDateSection">
-                <label htmlFor="trendDateElement">Trend date:</label>
-                <input type="date" id="trendDateElement" min="2004-01-01"/>
-            </div>
-            
-            <div id="dateRangeSection" style={{display:'none'}}>
-                <label htmlFor="startDateElement">Start date:</label>
-                <input type="date" id="startDateElement" min="2004-01-01"/>
-
-                <label htmlFor="endDateElement">End date:</label>
-                <input type="date" id="endDateElement" />
-            </div>
-
-            <label htmlFor="regionElement">Region:</label>
-            <select id="regionElement">
-                {
-                    regionCodesReformatted.map((obj,idx)=>{return (<option key={idx} value={obj.code}>{obj.name}</option>)})
-                }
-            </select>
-            
-            <button onClick={searchClicked} >Search</button>
-           
-            <div className="card" style={{"width":"18rem"}}>
-                <div className="card-header">Results</div>
-                <ul id="resultItemList" className="list-group list-group-flush"></ul>
-            </div>
-           
-           
-            {/* <div id="map"></div>
-            <div className="map-overlay top">
-                <button  style={{fontSize:"2em",position:"absolute",top:"150px",width:"650px"}}>
-                    Show stops between MIT and Harvard
-                </button>
-            </div> */}
-            
         </div>
         
     )

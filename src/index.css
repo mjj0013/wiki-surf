@@ -40,3 +40,9 @@ code {
   border-radius:3px;
   background:#f2f2f2;
 }
+
+.map {
+
+  width:100%;
+  height:400px; 
+}

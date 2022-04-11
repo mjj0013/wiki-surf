@@ -11,7 +11,7 @@ const {rulePacifUS, ruleCentUS, ruleEastUS, ruleMountUS} = require('./fetchDaily
 
 const PORT = process.env.PORT || 3000;
 const DIST_DIR = path.join(__dirname, "public");
-const {regionCodes, getDateObj} = require('./geoHelpers.js');
+const {regionCodes, getDateObj, trendCategories} = require('./geoHelpers.js');
 
 
 const app = express();
@@ -22,10 +22,13 @@ app.listen(PORT, ()=> { console.log("Server running on port "+PORT); })
 
 
 
+
+
+
 // Twitter API, try: https://www.programmableweb.com/api/twitter-search-tweets-rest-api-v11
 var usDailyTrendsJob = () => {
     var trendDate = getDateObj({offset:{direction:'before', days:15}})          //always gets trends from 15 days before current day, b/c that day will not be recoverable
-
+    
     googleTrends.dailyTrends( { trendDate: trendDate,  geo:"US"})
     .then((results)=> {
         var data = results.toString();
@@ -85,9 +88,15 @@ var interestOverTimeModule = (req,res) =>{
 }
 
 var dailyTrendsModule = (req,res) =>{
+    
     var query = req.body;
     var geo = query.region? query.region : regionCodes["United States"];
     var trendDate = query.trendDate? new Date(query.trendDate) : new Date();
+    var optionsObj = { trendDate: trendDate,  geo:geo}
+    // googleTrends.apiMethod()
+    if(query.category) {
+        optionsObj["category"] = query.category;
+    }
     var dateTest = dateWithinRange(trendDate);
     if(dateTest==-1) {           //invalid trendDate
         res.send({data:"Invalid date: The specified date was more than 15 days in the past", ok:false})
@@ -103,16 +112,15 @@ var dailyTrendsModule = (req,res) =>{
         var data = results.toString();
         data = JSON.parse(data);
         var days = data.default["trendingSearchesDays"]
-        
         var resultData = {searches:[]}
         
         for(let d=0 ; d < days.length; ++d) {
             for(let s=0; s < days[d]["trendingSearches"].length; ++s) {
                 days[d]["trendingSearches"][s].formattedTraffic = days[d]["trendingSearches"][s].formattedTraffic.replace("K+","000" )
                 resultData.searches.push(days[d]["trendingSearches"][s])
-                
             }
         }
+        console.log("resultData",resultData)
         res.send({data:resultData, ok:true})
     })
 }

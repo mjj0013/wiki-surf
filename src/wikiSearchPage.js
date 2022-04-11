@@ -23,6 +23,7 @@ export const WikiSearchPage = () => {
     
     return (
         <div>
+
             {/* <WikiSubject depth={2}/> */}
             <button onClick={sampleWikiSearch} style={{display:"block",top:"25%", left:"25%",position:"absolute"}}>Search</button>
            

@@ -1,7 +1,7 @@
 // import translate from 'translate';
 // translate.engine = "deepl"
 import './index.css'
-import React from 'react';
+import React, { useEffect ,useState} from 'react';
 import {AppContext} from './AppContext.js';
 
 import {Chart} from 'react-google-charts';
@@ -27,13 +27,41 @@ import {WikiSubject, wikiTitleSearch} from './wikiSubject.js';
 
 import {regionCodes} from '../server/geoHelpers.js';
 var searchTerms = [];
-
-
 var mapData = [
-    ["Country","Latitude"],
-    ["Algeria", 36],
-    ["Angola", -8]
+    ["Country","Year"],
+    ["Algeria", 6],
+    ["Angola", 6],
+    ["United States", 7],
+    ["France", 678],
+    ["Germany",987],
+    ["Portugal",2546],
+    ["Spain", 56],
+    ["Russia", 33]
 ];
+var countryData = [
+    ["Country","Year"],
+    ["Algeria", 6],
+    ["Angola", 6],
+    ["United States", 7],
+    ["France", 678],
+    ["Germany",987],
+    ["Portugal",2546],
+    ["Spain", 56],
+    ["Russia", 33]
+];
+
+// console.log('google.visualization,',google.visualization)
+// var mapData = google.visualization.arrayToDataTable([
+//     ["Country","Year"],
+//     ["Algeria", new Date(1933, 6, 13)],
+//     ["Angola", new Date(1965, 6, 13)],
+//     ["United States", new Date(1978, 6, 13)],
+//     ["France", new Date(1948, 6, 13)],
+//     ["Germany", new Date(1910, 6, 13)],
+//     ["Portugal",new Date(1923, 6, 13)],
+//     ["Spain", new Date(1988, 6, 13)],
+//     ["Russia", new Date(1978, 6, 13)]
+// ]);
 var mapOptions = {
     region:"002",
     colorAxis:{colors:["#00853f", "green", "#e32325"]},
@@ -45,11 +73,13 @@ var mapOptions = {
 
 const regions = Object.keys(regionCodes)
 const regionCodesReformatted = regions.map(i=>{return {name:i, code:regionCodes[i]}})
+
 regionCodesReformatted.sort(function(a,b){
     if(a.name < b.name) return -1;
     if(a.name > b.name) return 1;
     return 0;
 })
+const defaultCountryIdx = regionCodesReformatted.findIndex(x=> {return x.name=="United States"})
 
 
 import {sendRequestToBackend} from './frontEndHelpers.js';
@@ -157,9 +187,7 @@ function addKeywordPressed() {
 
 function keyPressedOnKeywordInput(e) {
     e.preventDefault();
-    if(e.key == "Enter" || e.key=="Tab") {
-        addKeywordPressed();
-    }
+    if(e.key=="Enter" || e.key=="Tab") addKeywordPressed();
 }
 function moduleChanged() {
     var moduleName = document.getElementById('moduleSelectElement').value;
@@ -176,22 +204,72 @@ function moduleChanged() {
         
     }
 }
-export var Home = () => {      
-    // This is the map instance
+
+export var Home = () => {   
+    // setInterval(()=>{
+    //     mapData[3][1] += 1;
+    //     console.log(document.getElementById("worldMap"))
+    // }, 300);
+    
+
+    // useEffect(()=> {
+    //     const getData = async ()=> {
+    //         setStats()
+    //     }
+    // })
+
+    
+
+    const [countryOptions, setCountryOptions] = useState({region:"US"});
+
+    const [data,setData] = useState(mapData);
+    // useEffect(()=> {
+    //     setInterval(()=>{
+    //         data[3][1] += 25;
+    //         setData([...data])
+    //     },50)
+    // },[]);
+
+
+    function regionChanged() {
+        var selected = document.getElementById("regionElement")
+
+        setCountryOptions({...countryOptions, region:selected.value})
+
+    }
+    function searchTabChanged(e) {
+        if(e.target.id=="globalSearchTab") {
+            document.getElementById("regionSection").style.display = "none";
+        }
+        if(e.target.id=="byCountrySearchTab") {
+            document.getElementById("regionSection").style.display = "block";
+        }
+    }
     return (
         <div>
-            <nav>
-                <div className="nav nav-tabs" role="tablist">
-                    <button className="nav-link active" id="globalSearchTab" data-bs-toggle="tab" data-bs-target="#globalSearch" type="button" role="tab" aria-controls="globalSearch" aria-selected="true">Global</button>
-                    <button className="nav-link" id="byCountrySearchTab" data-bs-toggle="tab" data-bs-target="#byCountrySearch" type="button" role="tab" aria-controls="byCountrySearch" aria-selected="false">By Country</button>
-                </div>
-            </nav>
+
+            <ul className="nav nav-tabs" role="tablist">
+                <li>
+                    <button className="nav-link active" id="globalSearchTab" onClick={(e)=>searchTabChanged(e)} data-bs-toggle="tab" data-bs-target="#globalSearch" type="button" role="tab" aria-controls="globalSearch" aria-selected="true">Global</button>
+                </li>
+                <li> 
+                    <button className="nav-link" id="byCountrySearchTab" onClick={(e)=>searchTabChanged(e)} data-bs-toggle="tab" data-bs-target="#byCountrySearch" type="button" role="tab" aria-controls="byCountrySearch" aria-selected="false">By Country</button>
+                </li>
+            </ul>
             <div className="tab-content" id="tabContent">
-                {/* <div className="tab-pane fade show active" id="globalSearch" role="tabpanel" aria-labelledby='globalSearchTab'>
-                    <Chart className="map" chartType="GeoChart" data={mapData}/>
-                </div> */}
-                <div className="tab-pane fade show active" id="byCountrySearch" role="tabpanel" aria-labelledby='byCountrySearchTab'>
-                    <label htmlFor="moduleSelectElement">Module:</label>
+                <div className="tab-pane fade show active" id="globalSearch" >
+
+                    <Chart id="worldMap" className="map" chartType="GeoChart" data={data}  chartPackages={["corechart","controls"]}/>
+
+                </div>
+                <div className="tab-pane fade" id="byCountrySearch">
+
+                    <Chart id="countryMap" className="map" chartType="GeoChart" data={countryData} options={countryOptions}  chartPackages={["corechart","controls"]}/>
+
+                    
+                    
+                </div>
+                <label htmlFor="moduleSelectElement">Module:</label>
                     <select id="moduleSelectElement" onChange={moduleChanged}>
                         <option value="dailyTrends">Daily Trends</option>
                         <option value="interestOverTime">Interest Over Time</option>
@@ -222,23 +300,34 @@ export var Home = () => {
                         <label htmlFor="endDateElement">End date:</label>
                         <input type="date" id="endDateElement" />
                     </div>
-
-                    <label htmlFor="regionElement">Region:</label>
-                    <select id="regionElement">
-                        {
-                            regionCodesReformatted.map((obj,idx)=>{return (<option key={idx} value={obj.code}>{obj.name}</option>)})
-                        }
-                    </select>
-                    
-                    <button onClick={searchClicked} >Search</button>
-                
-                    
-
-                    <div className="card" style={{"width":"18rem"}}>
-                        <div className="card-header">Results</div>
-                        <ul id="resultItemList" className="list-group list-group-flush"></ul>
+                    <div id="regionSection" style={{display:'none'}}>
+                        <label htmlFor="regionElement">Region:</label>
+                        <select id="regionElement" onChange={regionChanged} >
+                            {
+                                regionCodesReformatted.map((obj,idx)=>{return (<option key={idx} value={obj.code} selected={obj.name=="United States"? true:false}>{obj.name}</option>)})
+                            }
+                        </select>
                     </div>
-                </div>
+                   
+
+                    <button className="btn btn-primary" type="button" onClick={searchClicked} data-bs-toggle="offcanvas" data-bs-target="#offcanvasScrolling" aria-controls="offcanvasScrolling">Search</button>
+                
+                    <div id="offcanvasScrolling" className="offcanvas offcanvas-start" data-bs-backdrop="false" tabIndex="-1"  aria-labelledby="offcanvasScrollingLabel">
+                        {/* data-bs-scroll="true" */}
+                        <div className="offcanvas-header">
+                            <h5 className="offcanvas-title" id="offcanvasScrollingLabel">Colored with scrolling</h5>
+                            <button type="button" className="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                        </div>
+                        <div className="offcanvas-body">
+                            <div className="card" style={{"width":"18rem"}}>
+                                <div className="card-header">Results</div>
+                                <ul id="resultItemList" className="list-group list-group-flush"></ul>
+                            </div>
+                            
+                        </div>
+                    </div>
+
+                    
             </div>
         </div>
         

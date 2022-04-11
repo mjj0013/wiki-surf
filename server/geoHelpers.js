@@ -1,3 +1,185 @@
+//  https://github.com/pat310/google-trends-api/wiki/Google-Trends-Categories
+
+const trendCategories = {
+    "All Categories":0,
+    
+    "Finance":7,
+    "Self care": {
+        "Obesity":818,
+        "Eating Disorders":571,
+        "Running & Walking":541             // ***
+    },
+
+    "General": {                            // "anyone, anyday"
+        "Sleep Disorders":633,
+        "Pain Management":819,
+        "Injury":817,
+        
+        "Ear Nose & Throat":1211,
+        "Allergies":626,
+        "Oral & Dental Care":245,
+               
+        
+    },
+    "Policy": {                             // about rules, legislation, policies
+        "Public Health":947,
+        
+        "Local": {                          // seeks most immediate 
+            "Public Policy":1316,
+            "State & Local Government":966,
+            "Legal":75,
+            "Public safety" : 166,
+            "Social Services":508
+        },
+        "Global": {
+            "Embassies & Consulates":962,
+            "Intelligence & Counterterrorism":1221
+        }
+    },
+
+    "News": {
+        "Fringe/Skepticism": {
+            "Media Critics & Watchdogs":1203,
+
+        },
+        "Global": {
+            "World News":1209,
+            
+        
+        },
+        "Local": {
+            "Local News":572
+        }
+    },
+
+
+
+    "Occupational": {
+        "Jobs":60,
+        "Work & Labor Issues":703
+    },
+    "Travel": 67,
+    "Sentimental": {
+        "Antiques & Collectibles":64
+    },
+
+
+    "Humor": {                               //think "performer/painter"
+        "Live Comedy":895,
+        "Political Humor":1180,
+        "Spoofs & Satire":1244
+    },
+
+    "Healthcare": {                          // think healthcare professional
+        "Health Education & Medical Training":254,
+        "Health Foundations & Medical Research":252,
+        "Medical Literature & Resources":253,
+        "Nutrition":456,
+        "Nursing":418,
+        "Oral & Dental Care":245
+    },
+
+    "Athletics": {                          //think "competitor"
+        "Alternative & Natural Medicine":499,
+        "Nutrition":456,
+        "Sports News": 1077,
+        "Sports":20
+
+    },
+    
+
+    "Entertainment": {           
+        "Movies":34,
+        "Music & Audio":35,
+        "TV & Video":36,
+        "Performing Arts":23,
+        "Online Video":211,
+    },
+    "Arts": {       
+        "Online Image Galleries": 1222,
+        "Visual Art & Design":24
+
+    },
+    
+
+
+    "Introversion": {
+        "Leisure": {
+            "Computer & Video Games":41,
+            "Books & Literature":22,
+            
+        },
+        "Productivity": {
+            "Science":174
+        }
+        
+    },
+    "Extroversion": {
+        "Anti": {
+            "Goth Subculture":503
+        },
+
+        "People Search" : 1234,
+        "Celebrities & Entertainment News":184,
+        "Gossip & Tabloid News":507,
+        "Leisure": {
+            "Outdoors":688,
+            "Clubs & Nightlife": 188,
+        },
+        "Productivity": {
+            "Photographic & Digital Arts":439,
+            "Crafts":284,
+            "Apparel":68,
+
+           
+            
+        }
+    },
+
+
+    "Home & Garden": 11,
+
+    "Belief": {
+        "Fringe": {
+            "Astrology & Divination":448,
+            "Occult & Paranormal":449,
+            "Pagan & Esoteric Traditions":1258,
+            "Scientology":1251,
+            "Spirituality":101
+        },
+        "Mainstream": {
+            "Buddhism":862,
+            "Christianity":864,
+            "Judaism":869,
+            "Hinduism":866,
+            "Islam":868,
+        },
+        "Anti": {
+            "Skeptics & Non-Believers":975,
+        },
+        "Pro": {
+            "Theology & Religious Study":1340
+        }
+    },
+    "Blue-collar": {
+        "Construction & Maintenance":48,
+        
+    },
+
+    // "Business": {
+    //     "Business Services": {
+
+    //     },
+        
+        
+    // },
+    
+
+
+
+}
+
+
 var regionCodes = {
     "South Africa": "SA",
     "France":"FR",
@@ -79,5 +261,6 @@ var getDateObj = (time) =>{
 
 module.exports = {
     getDateObj:getDateObj,
-    regionCodes:regionCodes
+    regionCodes:regionCodes,
+    trendCategories: trendCategories
 }

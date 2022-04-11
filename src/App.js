@@ -16,7 +16,7 @@ import {sendRequestToBackend} from './frontEndHelpers.js';
 export function App() {
   // var req = new Request('/server')
   // sendRequestToBackend(req);
-
+  
   return (
     <HashRouter>
       <NavBar />

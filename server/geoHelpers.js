@@ -1,4 +1,41 @@
 //  https://github.com/pat310/google-trends-api/wiki/Google-Trends-Categories
+const abridgedCategories = {"All":"all", "Entertainment":"e", "Business":"b", "Science/Tech":"t", "Sports":"s", "Top Stories":"h"}
+
+const sentimentBasedGrouping = {
+    "Disfunctional": {
+        "Family Law":522,
+        "Pain Management":819,
+        "Divorce & Separation":1261,
+        "Tobacco Products": 123,
+
+    },
+    "Sleepy":{
+        "Sleep Disorders":633,
+    },
+    "Stressed": {
+        "Eating Disorders":571,
+        "Running & Walking":541,
+        "Anxiety & Stress":639,
+        "Depression":640,
+        "Tobacco Products": 123,
+    },
+    "Escapist": {
+        "Virtual Worlds":972,
+        "Travel":67,
+
+    },
+    "Naive": {
+        "Etiquette":1304,
+        "Wrestling":512,
+        "Tobacco Products": 123,
+    },
+    "Independent": {
+        "How-To, DIY & Expert Content":694,
+
+    }
+
+
+}
 
 const trendCategories = {
     "All Categories":0,
@@ -14,7 +51,7 @@ const trendCategories = {
         "Sleep Disorders":633,
         "Pain Management":819,
         "Injury":817,
-        
+        "Cleaning Supplies & Services": 949,
         "Ear Nose & Throat":1211,
         "Allergies":626,
         "Oral & Dental Care":245,
@@ -40,12 +77,9 @@ const trendCategories = {
     "News": {
         "Fringe/Skepticism": {
             "Media Critics & Watchdogs":1203,
-
         },
         "Global": {
             "World News":1209,
-            
-        
         },
         "Local": {
             "Local News":572
@@ -136,8 +170,10 @@ const trendCategories = {
         }
     },
 
+    "Edgy & Bizarre": 538,          //horror
+    "Occult & Paranormal":449,      //horror
 
-    "Home & Garden": 11,
+    "Home & Garden": 11,            //home improvement
 
     "Belief": {
         "Fringe": {
@@ -161,23 +197,14 @@ const trendCategories = {
             "Theology & Religious Study":1340
         }
     },
-    "Blue-collar": {
-        "Construction & Maintenance":48,
-        
-    },
-
-    // "Business": {
-    //     "Business Services": {
-
-    //     },
-        
-        
-    // },
     
-
+    "Construction & Maintenance":48,
 
 
 }
+
+
+
 
 
 var regionCodes = {
@@ -262,5 +289,6 @@ var getDateObj = (time) =>{
 module.exports = {
     getDateObj:getDateObj,
     regionCodes:regionCodes,
-    trendCategories: trendCategories
+    trendCategories: trendCategories,
+    abridgedCategories:abridgedCategories
 }

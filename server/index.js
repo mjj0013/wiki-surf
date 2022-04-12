@@ -1,6 +1,10 @@
 const express = require('express');
 const schedule = require('node-schedule')
 const googleTrends = require('google-trends-api');
+
+const https = require('https');
+
+console.log(Object.keys(googleTrends));
 const fs = require('fs');
 const path = require("path")
 const bodyParser = require("body-parser");      // a middleware
@@ -19,10 +23,6 @@ app.use(express.static(DIST_DIR));
 app.use(bodyParser.urlencoded({extended:false}));
 app.use(bodyParser.json());
 app.listen(PORT, ()=> { console.log("Server running on port "+PORT); })
-
-
-
-
 
 
 // Twitter API, try: https://www.programmableweb.com/api/twitter-search-tweets-rest-api-v11
@@ -72,13 +72,30 @@ var dateWithinRange = (dateObj) => {        //tests if specified date is more th
     else return 1
 }
 
+
+var interestByRegionModule = (req, res) => {
+    var query = req.body;
+    
+    var startTime = query.startTime? new Date(query.startTime) : new Date('2004-01-01');
+    var endTime = query.endTime? new Date(query.endTime) : new Date();
+    var keyword = query.keyword;
+
+    //all categories might be supported
+    googleTrends.interestByRegion({ keyword:keyword, startTime: startTime, endTime:endTime , category:7})       // , category:418
+    .then((results)=> {
+        var data = results.toString();
+        data = JSON.parse(data);
+        res.send({data:data.default, ok:true})
+    })
+}
+
 var interestOverTimeModule = (req,res) =>{
     var query = req.body;
     var geo = query.region? query.region : regionCodes["United States"];
     var startTime = query.startTime? new Date(query.startTime) : new Date('2004-01-01');
     var endTime = query.endTime? new Date(query.endTime) : new Date();
     var keyword = query.keyword;
-    googleTrends.interestOverTime({ keyword:keyword, startTime: startTime, endTime:endTime, geo:geo})
+    googleTrends.interestOverTime({ keyword:keyword, startTime: startTime, endTime:endTime, geo:geo, category:418 })
     .then((results)=> {
         var data = results.toString();
         data = JSON.parse(data);
@@ -87,12 +104,49 @@ var interestOverTimeModule = (req,res) =>{
     
 }
 
+var realTimeTrendsModule = (req,res) => {
+    // categories are abridged: {"All":"all", "Entertainment":"e", "Business":"b", "Science/Tech":"t", "Sports":"s", "Top Stories":"h"}
+
+
+    var query = req.body;
+    var geo = query.region? query.region : regionCodes["United States"];
+    
+    // var category = query.category? query.category : 7
+    
+    var optionsObj = { geo:geo, category:'7'}
+
+    console.log('optionsObj',optionsObj)
+    googleTrends.realTimeTrends(optionsObj)
+    .then((results)=> {
+        
+        var data = results.toString();
+        data = JSON.parse(data);
+       
+        
+        var stories = data.default["storySummaries"]["trendingStories"]
+        console.log(stories)
+        var resultData = {searches:[]}
+        
+        for(let d=0 ; d < stories.length; ++d) {
+            resultData.searches.push(stories[d])
+            console.log('stories[d]',stories[d])
+                
+            // resultData.searches.push(days[d]["trendingSearches"][s])
+            
+        }
+        console.log("resultData",resultData)
+        res.send({data:resultData, ok:true})
+    })
+}
+
 var dailyTrendsModule = (req,res) =>{
     
     var query = req.body;
     var geo = query.region? query.region : regionCodes["United States"];
     var trendDate = query.trendDate? new Date(query.trendDate) : new Date();
-    var optionsObj = { trendDate: trendDate,  geo:geo}
+    // var category = query.category? query.category : 7
+    var category = 7;
+    var optionsObj = { trendDate: trendDate,  geo:geo, category:category}
     // googleTrends.apiMethod()
     if(query.category) {
         optionsObj["category"] = query.category;
@@ -106,8 +160,8 @@ var dailyTrendsModule = (req,res) =>{
         res.send({data:"Invalid date: The specified date is in the future", ok:false})
         return;
     }
-    
-    googleTrends.dailyTrends( { trendDate: trendDate,  geo:geo})
+    console.log('optionsObj',optionsObj)
+    googleTrends.dailyTrends( optionsObj)
     .then((results)=> {
         var data = results.toString();
         data = JSON.parse(data);
@@ -128,7 +182,9 @@ var dailyTrendsModule = (req,res) =>{
 app.post('/server',(req,res)=>{
     res.setHeader("Accept", "application/json");
     res.setHeader("Content-Type", "application/json");
+    if(req.body.module=="realTimeTrends") realTimeTrendsModule(req,res)
     if(req.body.module=="dailyTrends") dailyTrendsModule(req,res)
+    if(req.body.module=="interestByRegion") interestByRegionModule(req,res)
     if(req.body.module=="interestOverTime") interestOverTimeModule(req,res)
 })
 

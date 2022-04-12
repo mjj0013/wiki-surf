@@ -4,6 +4,7 @@ import './index.css'
 import React, { useEffect ,useState} from 'react';
 import {AppContext} from './AppContext.js';
 
+const userAgents = require("user-agents");
 import {Chart} from 'react-google-charts';
 // import noUiSlider from 'nouislider';
 
@@ -49,6 +50,7 @@ var countryData = [
     ["Spain", 56],
     ["Russia", 33]
 ];
+
 
 // console.log('google.visualization,',google.visualization)
 // var mapData = google.visualization.arrayToDataTable([
@@ -120,13 +122,13 @@ function listTrends(moduleName) {
         var trendDate = document.getElementById("trendDateElement").value
         tempCriteria["trendDate"] = trendDate;
     }
-    else if(moduleName=="interestOverTime") {
+    
+    else if(moduleName=="interestOverTime" || moduleName=="interestByRegion") {
         var startDate = document.getElementById("startDateElement").value
         var endDate = document.getElementById("endDateElement").value
         var searchTerms = []
         var searchTermElements = document.getElementsByClassName('search-term');
         for(let e=0; e < searchTermElements.length; ++e) {
-            
             if(!searchTerms.includes(searchTermElements[e].innerText)) searchTerms.push(searchTermElements[e].innerText)
         }
         
@@ -139,6 +141,9 @@ function listTrends(moduleName) {
 
     sendRequestToBackend(req).then(result=>{
         if(moduleName=="dailyTrends") displayResults(result.data.searches)
+        else if(moduleName=="realTimeTrends") {
+            console.log("result",result)
+        }
         else {console.log(result)}
     })
 }
@@ -154,9 +159,8 @@ async function displayResults(results) {
         li.className = "list-group-item"
         
         li.innerHTML =results[i].title.query + " | +" + results[i].formattedTraffic + " views";
-        getWikiData(results[i].title.query)
-        // translate(results[i].snippet,{to:'en'})
-        // .then(result=>{console.log("snippet",result);})
+        // getWikiData(results[i].title.query)
+    
         var img = document.createElement("img");
         img.src = results[i].image.imageUrl
 
@@ -200,10 +204,25 @@ function moduleChanged() {
     else if(moduleName=="interestOverTime") {
         document.getElementById('dateRangeSection').style.display = 'block';
         document.getElementById('trendDateSection').style.display = 'none';
-        document.getElementById('keywordEntrySection').style.display = 'block'
-        
+        document.getElementById('keywordEntrySection').style.display = 'block'   
+    }
+    else if(moduleName=="realTimeTrends") {
+        document.getElementById('dateRangeSection').style.display = 'none';
+        document.getElementById('trendDateSection').style.display = 'none';
+        document.getElementById('keywordEntrySection').style.display = 'block'   
+    }
+    else if(moduleName=="interestByRegion") {
+        document.getElementById('dateRangeSection').style.display = 'block';
+        document.getElementById('trendDateSection').style.display = 'none';
+        document.getElementById('keywordEntrySection').style.display = 'block'   
     }
 }
+
+
+
+
+
+
 
 export var Home = () => {   
     // setInterval(()=>{
@@ -218,10 +237,9 @@ export var Home = () => {
     //     }
     // })
 
+
+    const [countryOptions, setCountryOptions] = useState({region:"US" });       //, displayMode:"regions",resolution:"countries"
     
-
-    const [countryOptions, setCountryOptions] = useState({region:"US"});
-
     const [data,setData] = useState(mapData);
     // useEffect(()=> {
     //     setInterval(()=>{
@@ -233,8 +251,9 @@ export var Home = () => {
 
     function regionChanged() {
         var selected = document.getElementById("regionElement")
-
-        setCountryOptions({...countryOptions, region:selected.value})
+        console.log('selected.value',selected.value)
+        if(selected.value=="US") setCountryOptions({...countryOptions,region:selected.value})           // resolution:"provinces", 
+        else setCountryOptions({...countryOptions,  region:selected.value})         //resolution:"countries",
 
     }
     function searchTabChanged(e) {
@@ -272,8 +291,12 @@ export var Home = () => {
                 <label htmlFor="moduleSelectElement">Module:</label>
                     <select id="moduleSelectElement" onChange={moduleChanged}>
                         <option value="dailyTrends">Daily Trends</option>
+                        <option value="realTimeTrends">Real Time Trends</option>
                         <option value="interestOverTime">Interest Over Time</option>
+                        <option value="interestByRegion">Interest By Region</option>
+                        
                     </select>
+                    
                     <div id="keywordEntrySection" >
                         <label htmlFor="keywordField">Keyword(s):</label>
                         <div id="keywordField" className="search-container">
@@ -306,6 +329,13 @@ export var Home = () => {
                             {
                                 regionCodesReformatted.map((obj,idx)=>{return (<option key={idx} value={obj.code} selected={obj.name=="United States"? true:false}>{obj.name}</option>)})
                             }
+                        </select>
+                    </div>
+
+                    <div id="categorySection" style={{display:'none'}}>
+                        <label htmlFor='categoryElement'>Categories:</label>
+                        <select id="categoryElement" onChange={categoryChanged}>
+                            
                         </select>
                     </div>
                    

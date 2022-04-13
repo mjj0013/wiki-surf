@@ -1,43 +1,7 @@
 //  https://github.com/pat310/google-trends-api/wiki/Google-Trends-Categories
 const abridgedCategories = {"All":"all", "Entertainment":"e", "Business":"b", "Science/Tech":"t", "Sports":"s", "Top Stories":"h"}
 
-const sentimentBasedGrouping = {
-    "Disfunctional": {
-        "Family Law":522,
-        "Pain Management":819,
-        "Divorce & Separation":1261,
-        "Tobacco Products": 123,
-
-    },
-    "Sleepy":{
-        "Sleep Disorders":633,
-    },
-    "Stressed": {
-        "Eating Disorders":571,
-        "Running & Walking":541,
-        "Anxiety & Stress":639,
-        "Depression":640,
-        "Tobacco Products": 123,
-    },
-    "Escapist": {
-        "Virtual Worlds":972,
-        "Travel":67,
-
-    },
-    "Naive": {
-        "Etiquette":1304,
-        "Wrestling":512,
-        "Tobacco Products": 123,
-    },
-    "Independent": {
-        "How-To, DIY & Expert Content":694,
-
-    }
-
-
-}
-
-const trendCategories = {
+const allCategories = {
     "All Categories":0,
     
     "Finance":7,
@@ -153,12 +117,13 @@ const trendCategories = {
             "Goth Subculture":503
         },
 
-        "People Search" : 1234,
-        "Celebrities & Entertainment News":184,
-        "Gossip & Tabloid News":507,
+        
         "Leisure": {
             "Outdoors":688,
             "Clubs & Nightlife": 188,
+            "People Search" : 1234,
+            "Celebrities & Entertainment News":184,
+            "Gossip & Tabloid News":507,
         },
         "Productivity": {
             "Photographic & Digital Arts":439,
@@ -204,6 +169,16 @@ const trendCategories = {
 }
 
 
+
+
+const angloSphere = [
+    "United States",
+    "United Kingdom",
+    "Canada",
+    "New Zealand",
+    "Ireland",
+    "Australia"
+]
 
 
 
@@ -289,6 +264,6 @@ var getDateObj = (time) =>{
 module.exports = {
     getDateObj:getDateObj,
     regionCodes:regionCodes,
-    trendCategories: trendCategories,
+    allCategories: allCategories,
     abridgedCategories:abridgedCategories
 }

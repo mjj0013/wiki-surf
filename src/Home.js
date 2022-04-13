@@ -26,7 +26,7 @@ import {WikiSubject, wikiTitleSearch} from './wikiSubject.js';
 //  Egypt: 75.66 million   internet users       106,156,692 total,      , 71.27%   106/km² density
 //  France: 60.92 million  internet users        65,426,179 total       , 93%,         119/km²
 
-import {regionCodes} from '../server/geoHelpers.js';
+import {abridgedCategories, regionCodes} from '../server/geoHelpers.js';
 var searchTerms = [];
 var mapData = [
     ["Country","Year"],
@@ -64,14 +64,9 @@ var countryData = [
 //     ["Spain", new Date(1988, 6, 13)],
 //     ["Russia", new Date(1978, 6, 13)]
 // ]);
-var mapOptions = {
-    region:"002",
-    colorAxis:{colors:["#00853f", "green", "#e32325"]},
-    backgroundColor:"#81d4fa",
-    datalessRegionColor:"#f8bbd0",
-    defaultColor:"#f5f5f5"
-}
 
+
+var searchTermColors = []
 
 const regions = Object.keys(regionCodes)
 const regionCodesReformatted = regions.map(i=>{return {name:i, code:regionCodes[i]}})
@@ -81,7 +76,7 @@ regionCodesReformatted.sort(function(a,b){
     if(a.name > b.name) return 1;
     return 0;
 })
-const defaultCountryIdx = regionCodesReformatted.findIndex(x=> {return x.name=="United States"})
+
 
 
 import {sendRequestToBackend} from './frontEndHelpers.js';
@@ -106,6 +101,26 @@ function searchClicked() {
     listTrends(moduleSelect);
 }
 
+function countryAnalysisClicked() {
+    var selectElement =  document.getElementById("regionElement");
+    var countryTitle = selectElement.options[selectElement.selectedIndex].text
+    var demographicsTitle = `Demographics of ${countryTitle}`;
+
+    
+    wikiTitleSearch(countryTitle)
+    .then(result=> {
+        console.log('country result', result)
+    })
+
+    // console.log('titleSearch',titleSearch)
+    // var countryPage = new WikiSubject()
+
+
+
+
+
+}
+
 
 function listTrends(moduleName) {
     // create form where the user inputs the search criteria (geo, time, phrase) for the trends. put that search criteria in the request body
@@ -121,6 +136,9 @@ function listTrends(moduleName) {
     if(moduleName=="dailyTrends") {
         var trendDate = document.getElementById("trendDateElement").value
         tempCriteria["trendDate"] = trendDate;
+    }
+    else if(moduleName=="realTimeTrends") {
+        tempCriteria["category"] = abridgedCategories[document.getElementById("categoryElement").value]
     }
     
     else if(moduleName=="interestOverTime" || moduleName=="interestByRegion") {
@@ -140,35 +158,49 @@ function listTrends(moduleName) {
     var req = new Request('/server', {  method:"POST",  headers:headers,    body: JSON.stringify(tempCriteria)   })
 
     sendRequestToBackend(req).then(result=>{
-        if(moduleName=="dailyTrends") displayResults(result.data.searches)
-        else if(moduleName=="realTimeTrends") {
-            console.log("result",result)
-        }
+        console.log(result)
+        if(moduleName=="dailyTrends") displayResults(moduleName, result.data.searches)
+        else if(moduleName=="realTimeTrends") displayResults(moduleName, result.data.searches)
+        
         else {console.log(result)}
     })
 }
 
-async function displayResults(results) {
+async function displayResults(moduleName, results) {
     var resultItemList = document.getElementById("resultItemList")
     while(resultItemList.firstChild) resultItemList.removeChild(resultItemList.firstChild);
-    results.sort(function(a,b){
-        return parseInt(b.formattedTraffic) - parseInt(a.formattedTraffic)
-    })
+    if(moduleName=="dailyTrends") results.sort(function(a,b){return parseInt(b.formattedTraffic) - parseInt(a.formattedTraffic)})
+
     for(let i =0; i < results.length; ++i) {
         var li = document.createElement("li");
+        var img = document.createElement("img");
+
+
         li.className = "list-group-item"
         
-        li.innerHTML =results[i].title.query + " | +" + results[i].formattedTraffic + " views";
+        if(moduleName=="dailyTrends") {
+            li.innerHTML =results[i].title.query + " | +" + results[i].formattedTraffic + " views";
+            img.src = results[i].image.imageUrl
+        }
+        else if(moduleName=="realTimeTrends") {
+            li.innerHTML = results[i].title;
+            img.src = results[i].image.imgUrl
+        }
         // getWikiData(results[i].title.query)
     
-        var img = document.createElement("img");
-        img.src = results[i].image.imageUrl
+        
+        
 
         resultItemList.appendChild(li)
         li.appendChild(img)
         
     }
 
+}
+function getRandomInt(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min) + min);
 }
 
 function addKeywordPressed() {
@@ -177,6 +209,31 @@ function addKeywordPressed() {
     if(keywordInput.value.length==0) return;
 
     var item = document.createElement('div');
+    var hue;
+    var sat;
+    var uniqueColorCreated = false;
+
+    while(!uniqueColorCreated) {
+        hue = getRandomInt(0,359);
+        sat = getRandomInt(1,99);
+        if(searchTermColors.length==0) {
+            searchTermColors.push([hue,sat])
+            uniqueColorCreated = true;
+        }
+        else {
+            for(let c=0; c < searchTermColors.length; ++c) {
+                if(Math.abs(hue-searchTermColors[c][0]) > 30) {
+                    if(Math.abs(sat-searchTermColors[c][1] > 15)) {
+                        searchTermColors.push([hue,sat])
+                        uniqueColorCreated = true;
+                    }
+                }
+            }
+        }
+        
+    }
+    var bgColor = `hsl(${hue}, ${sat}%, 60%)`
+    item.style.backgroundColor = bgColor;
     item.className = "search-term";
     var icon = document.createElement('i');
     icon.className="bi bi-x";
@@ -189,32 +246,56 @@ function addKeywordPressed() {
     keywordInput.value = '';
 }
 
-function keyPressedOnKeywordInput(e) {
-    e.preventDefault();
-    if(e.key=="Enter" || e.key=="Tab") addKeywordPressed();
+function keyDownOnKeywordInput(e) {
+    if(e.keyCode==9) {
+        e.preventDefault();
+        addKeywordPressed();
+    }
+}
+
+function keyUpOnKeywordInput(e) {
+    if(e.key=="Enter") addKeywordPressed();
 }
 function moduleChanged() {
     var moduleName = document.getElementById('moduleSelectElement').value;
+    document.getElementById("moduleSelectSection").style.display = 'block';
     if(moduleName=="dailyTrends") {
         document.getElementById('dateRangeSection').style.display = 'none';
         document.getElementById('trendDateSection').style.display = 'block';
         document.getElementById('keywordEntrySection').style.display = 'none'
-
+        document.getElementById('categorySection').style.display = 'none'
     }
+    
     else if(moduleName=="interestOverTime") {
         document.getElementById('dateRangeSection').style.display = 'block';
         document.getElementById('trendDateSection').style.display = 'none';
-        document.getElementById('keywordEntrySection').style.display = 'block'   
+        document.getElementById('keywordEntrySection').style.display = 'flex'   
     }
     else if(moduleName=="realTimeTrends") {
         document.getElementById('dateRangeSection').style.display = 'none';
         document.getElementById('trendDateSection').style.display = 'none';
-        document.getElementById('keywordEntrySection').style.display = 'block'   
+        document.getElementById('keywordEntrySection').style.display = 'none'   
+        document.getElementById('categorySection').style.display = 'block'
+        
+
+        //abridgedCategories
+        var categoryElement = document.getElementById('categoryElement');
+        while(categoryElement.firstChild) categoryElement.remove(categoryElement.firstChild);
+        var abridgedCats = Object.keys(abridgedCategories);
+        for(let c=0; c < abridgedCats.length; ++c) {
+            
+            let opt = document.createElement('option');
+            opt.key=c;
+            opt.innerHTML = abridgedCats[c];
+            opt.value = abridgedCats[c];
+            categoryElement.appendChild(opt);
+        }
+        
     }
     else if(moduleName=="interestByRegion") {
         document.getElementById('dateRangeSection').style.display = 'block';
         document.getElementById('trendDateSection').style.display = 'none';
-        document.getElementById('keywordEntrySection').style.display = 'block'   
+        document.getElementById('keywordEntrySection').style.display = 'flex'   
     }
 }
 
@@ -259,14 +340,30 @@ export var Home = () => {
     function searchTabChanged(e) {
         if(e.target.id=="globalSearchTab") {
             document.getElementById("regionSection").style.display = "none";
+            document.getElementById('analyzeButton').style.display = "none";
+            moduleChanged()
         }
         if(e.target.id=="byCountrySearchTab") {
             document.getElementById("regionSection").style.display = "block";
+            document.getElementById('analyzeButton').style.display = "block";
+
+            moduleChanged()
         }
+        // if(e.target.id=="countryAnalysisTab") {
+        //     document.getElementById("moduleSelectSection").style.display = 'none';
+        //     document.getElementById("regionSection").style.display = "block";
+        //     document.getElementById('dateRangeSection').style.display = 'none';
+        //     document.getElementById('trendDateSection').style.display = 'none';
+        //     document.getElementById('keywordEntrySection').style.display = 'none'
+        //     document.getElementById('categorySection').style.display = 'none'
+            
+        // }
+    }
+    function categoryChanged() {
+
     }
     return (
         <div>
-
             <ul className="nav nav-tabs" role="tablist">
                 <li>
                     <button className="nav-link active" id="globalSearchTab" onClick={(e)=>searchTabChanged(e)} data-bs-toggle="tab" data-bs-target="#globalSearch" type="button" role="tab" aria-controls="globalSearch" aria-selected="true">Global</button>
@@ -274,88 +371,94 @@ export var Home = () => {
                 <li> 
                     <button className="nav-link" id="byCountrySearchTab" onClick={(e)=>searchTabChanged(e)} data-bs-toggle="tab" data-bs-target="#byCountrySearch" type="button" role="tab" aria-controls="byCountrySearch" aria-selected="false">By Country</button>
                 </li>
+                
             </ul>
             <div className="tab-content" id="tabContent">
                 <div className="tab-pane fade show active" id="globalSearch" >
-
                     <Chart id="worldMap" className="map" chartType="GeoChart" data={data}  chartPackages={["corechart","controls"]}/>
-
                 </div>
                 <div className="tab-pane fade" id="byCountrySearch">
-
                     <Chart id="countryMap" className="map" chartType="GeoChart" data={countryData} options={countryOptions}  chartPackages={["corechart","controls"]}/>
-
-                    
                     
                 </div>
-                <label htmlFor="moduleSelectElement">Module:</label>
-                    <select id="moduleSelectElement" onChange={moduleChanged}>
-                        <option value="dailyTrends">Daily Trends</option>
-                        <option value="realTimeTrends">Real Time Trends</option>
-                        <option value="interestOverTime">Interest Over Time</option>
-                        <option value="interestByRegion">Interest By Region</option>
-                        
-                    </select>
-                    
-                    <div id="keywordEntrySection" >
-                        <label htmlFor="keywordField">Keyword(s):</label>
-                        <div id="keywordField" className="search-container">
-                            <div id="termList" className="search-term-container">
-                                <div>
-                                    <input id='keywordInput' onKeyUp={(e)=> keyPressedOnKeywordInput(e)}/>
-                                    <button id="addKeywordButton" onClick={addKeywordPressed} style={{display:'block'}}>
-                                        <img src="plus.svg" width="25" height="25"></img>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        
-                    </div>
-                    <div id="trendDateSection">
-                        <label htmlFor="trendDateElement">Trend date:</label>
-                        <input type="date" id="trendDateElement" min="2004-01-01"/>
-                    </div>
-                    
-                    <div id="dateRangeSection" style={{display:'none'}}>
-                        <label htmlFor="startDateElement">Start date:</label>
-                        <input type="date" id="startDateElement" min="2004-01-01"/>
-
-                        <label htmlFor="endDateElement">End date:</label>
-                        <input type="date" id="endDateElement" />
-                    </div>
-                    <div id="regionSection" style={{display:'none'}}>
-                        <label htmlFor="regionElement">Region:</label>
-                        <select id="regionElement" onChange={regionChanged} >
-                            {
-                                regionCodesReformatted.map((obj,idx)=>{return (<option key={idx} value={obj.code} selected={obj.name=="United States"? true:false}>{obj.name}</option>)})
-                            }
-                        </select>
-                    </div>
-
-                    <div id="categorySection" style={{display:'none'}}>
-                        <label htmlFor='categoryElement'>Categories:</label>
-                        <select id="categoryElement" onChange={categoryChanged}>
-                            
-                        </select>
-                    </div>
-                   
-
-                    <button className="btn btn-primary" type="button" onClick={searchClicked} data-bs-toggle="offcanvas" data-bs-target="#offcanvasScrolling" aria-controls="offcanvasScrolling">Search</button>
                 
-                    <div id="offcanvasScrolling" className="offcanvas offcanvas-start" data-bs-backdrop="false" tabIndex="-1"  aria-labelledby="offcanvasScrollingLabel">
-                        {/* data-bs-scroll="true" */}
-                        <div className="offcanvas-header">
-                            <h5 className="offcanvas-title" id="offcanvasScrollingLabel">Colored with scrolling</h5>
-                            <button type="button" className="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                <form>
+                    <div className="mb-3">
+                        <div id="moduleSelectSection">
+                            <label className="form-label" htmlFor="moduleSelectElement">Module:</label>
+                            <select  id="moduleSelectElement" onChange={moduleChanged}>
+                                <option value="dailyTrends">Daily Trends</option>
+                                <option value="realTimeTrends">Real Time Trends</option>
+                                <option value="interestOverTime">Interest Over Time</option>
+                                <option value="interestByRegion">Interest By Region</option>  
+                            </select>
                         </div>
-                        <div className="offcanvas-body">
-                            <div className="card" style={{"width":"18rem"}}>
-                                <div className="card-header">Results</div>
-                                <ul id="resultItemList" className="list-group list-group-flush"></ul>
+                        
+                    </div>
+                    <div className="mb-3">
+                        <div id="keywordEntrySection" >
+                            <label className="form-label" htmlFor="keywordField">Keyword(s):</label>
+                            <div id="keywordField" className="form-control search-container">
+                                <div className='search-container-inputs'>
+                                <input id='keywordInput' onKeyUp={(e)=> keyUpOnKeywordInput(e)} onKeyDown={(e)=> keyDownOnKeywordInput(e)}/>
+                                <button id="addKeywordButton" onClick={addKeywordPressed} style={{display:'block'}}>
+                                    <img src="plus.svg" width="25" height="25"/>
+                                </button>
+                                </div>    
+                                <div id="termList" className="search-term-container"></div>
                             </div>
-                            
                         </div>
                     </div>
+                    <div className="mb-3">
+                        <div id="trendDateSection">
+                            <label htmlFor="trendDateElement">Trend date:</label>
+                            <input type="date" id="trendDateElement" min="2004-01-01"/>
+                        </div>
+                    </div>
+                    <div className="mb-3">
+                        <div id="dateRangeSection" style={{display:'none'}}>
+                            <label htmlFor="startDateElement">Start date:</label>
+                            <input type="date" id="startDateElement" min="2004-01-01"/>
+
+                            <label htmlFor="endDateElement">End date:</label>
+                            <input type="date" id="endDateElement" />
+                        </div>
+                    </div>
+                    <div className="mb-3">
+                        <div id="regionSection" style={{display:'none'}}>
+                            <label htmlFor="regionElement">Region:</label>
+                            <select id="regionElement" onChange={regionChanged} >
+                                {  regionCodesReformatted.map((obj,idx)=>{return (<option key={idx} value={obj.code} selected={obj.name=="United States"? true:false}>{obj.name}</option>)})  }
+                            </select>
+                        </div>
+                    </div>
+                    <div className="mb-3">
+                        <div id="categorySection" style={{display:'none'}}>
+                            <label htmlFor='categoryElement'>Categories:</label>
+                            <select id="categoryElement" onChange={categoryChanged}></select>
+                        </div>
+                    </div>
+                    <div className="formButtonGrid">
+                        <button className="btn btn-primary" type="button" onClick={searchClicked} data-bs-toggle="offcanvas" data-bs-target="#offcanvasScrolling" aria-controls="offcanvasScrolling">Search</button>
+                        <button id="analyzeButton" className="btn btn-success" type="button" onClick={countryAnalysisClicked}>Analysis</button>
+                    </div>
+                    
+                </form>
+
+                <div id="offcanvasScrolling" className="offcanvas offcanvas-start" data-bs-backdrop="false" tabIndex="-1"  aria-labelledby="offcanvasScrollingLabel">
+            
+                    <div className="offcanvas-header">
+                        <h5 className="offcanvas-title" id="offcanvasScrollingLabel">Colored with scrolling</h5>
+                        <button type="button" className="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                    </div>
+                    <div className="offcanvas-body">
+                        <div className="card" style={{"width":"18rem"}}>
+                            <div className="card-header">Results</div>
+                            <ul id="resultItemList" className="list-group list-group-flush"></ul>
+                        </div>
+                        
+                    </div>
+                </div>
 
                     
             </div>

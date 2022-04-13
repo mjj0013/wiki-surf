@@ -111,9 +111,9 @@ var realTimeTrendsModule = (req,res) => {
     var query = req.body;
     var geo = query.region? query.region : regionCodes["United States"];
     
-    // var category = query.category? query.category : 7
+    var category = query.category? query.category : 'all'
     
-    var optionsObj = { geo:geo, category:'7'}
+    var optionsObj = { geo:geo, category:category}
 
     console.log('optionsObj',optionsObj)
     googleTrends.realTimeTrends(optionsObj)
@@ -121,15 +121,15 @@ var realTimeTrendsModule = (req,res) => {
         
         var data = results.toString();
         data = JSON.parse(data);
-       
+        console.log("data",data)
         
-        var stories = data.default["storySummaries"]["trendingStories"]
+        var stories = data["storySummaries"]["trendingStories"]
         console.log(stories)
         var resultData = {searches:[]}
         
         for(let d=0 ; d < stories.length; ++d) {
             resultData.searches.push(stories[d])
-            console.log('stories[d]',stories[d])
+            // console.log('stories[d]',stories[d])
                 
             // resultData.searches.push(days[d]["trendingSearches"][s])
             
@@ -144,10 +144,10 @@ var dailyTrendsModule = (req,res) =>{
     var query = req.body;
     var geo = query.region? query.region : regionCodes["United States"];
     var trendDate = query.trendDate? new Date(query.trendDate) : new Date();
-    // var category = query.category? query.category : 7
-    var category = 7;
+    var category = query.category? query.category : 7
+    
     var optionsObj = { trendDate: trendDate,  geo:geo, category:category}
-    // googleTrends.apiMethod()
+    
     if(query.category) {
         optionsObj["category"] = query.category;
     }

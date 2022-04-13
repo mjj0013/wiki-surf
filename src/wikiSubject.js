@@ -34,7 +34,7 @@ function wikiTitleSearch(queryName) {
         fetch(req)
         .then(response => {    return response.json();})
         .then(result=>{
-            
+            console.log("result",result)
             var query = result.query
             // if(query.searchinfo) {
             //     if(query.searchinfo.totalhits > 0) {
@@ -110,6 +110,9 @@ class WikiSubject {      // extends React.Component
         return new Promise((resolve, reject)=> {
             fetch(req)
             .then(response => {  return response.json();    })
+            .catch((error)=>{
+                return reject(error);
+            })
             .then(data=> {
                 var results = []
                 var keys = Object.keys(data.query.pages)

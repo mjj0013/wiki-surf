@@ -27,6 +27,10 @@ function reformatURL(url) {
 
     return url;
 }
+
+
+
+
 function wikiTitleSearch(queryName) {
     return new Promise((resolve,reject)=>{
         var url = `https://en.wikipedia.org/w/api.php?action=query&list=search&srwhat=text&srsearch=${reformatURL(queryName)}&srprop=categorysnippet&format=json&origin=*`;
@@ -34,20 +38,11 @@ function wikiTitleSearch(queryName) {
         fetch(req)
         .then(response => {    return response.json();})
         .then(result=>{
-            console.log("result",result)
             var query = result.query
-            // if(query.searchinfo) {
-            //     if(query.searchinfo.totalhits > 0) {
-            //         return 
-            //     }
-            // }
-            var topResult = query.search[0];
-           
-            resolve(topResult.title);
+            if(query.search.length==0)  return reject("not found");
+            return resolve(query.search[0].title);
         })
     })
-    
-
 }
 
 class WikiSubject {      // extends React.Component
@@ -60,6 +55,7 @@ class WikiSubject {      // extends React.Component
         */
 
         this.initSubject = this.initSubject.bind(this);
+       
         this.extractSubjectData = this.extractSubjectData.bind(this);
         this.fetchSrc = this.fetchSrc.bind(this);
 
@@ -149,10 +145,19 @@ class WikiSubject {      // extends React.Component
         }
         if(this.depth==1) {
             this.fetchSrc(req).then(result=> {
+               
                 this.sourceObj =  result;
                 this.extractSubjectData()
-                .catch(result=>{
-                    console.log(result)
+                .catch(message=>{
+                    if(message.substr(0,4)=="#RE;") {
+                        var parts = message.split(';');
+                        var idx = parseInt(parts[1]);
+                        var redirectUrl = parts[2];
+                        this.sourceObj[idx].title = redirectUrl;
+                        //a compromise..in the case that multiple page titles were returned in the response, this code forces every page to be processed again, even if only one had redirected
+                        // the code is designed to only process one page title per WikiSubject Object
+                        this.extractSubjectData()           
+                    }
                 })
             })
         }
@@ -161,6 +166,7 @@ class WikiSubject {      // extends React.Component
      extractSubjectData() {
         return new Promise((resolve, reject)=> {
             for(let k=0; k < this.sourceObj.length; ++k) {
+                
                 var title = this.sourceObj[k].title;
                 var urlFormattedTitle = reformatURL(title);
     
@@ -168,7 +174,17 @@ class WikiSubject {      // extends React.Component
                 fetch(req)
                 .then(response => {return response.json()})
                 .then(data => {
-                    if(data.error) reject(`ERROR: page "${title}" doesn't exist`);
+                    
+                    var redirectCheck  = data.parse.parsetree
+                    
+                    if(redirectCheck.substr(6,9)=="#REDIRECT")  {
+                        var matchLinkRE = /\[\[(.*?)\]\]/gi
+                        var redirectLink = redirectCheck.match(matchLinkRE);
+                        redirectLink = redirectLink[0].substr(2)
+                        redirectLink = redirectLink.substr(0,redirectLink.length-2)
+                        reject(`#RE;${k};`+redirectLink)
+                    }
+                    else if(data.error) reject(`ERROR: page "${title}" doesn't exist`);
                     else {
                         var result = convert.xml2json(data.parse.parsetree, {compact: false, spaces: 4});       //  https://goessner.net/download/prj/jsonxml/
                         var contentLevel = JSON.parse(result)["elements"][0]["elements"]

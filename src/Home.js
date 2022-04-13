@@ -93,32 +93,49 @@ function getWikiData(queryName) {
         console.log("obj", wikiSubjObj)
     })
 }
-            
-
-
 function searchClicked() {
     var moduleSelect = document.getElementById("moduleSelectElement").value
     listTrends(moduleSelect);
 }
 
+
+
+
 function countryAnalysisClicked() {
     var selectElement =  document.getElementById("regionElement");
-    var countryTitle = selectElement.options[selectElement.selectedIndex].text
-    var demographicsTitle = `Demographics of ${countryTitle}`;
+    var mainTitle = selectElement.options[selectElement.selectedIndex].text
+    var demographicsTitle = `Demographics of ${mainTitle}`;
 
-    
-    wikiTitleSearch(countryTitle)
+    var mainExists = true;
+    var demographicsExists = true;
+
+    // checking for country's main Wiki page
+    wikiTitleSearch(mainTitle)
+    .catch((err)=>{mainExists=false})
     .then(result=> {
-        console.log('country result', result)
+        console.log('main result', result)
     })
+
+
+    // checking for country's demographics Wiki page
+    wikiTitleSearch(demographicsTitle)
+    .catch((err)=>{demographicsExists=false})
+    .then(result=> {
+        console.log('demographics result', result)
+    })
+
+    if(mainExists) {
+        var mainPage = new WikiSubject({wikiTitle:mainTitle, depth:1});
+        console.log('mainPage',mainPage)
+    }
+    if(demographicsExists) {
+        var demoPage = new WikiSubject({wikiTitle:demographicsTitle, depth:1});
+        console.log('demoPage',demoPage)
+
+    }
 
     // console.log('titleSearch',titleSearch)
     // var countryPage = new WikiSubject()
-
-
-
-
-
 }
 
 
@@ -187,9 +204,6 @@ async function displayResults(moduleName, results) {
             img.src = results[i].image.imgUrl
         }
         // getWikiData(results[i].title.query)
-    
-        
-        
 
         resultItemList.appendChild(li)
         li.appendChild(img)
@@ -346,19 +360,11 @@ export var Home = () => {
         if(e.target.id=="byCountrySearchTab") {
             document.getElementById("regionSection").style.display = "block";
             document.getElementById('analyzeButton').style.display = "block";
-
             moduleChanged()
         }
-        // if(e.target.id=="countryAnalysisTab") {
-        //     document.getElementById("moduleSelectSection").style.display = 'none';
-        //     document.getElementById("regionSection").style.display = "block";
-        //     document.getElementById('dateRangeSection').style.display = 'none';
-        //     document.getElementById('trendDateSection').style.display = 'none';
-        //     document.getElementById('keywordEntrySection').style.display = 'none'
-        //     document.getElementById('categorySection').style.display = 'none'
-            
-        // }
     }
+    
+
     function categoryChanged() {
 
     }

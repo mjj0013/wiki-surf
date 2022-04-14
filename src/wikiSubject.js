@@ -29,6 +29,66 @@ function reformatURL(url) {
 }
 
 
+function processCellData(str) {         // this function processes the value in a table's cell and returns a usable object of it
+    var finalObj = {value:-1, type:'str'}
+
+    var matchParRE = /\(\|(.*?)\|\)/gi
+    // ¼ , ½, ¾
+    var noLetters = /^([^a-z]+)$/i
+    var onlyLetters = /^([a-z]+)$/i
+    var onlyNumbers = /^([0-9]+)$/i
+    var isNumber = /^([0-9,\.]+)$/gi
+    var isPercent = /^([0-9,\.]+)(\s*)\%$/gi
+    var isDollarPrice = /^\$(\s*)([0-9,\.]+)$/gi
+    var isAngleDegree = /^([0-9,\.]+)(\s*)°((?!.*F|C|K)+)$/gi
+    var isTempDegree = /^([0-9,\.]+)(\s*)°(F|C|K+)$/gi
+
+    var isEuroPrice = /^€(\s*)([0-9,\.]+)$/gi
+    var phoneNumTest = /^(?:\d{3}|\(\d{3}\))([-\/\.])\d{3}\1\d{4}$/;
+
+
+
+    if(str.match(isNumber)) {
+        str = str.replace(",","")
+        finalObj.value = parseFloat(str);
+        finalObj.type='number'
+    }
+
+    else if(str.match(isDollarPrice)) {
+        str = str.replace(",","")
+        str = str.replace("$","")
+        finalObj.value = parseFloat(str);
+        finalObj.type='dollars'
+        
+    }
+    else if(str.match(isAngleDegree)) {
+        str = str.replace(",","")
+        str = str.replace("°","")
+        finalObj.value = parseFloat(str);
+        finalObj.type='degrees'
+        
+    }
+    else if(str.match(isTempDegree)) {
+        finalObj.type=`temperature:${str.split("°")[1]}`
+        str = str.replace(",","")
+        str = str.replace("°","")
+        finalObj.value = parseFloat(str);
+        
+        
+        
+    }
+    else if(str.match(isDollarPrice)) {
+        str = str.replace(",","")
+        str = str.replace("$","")
+        finalObj.value = parseFloat(str);
+        finalObj.type='dollars'
+        
+    }
+    
+
+}
+
+
 
 
 function wikiTitleSearch(queryName) {
@@ -299,7 +359,19 @@ class WikiSubject {      // extends React.Component
                 if(section.tables.length > 0) {
                     for(let t=0; t < section.tables.length; ++t) {
                         var tableStr = section.tables[t];
-                        console.log('tableStr',tableStr)
+                        
+
+                        
+                        var tableRows = tableStr.split("|-");
+                        var tableCaption = tableRows[0].includes("|+")? tableRows[0].split("|+")[1] : "<no caption>"
+                        var tableMainHeaders = tableRows[1].includes("!")? tableRows.split("!") : [];
+                        tableMainHeaders = tableMainHeaders.filter((h)=> {return h.length > 0; })
+                        var currentHeaders = tableMainHeaders;
+
+                        for(let r=0; r < tableRows.length; ++r) {
+                            tableRows[r]
+                        }
+                        
                     }
                 }
                 

@@ -62,12 +62,14 @@ class WikiSubject {      // extends React.Component
         this.branchSubjectData = this.branchSubjectData.bind(this);
         this.pagesInCategory = this.pagesInCategory.bind(this);
         this.data = [];
+        this.tableData = [];
         this.subjectNetwork = [];       // other WikiSubject objects that are linked to it.  should be formatted:       [   {sectionName:<...>, objs:[]} , ...    ]
 
         this.wikiTitle = props.wikiTitle? props.wikiTitle : null;
         this.depth = props.depth? props.depth : -1;             // the 'depth' that the WikiSubject is brought to initialization; default is -1, which means only bring it to initSubject()
         
         
+        this.processTableData = this.processTableData.bind(this);
 
         this.sourceObj = null;
         if(this.wikiTitle==null) this.initSubject(true);
@@ -188,7 +190,7 @@ class WikiSubject {      // extends React.Component
                     else {
                         var result = convert.xml2json(data.parse.parsetree, {compact: false, spaces: 4});       //  https://goessner.net/download/prj/jsonxml/
                         var contentLevel = JSON.parse(result)["elements"][0]["elements"]
-            
+                        
                         //the 1st text-type element is the introduction
                         //if element has name "h", it's the header for the section following it
         
@@ -280,11 +282,40 @@ class WikiSubject {      // extends React.Component
                             }
                         }
                         console.log("this.data", this.data)
+                        this.processTableData()
                         resolve();
                     }  
                 })
             }  
         })
+    }
+
+    processTableData() {
+        if(this.data) {
+            for(let s=0; s < this.data.length; ++s) {
+                var section = this.data[s];
+                var finalObj = {sectionName:section.sectionName, idx:section.idx, data:[]};
+                
+                if(section.tables.length > 0) {
+                    for(let t=0; t < section.tables.length; ++t) {
+                        var tableStr = section.tables[t];
+                        console.log('tableStr',tableStr)
+                    }
+                }
+                
+                if(section.children.length>0) {
+                    for(let c=0; c < section.children.length; ++c) {
+                        var child = section.children[c];
+                        if(child.tables.length > 0) {
+                            for(let t=0; t <child.tables.length; ++t) {
+                                var tableStr = child.tables[t];
+                                console.log('child tableStr',tableStr)
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
     branchSubjectData(targets, depths) {
         //targets   :   list of sections/links that will be branched into

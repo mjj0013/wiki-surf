@@ -30,21 +30,51 @@ function reformatURL(url) {
 
 
 function processCellData(str) {         // this function processes the value in a table's cell and returns a usable object of it
-    var finalObj = {value:-1, type:'str'}
+    var finalObj = {value:-1, type:'str', ok:false, vars:[], parentheses:null}
 
-    var matchParRE = /\(\|(.*?)\|\)/gi
-    // ¼ , ½, ¾
-    var noLetters = /^([^a-z]+)$/i
-    var onlyLetters = /^([a-z]+)$/i
-    var onlyNumbers = /^([0-9]+)$/i
+    var matchParRE = /\((.*?)\)/gi
+    finalObj.parentheses = str.match(matchParRE);
+    str = str.replace(matchParRE,"");
+
+
+    // ¼ , ½ , ¾
+    str = str.replace(/\xBC/i, ".25")
+    str = str.replace(/\xBD/i, ".5")
+    str = str.replace(/\xBE/i, ".75")
+
+    var isEntity = /^([a-z\-\xC0-\xF6\xF8-\xFF\xB5\xAE\x99]+)((\s*)([a-z\-\xC0-\xF6\xF8-\xFF]))*$/i
+
+
     var isNumber = /^([0-9,\.]+)$/gi
+    var isPlusMinusNumber = /^\xB1([0-9,\.]+)$/gi
     var isPercent = /^([0-9,\.]+)(\s*)\%$/gi
+    var isPercentVar = /^([0-9,\.]+)(\s*)\%(\s*)([a-z]+)$/gi
     var isDollarPrice = /^\$(\s*)([0-9,\.]+)$/gi
-    var isAngleDegree = /^([0-9,\.]+)(\s*)°((?!.*F|C|K)+)$/gi
-    var isTempDegree = /^([0-9,\.]+)(\s*)°(F|C|K+)$/gi
+    var isDollarRange = /^\$(\s*)([0-9,\.]+)(\s*)(\-)+(\s*)(\$*)(\s*)([0-9,\.]+)$/i
 
-    var isEuroPrice = /^€(\s*)([0-9,\.]+)$/gi
+    var isAngleDegree = /^([0-9,\.]+)(\s*)°((?!.*F|C|K)+)$/gi
+    var isTempDegree = /^([0-9,\.]+)(\s*)°(\s*)(F|C|K+)$/gi
+
+    // use hex column for values at https://www.meridianoutpost.com/resources/articles/ASCII-Extended-Code-reference-chart.php
+    var isYenPrice = /^\xA5(\s*)([0-9,\.]+)$/gi
+    var isEuroPrice = /^\x80(\s*)([0-9,\.]+)$/gi
+    var isPoundPrice = /^\xA3(\s*)([0-9,\.]+)$/gi
     var phoneNumTest = /^(?:\d{3}|\(\d{3}\))([-\/\.])\d{3}\1\d{4}$/;
+
+    var isNumberMoreThan = /^\$(\s*)([0-9,\.]+)(\s*)(\+|\>)+(\s*)$/i
+    var isNumberLessThan = /^\$(\s*)([0-9,\.]+)(\s*)(\-|\<)+(\s*)$/i
+    var isNumberRangeDash = /^([0-9,\.]+)(\s*)(\-)+(\s*)([0-9,\.]+)$/
+    var isNumberRangeVar = /^([0-9,\.]+)(\s*)(\<|\>)+(\s*)([a-z]+)(\s*)(\<|\>)+(\s*)([0-9,\.]+)$/
+
+    var isNumberWithUnit = /^([0-9]+)(\s*)([a-z\xB5]+)(\.*)(\s*)$/i
+
+    
+    if(str.match(isEntity)) {
+        str = str.replace(",","")
+        finalObj.value = str
+        finalObj.type='entity'
+        finalObj.ok = true;
+    }
 
 
 
@@ -52,6 +82,68 @@ function processCellData(str) {         // this function processes the value in 
         str = str.replace(",","")
         finalObj.value = parseFloat(str);
         finalObj.type='number'
+        finalObj.ok = true;
+    }
+    if(str.match(isPlusMinusNumber)) {
+        str = str.replace(",","")
+        str = str.replace(/\xB1/,"");
+
+        finalObj.value = parseFloat(str);
+        finalObj.type='number'
+        finalObj.ok = true;
+    }
+
+    else if(str.match(isNumberMoreThan)) {
+        str = str.replace(",","")
+        str = str.replace(">","")
+        finalObj.value = parseFloat(str);
+        finalObj.type='number-morethan'
+        finalObj.ok = true;
+    }
+
+    else if(str.match(isNumberMoreThan)) {
+        str = str.replace(",","")
+        str = str.replace(">","")
+        finalObj.value = parseFloat(str);
+        finalObj.type='number-morethan'
+        finalObj.ok = true;
+    }
+    else if(str.match(isNumberLessThan)) {
+        str = str.replace(",","")
+        str = str.replace("<","")
+        finalObj.value = parseFloat(str);
+        finalObj.type='number-lessthan'
+        finalObj.ok = true;
+    }
+    else if(str.match(isNumberWithUnit)) {
+        str = str.replace(",","")
+        str = str.split(" ")
+        finalObj.value = parseFloat(str[0]);
+        finalObj.vars = {value:str[1], type:'unit'};
+        finalObj.type='number-with-unit'
+        finalObj.ok = true;
+    }
+    else if(str.match(isNumberRangeDash)) {
+        str = str.replace(",","")
+        str = str.split("-")
+        finalObj.value = [parseFloat(str[0]), parseFloat(str[1]) ];
+        finalObj.type='number-range'
+        finalObj.ok = true;
+    }
+    else if(str.match(isNumberRangeVar)) {
+        str = str.replace(",","")
+        str = str.split(/(\>|\<)+/)
+        finalObj.vars = {value:str[1], type:'var'};
+        finalObj.value = [parseFloat(str[0]), parseFloat(str[2])];
+        finalObj.type='number-range-var'
+        finalObj.ok = true;
+    }
+    else if(str.match(isDollarRange)) {
+        str = str.replace(",","")
+        str = str.replace("$","")
+        finalObj.value = [parseFloat(str[0]), parseFloat(str[2])];
+        finalObj.type='dollar-range'
+        finalObj.ok = true;
     }
 
     else if(str.match(isDollarPrice)) {
@@ -59,6 +151,24 @@ function processCellData(str) {         // this function processes the value in 
         str = str.replace("$","")
         finalObj.value = parseFloat(str);
         finalObj.type='dollars'
+        finalObj.ok = true;
+    }
+
+    else if(str.match(isPercent)) {
+        str = str.replace(",","")
+        str = str.replace("%","")
+        finalObj.value = parseFloat(str);
+        finalObj.type='percent'
+        finalObj.ok = true;
+        
+    }
+    else if(str.match(isPercentVar)) {
+        str = str.replace(",","")
+        str = str.split("%")
+        finalObj.vars = {value:str[1], type:'var'};
+        finalObj.value = parseFloat(str[0]);
+        finalObj.type='percent-var'
+        finalObj.ok = true;
         
     }
     else if(str.match(isAngleDegree)) {
@@ -66,6 +176,7 @@ function processCellData(str) {         // this function processes the value in 
         str = str.replace("°","")
         finalObj.value = parseFloat(str);
         finalObj.type='degrees'
+        finalObj.ok = true;
         
     }
     else if(str.match(isTempDegree)) {
@@ -73,18 +184,10 @@ function processCellData(str) {         // this function processes the value in 
         str = str.replace(",","")
         str = str.replace("°","")
         finalObj.value = parseFloat(str);
-        
-        
-        
+        finalObj.ok = true;
     }
-    else if(str.match(isDollarPrice)) {
-        str = str.replace(",","")
-        str = str.replace("$","")
-        finalObj.value = parseFloat(str);
-        finalObj.type='dollars'
-        
-    }
-    
+
+    return finalObj;
 
 }
 
@@ -228,17 +331,13 @@ class WikiSubject {      // extends React.Component
      extractSubjectData() {
         return new Promise((resolve, reject)=> {
             for(let k=0; k < this.sourceObj.length; ++k) {
-                
                 var title = this.sourceObj[k].title;
                 var urlFormattedTitle = reformatURL(title);
-    
                 var req = new Request(`http://en.wikipedia.org/w/api.php?action=parse&origin=*&format=json&page=${urlFormattedTitle}&prop=parsetree&formatversion=2`,{method:'GET',mode:'cors'})        
                 fetch(req)
                 .then(response => {return response.json()})
                 .then(data => {
-                    
                     var redirectCheck  = data.parse.parsetree
-                    
                     if(redirectCheck.substr(6,9)=="#REDIRECT")  {
                         var matchLinkRE = /\[\[(.*?)\]\]/gi
                         var redirectLink = redirectCheck.match(matchLinkRE);
@@ -358,14 +457,26 @@ class WikiSubject {      // extends React.Component
                 
                 if(section.tables.length > 0) {
                     for(let t=0; t < section.tables.length; ++t) {
+                        var tableDataObj = {}
                         var tableStr = section.tables[t];
                         
 
                         
                         var tableRows = tableStr.split("|-");
                         var tableCaption = tableRows[0].includes("|+")? tableRows[0].split("|+")[1] : "<no caption>"
-                        var tableMainHeaders = tableRows[1].includes("!")? tableRows.split("!") : [];
+                        var tableMainHeaders = tableRows[1].includes("!")? tableRows[1].split(/\!+\!*\s*/) : [];
                         tableMainHeaders = tableMainHeaders.filter((h)=> {return h.length > 0; })
+                        
+                        for(let h=0; h < tableMainHeaders.length; ++h) {
+                            
+                            tableMainHeaders[h] = tableMainHeaders[h].replace(/(\s*)(scope\=\"col\"+)(\s*)(\|+)(\s*)/, "")
+                            tableMainHeaders[h] = tableMainHeaders[h].replace(/(\s*)$/, "")
+                            var headerData = processCellData(tableMainHeaders[h])
+                            console.log("headerData", headerData)
+                        }
+                        
+                        console.log("tableMainHeaders", tableMainHeaders)
+
                         var currentHeaders = tableMainHeaders;
 
                         for(let r=0; r < tableRows.length; ++r) {
@@ -381,7 +492,15 @@ class WikiSubject {      // extends React.Component
                         if(child.tables.length > 0) {
                             for(let t=0; t <child.tables.length; ++t) {
                                 var tableStr = child.tables[t];
-                                console.log('child tableStr',tableStr)
+                                var tableRows = tableStr.split("|-");
+                                var tableCaption = tableRows[0].includes("|+")? tableRows[0].split("|+")[1] : "<no caption>"
+                                var tableMainHeaders = tableRows[1].includes("!")? tableRows[1].split("!") : [];
+                                tableMainHeaders = tableMainHeaders.filter((h)=> {return h.length > 0; })
+                                for(let h=0; h < tableMainHeaders.length; ++h) {
+                            
+                                    tableMainHeaders[h] = tableMainHeaders[h].replace(/(\s*)scope\=\"col\"(\s*)\|/, "")
+                                }
+                                // console.log("tableMainHeaders", tableMainHeaders)
                             }
                         }
                     }

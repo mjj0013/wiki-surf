@@ -22,7 +22,241 @@ var isNumberRangeVar = /^([0-9,\.]+)(\s*)(\<|\>)+(\s*)([a-z]+)(\s*)(\<|\>)+(\s*)
 var isNumberWithUnit = /^([0-9]+)(\s*)([a-z\xB5]+)(\.*)(\s*)$/i
 
 
+
+function processTableData(data) {
+    var allSectionTables = []
+
+
+    function lookForCaption(row) {
+        if(row.includes("|+")) retur
+    }
+
+
+
+    for(let s=0; s < data.length; ++s) {
+        var section = data[s];
+        var finalObj = {sectionName:section.sectionName, idx:section.idx, data:[]};
+        
+        if(section.tables.length > 0) {
+            for(let t=0; t < section.tables.length; ++t) {
+                var tableDataObj = {caption:null, mainHeaders:[], entities:[]}      
+                // entities are headers inside the table contents ("HORIZONTAL HEADERS"), 
+                // defined in 1st column, describes instance of table attributes 
+                var tableStr = section.tables[t];
+                
+                tableStr = tableStr.replace(/\|\-style\=\"(.*)\"\|/i, "")
+                tableStr = tableStr.replace(/\|\}$/, "")        //removing table syntax at end of string
+                //splitting the table into rows
+                var tableRows = tableStr.split("|-");
+                tableDataObj.caption = tableRows[0].includes("|+")? tableRows[0].split("|+")[1] : "<no caption>"
+
+                var tableMainHeaders = tableRows[1].includes("!")? tableRows[1].split(/\!+\!*\s*/) : [];
+                tableMainHeaders = tableMainHeaders.filter((h)=> {return h.length > 0; })
+
+                var hasMainHeader = tableMainHeaders.length>0
+                
+                
+
+                //finding the data type of each main header column
+                for(let h=0; h < tableMainHeaders.length; ++h) {
+                    
+                    tableMainHeaders[h] = tableMainHeaders[h].replace(/(\s*)(scope\=\"col\"+)(\s*)(\|+)(\s*)/, "")
+                    tableMainHeaders[h] = tableMainHeaders[h].replace(/(\s*)$/, "")
+                    tableDataObj.mainHeaders.push(processCellData(tableMainHeaders[h]))
+                }
+                
+                console.log("tableMainHeaders", tableMainHeaders)
+
+                var currentHeaders = tableMainHeaders;
+                var currentEntity = null;
+
+
+                //tableRows[0] is always reserved for class description
+                //so, tableRows[1] will be where mainHeaders are, if they exist
+                let tableContentStart = hasMainHeader?2:1
+                for(let r=tableContentStart; r < tableRows.length; ++r) {
+                    
+                    tableRows[r] = tableRows[r][0]=='|'? tableRows[r].substr(1) : tableRows[r];
+                    if(tableRows[r][0].match(/^(\s*)\!/i)) {
+                        //then this row denotes an instance of the table; just like object of a class
+                        tableRows[r] = tableRows[r].replace(/\'\'\'/gi,"")      // replaces the ''' characters which is markup for bold text
+
+                    }
+                    var parRE = /\[\[(.*?)\]\]/gi                       // checks if text in cell is a hyperlink, if so replaces '|' if found in it
+                    var embeddedLink = tableRows[r].match(parRE)
+                    if(embeddedLink) {
+                        embeddedLink[0] = embeddedLink[0].replace("|","~")   //replaces "|" with "~" so it doesn't get captured by the RegExp below
+                        tableRows[r] = tableRows[r].replace(parRE,embeddedLink[0]);
+                    }
+
+                   
+                    var cells = tableRows[r].split(/\|+\|*\s*/)
+                    cells = cells.filter((c)=> {return c.length > 0; })
+                    console.log("cells",cells)
+                }
+                
+            }
+        }
+        
+        if(section.children.length>0) {
+            for(let c=0; c < section.children.length; ++c) {
+                var child = section.children[c];
+                if(child.tables.length > 0) {
+                    for(let t=0; t <child.tables.length; ++t) {
+                        var tableStr = child.tables[t];
+                        var tableRows = tableStr.split("|-");
+                        var tableCaption = tableRows[0].includes("|+")? tableRows[0].split("|+")[1] : "<no caption>"
+                        var tableMainHeaders = tableRows[1].includes("!")? tableRows[1].split("!") : [];
+                        tableMainHeaders = tableMainHeaders.filter((h)=> {return h.length > 0; })
+                        for(let h=0; h < tableMainHeaders.length; ++h) {
+                            tableMainHeaders[h] = tableMainHeaders[h].replace(/(\s*)scope\=\"col\"(\s*)\|/, "")
+                        }
+                       
+                    }
+                }
+            }
+        }
+    }
+    
+    return allSectionTables;
+    
+}
+function processCellData(str) {         // this function processes the value in a table's cell and returns a usable object of it
+    var finalObj = {value:-1, type:'str', ok:false, vars:[], parentheses:null}
+
+    var matchParRE = /\((.*?)\)/gi
+    finalObj.parentheses = str.match(matchParRE);
+    str = str.replace(matchParRE,"");
+
+    str = str.replace(/\xBC/i, ".25")
+    str = str.replace(/\xBD/i, ".5")
+    str = str.replace(/\xBE/i, ".75")
+
+    if(str.match(isEntity)) {
+        str = str.replace(",","")
+        finalObj.value = str
+        finalObj.type='entity'
+        finalObj.ok = true;
+    }
+
+    else if(str.match(isNumber)) {
+        str = str.replace(",","")
+        finalObj.value = parseFloat(str);
+        finalObj.type='number'
+        finalObj.ok = true;
+    }
+    else if(str.match(isPlusMinusNumber)) {
+        str = str.replace(",","")
+        str = str.replace(/\xB1/,"");
+
+        finalObj.value = parseFloat(str);
+        finalObj.type='number'
+        finalObj.ok = true;
+    }
+    else if(str.match(isNumberWithUnit)) {
+        str = str.replace(",","")
+        str = str.split(" ")
+        finalObj.value = parseFloat(str[0]);
+        finalObj.vars = {value:str[1], type:'unit'};
+        finalObj.type='number-with-unit'
+        finalObj.ok = true;
+    }
+
+    else if(str.match(isNumberMoreThan)) {
+        str = str.replace(",","")
+        str = str.replace(">","")
+        finalObj.value = parseFloat(str);
+        finalObj.type='number-morethan'
+        finalObj.ok = true;
+    }
+
+    else if(str.match(isNumberMoreThan)) {
+        str = str.replace(",","")
+        str = str.replace(">","")
+        finalObj.value = parseFloat(str);
+        finalObj.type='number-morethan'
+        finalObj.ok = true;
+    }
+    else if(str.match(isNumberLessThan)) {
+        str = str.replace(",","")
+        str = str.replace("<","")
+        finalObj.value = parseFloat(str);
+        finalObj.type='number-lessthan'
+        finalObj.ok = true;
+    }
+    
+    else if(str.match(isNumberRangeDash)) {
+        str = str.replace(",","")
+        str = str.split("-")
+        finalObj.value = [parseFloat(str[0]), parseFloat(str[1]) ];
+        finalObj.type='number-range'
+        finalObj.ok = true;
+    }
+    else if(str.match(isAngleDegree)) {
+        str = str.replace(",","")
+        str = str.replace("°","")
+        finalObj.value = parseFloat(str);
+        finalObj.type='degrees'
+        finalObj.ok = true;
+        
+    }
+    else if(str.match(isTempDegree)) {
+        finalObj.type=`temperature:${str.split("°")[1]}`
+        str = str.replace(",","")
+        str = str.replace("°","")
+        finalObj.value = parseFloat(str);
+        finalObj.ok = true;
+    }
+    else if(str.match(isNumberRangeVar)) {
+        str = str.replace(",","")
+        str = str.split(/(\>|\<)+/)
+        finalObj.vars = {value:str[1], type:'var'};
+        finalObj.value = [parseFloat(str[0]), parseFloat(str[2])];
+        finalObj.type='number-range-var'
+        finalObj.ok = true;
+    }
+    else if(str.match(isDollarRange)) {
+        str = str.replace(",","")
+        str = str.replace("$","")
+        finalObj.value = [parseFloat(str[0]), parseFloat(str[2])];
+        finalObj.type='dollar-range'
+        finalObj.ok = true;
+    }
+
+    else if(str.match(isDollarPrice)) {
+        str = str.replace(",","")
+        str = str.replace("$","")
+        finalObj.value = parseFloat(str);
+        finalObj.type='dollars'
+        finalObj.ok = true;
+    }
+
+    else if(str.match(isPercent)) {
+        str = str.replace(",","")
+        str = str.replace("%","")
+        finalObj.value = parseFloat(str);
+        finalObj.type='percent'
+        finalObj.ok = true;
+        
+    }
+    else if(str.match(isPercentVar)) {
+        str = str.replace(",","")
+        str = str.split("%")
+        finalObj.vars = {value:str[1], type:'var'};
+        finalObj.value = parseFloat(str[0]);
+        finalObj.type='percent-var'
+        finalObj.ok = true;
+        
+    }
+
+    return finalObj;
+
+}
+
+
+
 module.exports ={
+    processTableData:processTableData,
     isEntity:isEntity,
     isNumber:isNumber,
     isPlusMinusNumber:isPlusMinusNumber,

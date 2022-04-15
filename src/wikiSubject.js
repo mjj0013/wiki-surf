@@ -1,6 +1,6 @@
 const { isElementOfType } = require( 'react-dom/test-utils');
 var convert = require('xml-js');
-var {isEntity,isPlusMinusNumber,isPercent,isPercentVar,isDollarPrice,isDollarRange,isAngleDegree,isTempDegree,isYenPrice,isEuroPrice,
+var {processTableData, isNumber, isEntity,isPlusMinusNumber,isPercent,isPercentVar,isDollarPrice,isDollarRange,isAngleDegree,isTempDegree,isYenPrice,isEuroPrice,
 isPoundPrice,phoneNumTest,isNumberMoreThan,isNumberLessThan,isNumberRangeDash,isNumberRangeVar,isNumberWithUnit} = require('./tableHelpers.js')
 
 // const {fetch} = require('node-fetch');
@@ -32,143 +32,7 @@ function reformatURL(url) {
 }
 
 
-function processCellData(str) {         // this function processes the value in a table's cell and returns a usable object of it
-    var finalObj = {value:-1, type:'str', ok:false, vars:[], parentheses:null}
 
-    var matchParRE = /\((.*?)\)/gi
-    finalObj.parentheses = str.match(matchParRE);
-    str = str.replace(matchParRE,"");
-
-    str = str.replace(/\xBC/i, ".25")
-    str = str.replace(/\xBD/i, ".5")
-    str = str.replace(/\xBE/i, ".75")
-
-    
-
-    
-    if(str.match(isEntity)) {
-        str = str.replace(",","")
-        finalObj.value = str
-        finalObj.type='entity'
-        finalObj.ok = true;
-    }
-
-
-
-    else if(str.match(isNumber)) {
-        str = str.replace(",","")
-        finalObj.value = parseFloat(str);
-        finalObj.type='number'
-        finalObj.ok = true;
-    }
-    else if(str.match(isPlusMinusNumber)) {
-        str = str.replace(",","")
-        str = str.replace(/\xB1/,"");
-
-        finalObj.value = parseFloat(str);
-        finalObj.type='number'
-        finalObj.ok = true;
-    }
-    else if(str.match(isNumberWithUnit)) {
-        str = str.replace(",","")
-        str = str.split(" ")
-        finalObj.value = parseFloat(str[0]);
-        finalObj.vars = {value:str[1], type:'unit'};
-        finalObj.type='number-with-unit'
-        finalObj.ok = true;
-    }
-
-    else if(str.match(isNumberMoreThan)) {
-        str = str.replace(",","")
-        str = str.replace(">","")
-        finalObj.value = parseFloat(str);
-        finalObj.type='number-morethan'
-        finalObj.ok = true;
-    }
-
-    else if(str.match(isNumberMoreThan)) {
-        str = str.replace(",","")
-        str = str.replace(">","")
-        finalObj.value = parseFloat(str);
-        finalObj.type='number-morethan'
-        finalObj.ok = true;
-    }
-    else if(str.match(isNumberLessThan)) {
-        str = str.replace(",","")
-        str = str.replace("<","")
-        finalObj.value = parseFloat(str);
-        finalObj.type='number-lessthan'
-        finalObj.ok = true;
-    }
-    
-    else if(str.match(isNumberRangeDash)) {
-        str = str.replace(",","")
-        str = str.split("-")
-        finalObj.value = [parseFloat(str[0]), parseFloat(str[1]) ];
-        finalObj.type='number-range'
-        finalObj.ok = true;
-    }
-    else if(str.match(isAngleDegree)) {
-        str = str.replace(",","")
-        str = str.replace("°","")
-        finalObj.value = parseFloat(str);
-        finalObj.type='degrees'
-        finalObj.ok = true;
-        
-    }
-    else if(str.match(isTempDegree)) {
-        finalObj.type=`temperature:${str.split("°")[1]}`
-        str = str.replace(",","")
-        str = str.replace("°","")
-        finalObj.value = parseFloat(str);
-        finalObj.ok = true;
-    }
-    else if(str.match(isNumberRangeVar)) {
-        str = str.replace(",","")
-        str = str.split(/(\>|\<)+/)
-        finalObj.vars = {value:str[1], type:'var'};
-        finalObj.value = [parseFloat(str[0]), parseFloat(str[2])];
-        finalObj.type='number-range-var'
-        finalObj.ok = true;
-    }
-    else if(str.match(isDollarRange)) {
-        str = str.replace(",","")
-        str = str.replace("$","")
-        finalObj.value = [parseFloat(str[0]), parseFloat(str[2])];
-        finalObj.type='dollar-range'
-        finalObj.ok = true;
-    }
-
-    else if(str.match(isDollarPrice)) {
-        str = str.replace(",","")
-        str = str.replace("$","")
-        finalObj.value = parseFloat(str);
-        finalObj.type='dollars'
-        finalObj.ok = true;
-    }
-
-    else if(str.match(isPercent)) {
-        str = str.replace(",","")
-        str = str.replace("%","")
-        finalObj.value = parseFloat(str);
-        finalObj.type='percent'
-        finalObj.ok = true;
-        
-    }
-    else if(str.match(isPercentVar)) {
-        str = str.replace(",","")
-        str = str.split("%")
-        finalObj.vars = {value:str[1], type:'var'};
-        finalObj.value = parseFloat(str[0]);
-        finalObj.type='percent-var'
-        finalObj.ok = true;
-        
-    }
-    
-
-    return finalObj;
-
-}
 
 
 
@@ -211,8 +75,7 @@ class WikiSubject {      // extends React.Component
         this.depth = props.depth? props.depth : -1;             // the 'depth' that the WikiSubject is brought to initialization; default is -1, which means only bring it to initSubject()
         
         
-        this.processTableData = this.processTableData.bind(this);
-
+       
         this.sourceObj = null;
         if(this.wikiTitle==null) this.initSubject(true);
         else this.initSubject();
@@ -420,7 +283,7 @@ class WikiSubject {      // extends React.Component
                             }
                         }
                         console.log("this.data", this.data)
-                        this.processTableData()
+                        processTableData(this.data)
                         resolve();
                     }  
                 })
@@ -428,65 +291,7 @@ class WikiSubject {      // extends React.Component
         })
     }
 
-    processTableData() {
-        if(this.data) {
-            for(let s=0; s < this.data.length; ++s) {
-                var section = this.data[s];
-                var finalObj = {sectionName:section.sectionName, idx:section.idx, data:[]};
-                
-                if(section.tables.length > 0) {
-                    for(let t=0; t < section.tables.length; ++t) {
-                        var tableDataObj = {}
-                        var tableStr = section.tables[t];
-                        
-
-                        
-                        var tableRows = tableStr.split("|-");
-                        var tableCaption = tableRows[0].includes("|+")? tableRows[0].split("|+")[1] : "<no caption>"
-                        var tableMainHeaders = tableRows[1].includes("!")? tableRows[1].split(/\!+\!*\s*/) : [];
-                        tableMainHeaders = tableMainHeaders.filter((h)=> {return h.length > 0; })
-                        
-                        for(let h=0; h < tableMainHeaders.length; ++h) {
-                            
-                            tableMainHeaders[h] = tableMainHeaders[h].replace(/(\s*)(scope\=\"col\"+)(\s*)(\|+)(\s*)/, "")
-                            tableMainHeaders[h] = tableMainHeaders[h].replace(/(\s*)$/, "")
-                            var headerData = processCellData(tableMainHeaders[h])
-                            console.log("headerData", headerData)
-                        }
-                        
-                        console.log("tableMainHeaders", tableMainHeaders)
-
-                        var currentHeaders = tableMainHeaders;
-
-                        for(let r=0; r < tableRows.length; ++r) {
-                            tableRows[r]
-                        }
-                        
-                    }
-                }
-                
-                if(section.children.length>0) {
-                    for(let c=0; c < section.children.length; ++c) {
-                        var child = section.children[c];
-                        if(child.tables.length > 0) {
-                            for(let t=0; t <child.tables.length; ++t) {
-                                var tableStr = child.tables[t];
-                                var tableRows = tableStr.split("|-");
-                                var tableCaption = tableRows[0].includes("|+")? tableRows[0].split("|+")[1] : "<no caption>"
-                                var tableMainHeaders = tableRows[1].includes("!")? tableRows[1].split("!") : [];
-                                tableMainHeaders = tableMainHeaders.filter((h)=> {return h.length > 0; })
-                                for(let h=0; h < tableMainHeaders.length; ++h) {
-                            
-                                    tableMainHeaders[h] = tableMainHeaders[h].replace(/(\s*)scope\=\"col\"(\s*)\|/, "")
-                                }
-                                // console.log("tableMainHeaders", tableMainHeaders)
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+    
     branchSubjectData(targets, depths) {
         //targets   :   list of sections/links that will be branched into
             //each target possible formats:  "section-name", "section-name>sub-section-name", "section-name>:LINK:specific-link"

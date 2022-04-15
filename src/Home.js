@@ -331,7 +331,8 @@ export var Home = () => {
     //         setStats()
     //     }
     // })
-
+    
+    var a = new WikiSubject({depth:1, wikiTitle:"Depopulation of the Great Plains"})
 
     const [countryOptions, setCountryOptions] = useState({region:"US" });       //, displayMode:"regions",resolution:"countries"
     

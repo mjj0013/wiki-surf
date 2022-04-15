@@ -1,5 +1,8 @@
 const { isElementOfType } = require( 'react-dom/test-utils');
 var convert = require('xml-js');
+var {isEntity,isPlusMinusNumber,isPercent,isPercentVar,isDollarPrice,isDollarRange,isAngleDegree,isTempDegree,isYenPrice,isEuroPrice,
+isPoundPrice,phoneNumTest,isNumberMoreThan,isNumberLessThan,isNumberRangeDash,isNumberRangeVar,isNumberWithUnit} = require('./tableHelpers.js')
+
 // const {fetch} = require('node-fetch');
 //"https://en.wikipedia.org/w/api.php?&origin=*&action=opensearch&search=Belgium&limit=5"
 
@@ -36,37 +39,11 @@ function processCellData(str) {         // this function processes the value in 
     finalObj.parentheses = str.match(matchParRE);
     str = str.replace(matchParRE,"");
 
-
-    // ¼ , ½ , ¾
     str = str.replace(/\xBC/i, ".25")
     str = str.replace(/\xBD/i, ".5")
     str = str.replace(/\xBE/i, ".75")
 
-    var isEntity = /^([a-z\-\xC0-\xF6\xF8-\xFF\xB5\xAE\x99]+)((\s*)([a-z\-\xC0-\xF6\xF8-\xFF]))*$/i
-
-
-    var isNumber = /^([0-9,\.]+)$/gi
-    var isPlusMinusNumber = /^\xB1([0-9,\.]+)$/gi
-    var isPercent = /^([0-9,\.]+)(\s*)\%$/gi
-    var isPercentVar = /^([0-9,\.]+)(\s*)\%(\s*)([a-z]+)$/gi
-    var isDollarPrice = /^\$(\s*)([0-9,\.]+)$/gi
-    var isDollarRange = /^\$(\s*)([0-9,\.]+)(\s*)(\-)+(\s*)(\$*)(\s*)([0-9,\.]+)$/i
-
-    var isAngleDegree = /^([0-9,\.]+)(\s*)°((?!.*F|C|K)+)$/gi
-    var isTempDegree = /^([0-9,\.]+)(\s*)°(\s*)(F|C|K+)$/gi
-
-    // use hex column for values at https://www.meridianoutpost.com/resources/articles/ASCII-Extended-Code-reference-chart.php
-    var isYenPrice = /^\xA5(\s*)([0-9,\.]+)$/gi
-    var isEuroPrice = /^\x80(\s*)([0-9,\.]+)$/gi
-    var isPoundPrice = /^\xA3(\s*)([0-9,\.]+)$/gi
-    var phoneNumTest = /^(?:\d{3}|\(\d{3}\))([-\/\.])\d{3}\1\d{4}$/;
-
-    var isNumberMoreThan = /^\$(\s*)([0-9,\.]+)(\s*)(\+|\>)+(\s*)$/i
-    var isNumberLessThan = /^\$(\s*)([0-9,\.]+)(\s*)(\-|\<)+(\s*)$/i
-    var isNumberRangeDash = /^([0-9,\.]+)(\s*)(\-)+(\s*)([0-9,\.]+)$/
-    var isNumberRangeVar = /^([0-9,\.]+)(\s*)(\<|\>)+(\s*)([a-z]+)(\s*)(\<|\>)+(\s*)([0-9,\.]+)$/
-
-    var isNumberWithUnit = /^([0-9]+)(\s*)([a-z\xB5]+)(\.*)(\s*)$/i
+    
 
     
     if(str.match(isEntity)) {
@@ -78,18 +55,26 @@ function processCellData(str) {         // this function processes the value in 
 
 
 
-    if(str.match(isNumber)) {
+    else if(str.match(isNumber)) {
         str = str.replace(",","")
         finalObj.value = parseFloat(str);
         finalObj.type='number'
         finalObj.ok = true;
     }
-    if(str.match(isPlusMinusNumber)) {
+    else if(str.match(isPlusMinusNumber)) {
         str = str.replace(",","")
         str = str.replace(/\xB1/,"");
 
         finalObj.value = parseFloat(str);
         finalObj.type='number'
+        finalObj.ok = true;
+    }
+    else if(str.match(isNumberWithUnit)) {
+        str = str.replace(",","")
+        str = str.split(" ")
+        finalObj.value = parseFloat(str[0]);
+        finalObj.vars = {value:str[1], type:'unit'};
+        finalObj.type='number-with-unit'
         finalObj.ok = true;
     }
 
@@ -115,19 +100,27 @@ function processCellData(str) {         // this function processes the value in 
         finalObj.type='number-lessthan'
         finalObj.ok = true;
     }
-    else if(str.match(isNumberWithUnit)) {
-        str = str.replace(",","")
-        str = str.split(" ")
-        finalObj.value = parseFloat(str[0]);
-        finalObj.vars = {value:str[1], type:'unit'};
-        finalObj.type='number-with-unit'
-        finalObj.ok = true;
-    }
+    
     else if(str.match(isNumberRangeDash)) {
         str = str.replace(",","")
         str = str.split("-")
         finalObj.value = [parseFloat(str[0]), parseFloat(str[1]) ];
         finalObj.type='number-range'
+        finalObj.ok = true;
+    }
+    else if(str.match(isAngleDegree)) {
+        str = str.replace(",","")
+        str = str.replace("°","")
+        finalObj.value = parseFloat(str);
+        finalObj.type='degrees'
+        finalObj.ok = true;
+        
+    }
+    else if(str.match(isTempDegree)) {
+        finalObj.type=`temperature:${str.split("°")[1]}`
+        str = str.replace(",","")
+        str = str.replace("°","")
+        finalObj.value = parseFloat(str);
         finalObj.ok = true;
     }
     else if(str.match(isNumberRangeVar)) {
@@ -171,21 +164,7 @@ function processCellData(str) {         // this function processes the value in 
         finalObj.ok = true;
         
     }
-    else if(str.match(isAngleDegree)) {
-        str = str.replace(",","")
-        str = str.replace("°","")
-        finalObj.value = parseFloat(str);
-        finalObj.type='degrees'
-        finalObj.ok = true;
-        
-    }
-    else if(str.match(isTempDegree)) {
-        finalObj.type=`temperature:${str.split("°")[1]}`
-        str = str.replace(",","")
-        str = str.replace("°","")
-        finalObj.value = parseFloat(str);
-        finalObj.ok = true;
-    }
+    
 
     return finalObj;
 

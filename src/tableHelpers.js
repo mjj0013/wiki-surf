@@ -77,6 +77,8 @@ function processTableData(data) {
                 for(let r=tableContentStart; r < tableRows.length; ++r) {
                     
                     tableRows[r] = tableRows[r][0]=='|'? tableRows[r].substr(1) : tableRows[r];
+                    if(tableRows[r]=='') continue;
+                    
                     if(tableRows[r][0].match(/^(\s*)\!/i)) {
                         //then this row denotes an instance of the table; just like object of a class
                         tableRows[r] = tableRows[r].replace(/\'\'\'/gi,"")      // replaces the ''' characters which is markup for bold text

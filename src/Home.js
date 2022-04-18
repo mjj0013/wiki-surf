@@ -6,7 +6,7 @@ import {AppContext} from './AppContext.js';
 
 const userAgents = require("user-agents");
 import {Chart} from 'react-google-charts';
-// import noUiSlider from 'nouislider';
+import noUiSlider from 'nouislider';
 
 import {WikiSubject, wikiTitleSearch} from './wikiSubject.js';
 
@@ -93,10 +93,7 @@ function getWikiData(queryName) {
         console.log("obj", wikiSubjObj)
     })
 }
-function searchClicked() {
-    var moduleSelect = document.getElementById("moduleSelectElement").value
-    listTrends(moduleSelect);
-}
+
 
 
 
@@ -112,17 +109,13 @@ function countryAnalysisClicked() {
     // checking for country's main Wiki page
     wikiTitleSearch(mainTitle)
     .catch((err)=>{mainExists=false})
-    .then(result=> {
-        console.log('main result', result)
-    })
+    .then(result=> {   console.log('main result', result) })
 
 
     // checking for country's demographics Wiki page
     wikiTitleSearch(demographicsTitle)
     .catch((err)=>{demographicsExists=false})
-    .then(result=> {
-        console.log('demographics result', result)
-    })
+    .then(result=> {  console.log('demographics result', result) })
 
     if(mainExists) {
         var mainPage = new WikiSubject({wikiTitle:mainTitle, depth:1});
@@ -131,7 +124,6 @@ function countryAnalysisClicked() {
     if(demographicsExists) {
         var demoPage = new WikiSubject({wikiTitle:demographicsTitle, depth:1});
         console.log('demoPage',demoPage)
-
     }
 
     // console.log('titleSearch',titleSearch)
@@ -139,78 +131,7 @@ function countryAnalysisClicked() {
 }
 
 
-function listTrends(moduleName) {
-    // create form where the user inputs the search criteria (geo, time, phrase) for the trends. put that search criteria in the request body
-    // other possible modules:    relatedQueries, relatedTopics, interestOverTime, interestByRegion
-    
-    var region = document.getElementById("regionElement").value
 
-    var tempCriteria = {
-        module:moduleName,     
-        region:region? region : null,
-    }
-
-    if(moduleName=="dailyTrends") {
-        var trendDate = document.getElementById("trendDateElement").value
-        tempCriteria["trendDate"] = trendDate;
-    }
-    else if(moduleName=="realTimeTrends") {
-        tempCriteria["category"] = abridgedCategories[document.getElementById("categoryElement").value]
-    }
-    
-    else if(moduleName=="interestOverTime" || moduleName=="interestByRegion") {
-        var startDate = document.getElementById("startDateElement").value
-        var endDate = document.getElementById("endDateElement").value
-        var searchTerms = []
-        var searchTermElements = document.getElementsByClassName('search-term');
-        for(let e=0; e < searchTermElements.length; ++e) {
-            if(!searchTerms.includes(searchTermElements[e].innerText)) searchTerms.push(searchTermElements[e].innerText)
-        }
-        
-        tempCriteria["keyword"] = searchTerms;
-        tempCriteria["startTime"] = startDate;
-        tempCriteria["endTime"] = endDate;
-    }
-    var headers = {"Content-Type":"application/json", "Accept":"application/json"}
-    var req = new Request('/server', {  method:"POST",  headers:headers,    body: JSON.stringify(tempCriteria)   })
-
-    sendRequestToBackend(req).then(result=>{
-        console.log(result)
-        if(moduleName=="dailyTrends") displayResults(moduleName, result.data.searches)
-        else if(moduleName=="realTimeTrends") displayResults(moduleName, result.data.searches)
-        
-        else {console.log(result)}
-    })
-}
-
-async function displayResults(moduleName, results) {
-    var resultItemList = document.getElementById("resultItemList")
-    while(resultItemList.firstChild) resultItemList.removeChild(resultItemList.firstChild);
-    if(moduleName=="dailyTrends") results.sort(function(a,b){return parseInt(b.formattedTraffic) - parseInt(a.formattedTraffic)})
-
-    for(let i =0; i < results.length; ++i) {
-        var li = document.createElement("li");
-        var img = document.createElement("img");
-
-
-        li.className = "list-group-item"
-        
-        if(moduleName=="dailyTrends") {
-            li.innerHTML =results[i].title.query + " | +" + results[i].formattedTraffic + " views";
-            img.src = results[i].image.imageUrl
-        }
-        else if(moduleName=="realTimeTrends") {
-            li.innerHTML = results[i].title;
-            img.src = results[i].image.imgUrl
-        }
-        // getWikiData(results[i].title.query)
-
-        resultItemList.appendChild(li)
-        li.appendChild(img)
-        
-    }
-
-}
 function getRandomInt(min, max) {
     min = Math.ceil(min);
     max = Math.floor(max);
@@ -308,6 +229,19 @@ function moduleChanged() {
     }
     else if(moduleName=="interestByRegion") {
         document.getElementById('dateRangeSection').style.display = 'block';
+        var startValue = new Date("2004-01-01").getTime()
+        
+        noUiSlider.create(document.getElementById("dateSlider"), {start:[startValue,Date.now()],connect:true,step: 1, range:{'min':startValue, 'max':Date.now()}});
+        document.getElementById("dateSlider").noUiSlider.on('update', function (values, handle) {
+            
+            var startDateObj = new Date(parseInt(values[0]));
+            var endDateObj = new Date(parseInt(values[1]));
+            
+            var startInputVal = `${startDateObj.getFullYear()}-${startDateObj.getMonth()<=9?0:''}${startDateObj.getMonth()}-${startDateObj.getDate()<=9?0:''}${startDateObj.getDate()}`
+            var endInputVal = `${endDateObj.getFullYear()}-${endDateObj.getMonth()<=9?0:''}${endDateObj.getMonth()}-${endDateObj.getDate()<=9?0:''}${endDateObj.getDate()}`
+            document.getElementById("startDateElement").value = startInputVal
+            document.getElementById("endDateElement").value = endInputVal
+        })
         document.getElementById('trendDateSection').style.display = 'none';
         document.getElementById('keywordEntrySection').style.display = 'flex'   
     }
@@ -320,6 +254,10 @@ function moduleChanged() {
 
 
 export var Home = () => {   
+    const zoomIntensity = 0.2;
+    var lastZoom = {x:0,y:0};
+    var searchTerms = []
+    var transformMatrix = [1, 0, 0, 1, 0, 0];
     // setInterval(()=>{
     //     mapData[3][1] += 1;
     //     console.log(document.getElementById("worldMap"))
@@ -332,16 +270,19 @@ export var Home = () => {
     //     }
     // })
     
-    var a = new WikiSubject({depth:1, wikiTitle:"Depopulation of the Great Plains"})
+    // var a = new WikiSubject({depth:1, wikiTitle:"Depopulation of the Great Plains"})
 
     const [countryOptions, setCountryOptions] = useState({region:"US" });       //, displayMode:"regions",resolution:"countries"
     
-    const [data,setData] = useState(mapData);
+    const [data,setMapData] = useState(mapData);
     // useEffect(()=> {
     //     setInterval(()=>{
     //         data[3][1] += 25;
-    //         setData([...data])
+    //         setMapData([...data])
     //     },50)
+    // },[]);
+    // useEffect(()=> {
+    //     initMapControls()
     // },[]);
 
 
@@ -369,6 +310,113 @@ export var Home = () => {
     function categoryChanged() {
 
     }
+    function searchClicked() {
+        
+        var moduleSelect = document.getElementById("moduleSelectElement").value
+        processClientRequest(moduleSelect);
+    }
+
+    function processClientRequest(moduleName) {
+        // create form where the user inputs the search criteria (geo, time, phrase) for the trends. put that search criteria in the request body
+        // other possible modules:    relatedQueries, relatedTopics, interestOverTime, interestByRegion
+        
+        var region = document.getElementById("regionElement").value
+    
+        var tempCriteria = {
+            module:moduleName,     
+            region:region? region : null,
+        }
+    
+        if(moduleName=="dailyTrends") {
+            var trendDate = document.getElementById("trendDateElement").value
+            tempCriteria["trendDate"] = trendDate;
+        }
+        else if(moduleName=="realTimeTrends") {
+            tempCriteria["category"] = abridgedCategories[document.getElementById("categoryElement").value]
+        }
+        
+        else if(moduleName=="interestOverTime" || moduleName=="interestByRegion") {
+            var startDate = document.getElementById("startDateElement").value
+            var endDate = document.getElementById("endDateElement").value
+            searchTerms = []
+            var searchTermElements = document.getElementsByClassName('search-term');
+            for(let e=0; e < searchTermElements.length; ++e) {
+                if(!searchTerms.includes(searchTermElements[e].innerText)) searchTerms.push(searchTermElements[e].innerText)
+            }
+            
+            tempCriteria["keyword"] = searchTerms;
+            tempCriteria["startTime"] = startDate;
+            tempCriteria["endTime"] = endDate;
+        }
+        var headers = {"Content-Type":"application/json", "Accept":"application/json"}
+        var req = new Request('/server', {  method:"POST",  headers:headers,    body: JSON.stringify(tempCriteria)   })
+    
+        sendRequestToBackend(req).then(result=>{
+            console.log(result)
+            if(moduleName=="dailyTrends") displayResults(moduleName, result.data.searches)
+            else if(moduleName=="realTimeTrends") displayResults(moduleName, result.data.searches)
+            else if(moduleName=="interestByRegion") displayMapValues(moduleName, result.data);
+     
+        })
+    }
+
+    function displayMapValues(moduleName, data) {
+        if(moduleName=="interestByRegion") {
+            var header= ["Region", ...searchTerms];
+            // for(let t=0; t < searchTerms.length; ++t) {
+            //     header.push(searchTerms[t])
+            // }
+            var includedCountries = Object.keys(regionCodes)
+            var newMapData = [header]
+            for(let reg=0; reg < data.geoMapData.length; ++reg) {
+                var regData = data.geoMapData[reg];
+                if(!includedCountries.includes(regData.geoName)) continue;
+                
+                var termData = [regData.geoName]
+                for(let term=0; term < regData.value.length; ++term) {
+                    if(regData.hasData[term]) termData.push(regData.value[term])
+                    else termData.push(0)
+                }
+                newMapData.push(termData);
+                // if(regData.hasData[0]) newMapData.push([data.geoMapData[reg].geoName,data.geoMapData[reg].value[0]])
+            }
+            setMapData(newMapData)
+        }
+    }
+    
+    async function displayResults(moduleName, results) {
+        var resultItemList = document.getElementById("resultItemList")
+        while(resultItemList.firstChild) resultItemList.removeChild(resultItemList.firstChild);
+        console.log("worldMap", document.getElementById("worldMap"))
+        
+        // document.getElementById('tabContent').appendChild(slider)
+        for(let i =0; i < results.length; ++i) {
+            var li = document.createElement("li");
+            var img = document.createElement("img");
+    
+    
+            li.className = "list-group-item"
+            
+            if(moduleName=="dailyTrends") {
+                li.innerHTML =results[i].title.query + " | +" + results[i].formattedTraffic + " views";
+                img.src = results[i].image.imageUrl
+            }
+            else if(moduleName=="realTimeTrends") {
+                li.innerHTML = results[i].title;
+                img.src = results[i].image.imgUrl
+            }
+            else if(moduleName=="interestByRegion") {
+                
+            }
+            // getWikiData(results[i].title.query)
+    
+            resultItemList.appendChild(li)
+            li.appendChild(img)
+            
+        }
+    
+    }
+    
     return (
         <div>
             <ul className="nav nav-tabs" role="tablist">
@@ -378,15 +426,15 @@ export var Home = () => {
                 <li> 
                     <button className="nav-link" id="byCountrySearchTab" onClick={(e)=>searchTabChanged(e)} data-bs-toggle="tab" data-bs-target="#byCountrySearch" type="button" role="tab" aria-controls="byCountrySearch" aria-selected="false">By Country</button>
                 </li>
-                
             </ul>
             <div className="tab-content" id="tabContent">
                 <div className="tab-pane fade show active" id="globalSearch" >
                     <Chart id="worldMap" className="map" chartType="GeoChart" data={data}  chartPackages={["corechart","controls"]}/>
                 </div>
+                
+                
                 <div className="tab-pane fade" id="byCountrySearch">
-                    <Chart id="countryMap" className="map" chartType="GeoChart" data={countryData} options={countryOptions}  chartPackages={["corechart","controls"]}/>
-                    
+                    <Chart id="countryMap" className="map" chartType="GeoChart" data={countryData} options={countryOptions}  chartPackages={["geochart","corechart","controls"]}/>
                 </div>
                 
                 <form>
@@ -408,7 +456,7 @@ export var Home = () => {
                             <div id="keywordField" className="form-control search-container">
                                 <div className='search-container-inputs'>
                                 <input id='keywordInput' onKeyUp={(e)=> keyUpOnKeywordInput(e)} onKeyDown={(e)=> keyDownOnKeywordInput(e)}/>
-                                <button id="addKeywordButton" onClick={addKeywordPressed} style={{display:'block'}}>
+                                <button  id="addKeywordButton"type="button"  onClick={addKeywordPressed} style={{display:'block'}}>
                                     <img src="plus.svg" width="25" height="25"/>
                                 </button>
                                 </div>    
@@ -424,11 +472,14 @@ export var Home = () => {
                     </div>
                     <div className="mb-3">
                         <div id="dateRangeSection" style={{display:'none'}}>
+                           
+                           
+                            
                             <label htmlFor="startDateElement">Start date:</label>
                             <input type="date" id="startDateElement" min="2004-01-01"/>
-
                             <label htmlFor="endDateElement">End date:</label>
                             <input type="date" id="endDateElement" />
+                            <div id="dateSlider"></div>
                         </div>
                     </div>
                     <div className="mb-3">

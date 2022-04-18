@@ -181,7 +181,7 @@ const angloSphere = [
 ]
 
 
-
+// https://en.wikipedia.org/wiki/ISO_3166-2
 var regionCodes = {
     "South Africa": "SA",
     "France":"FR",
@@ -238,7 +238,38 @@ var regionCodes = {
     "Poland":"PL",
     "Norway":"NO",
     "Belgium" : "BE",
-    "Switzerland": "CH"
+    "Switzerland": "CH",
+    "China":"CN",
+    "Belize":"BZ",
+    "Ukraine":"UA",
+    "Yemen":"YE",
+    "Uganda":"UG",
+    "Turkmenistan":"TM",
+    "Panama":"PA",
+    "Mongolia":"MN",
+    "Madagascar":"MG",
+    "Mali":"ML",
+    "Myanmar":"MM",
+    "Somalia":"SO",
+    "Belarus":"BY",
+    "Afghanistan":"AF",
+    "Iraq":"IQ",
+    "Cambodia":"KH",
+    "Kazakhstan":"KZ",
+    "Latvia":"LV",
+    "Kyrgyzstan":"KG",
+    "Iceland":"IS",
+    "Niger":"NE",
+    "Zimbabwe":"ZW",
+    "Sudan":"SD",
+    "Libya":"LY",
+    "Kenya":"KE",
+    "Jordan":"JO",
+    "Kuwait":"KW",
+    "Syrian Arab Republic":"SY",
+    "Greenland":"GL",
+    "Papua New Guinea":"PG",
+    "Honduras":"HN"
 }
 
 var getDateObj = (time) =>{

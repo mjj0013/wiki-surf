@@ -7,7 +7,7 @@ import {AppContext} from './AppContext.js';
 const userAgents = require("user-agents");
 import {Chart} from 'react-google-charts';
 import noUiSlider from 'nouislider';
-
+import {translateText, langAbbrevs} from "./langTranslator.js"
 import {WikiSubject, wikiTitleSearch} from './wikiSubject.js';
 
 // https://www.statista.com/statistics/262966/number-of-internet-users-in-selected-countries/
@@ -236,7 +236,7 @@ function moduleChanged() {
             
             var startDateObj = new Date(parseInt(values[0]));
             var endDateObj = new Date(parseInt(values[1]));
-            
+
             var startInputVal = `${startDateObj.getFullYear()}-${startDateObj.getMonth()<=9?0:''}${startDateObj.getMonth()}-${startDateObj.getDate()<=9?0:''}${startDateObj.getDate()}`
             var endInputVal = `${endDateObj.getFullYear()}-${endDateObj.getMonth()<=9?0:''}${endDateObj.getMonth()}-${endDateObj.getDate()<=9?0:''}${endDateObj.getDate()}`
             document.getElementById("startDateElement").value = startInputVal
@@ -416,7 +416,7 @@ export var Home = () => {
         }
     
     }
-    
+    translateText("Hello World",langAbbrevs["Chinese"])
     return (
         <div>
             <ul className="nav nav-tabs" role="tablist">

@@ -14,6 +14,11 @@ module.exports =  [
 		mode:'development',
 		module: {
 			rules: [
+				{
+					test: /\.tsx?$/,
+					use:'ts-loader',
+					exclude:/node_modules/,
+				},
 			   {
 				   test: /\.(js|jsx)$/, exclude: /node_modules/, use: {	loader: 'babel-loader'},
 			   },
@@ -58,13 +63,14 @@ module.exports =  [
 		
 		plugins: [HTMLWebpackPluginConfig,],
 		resolve: {	
-			extensions: [".js", ".jsx"],
+			extensions: ["tsx","ts",".js", ".jsx"],
 			fallback: {
 				"https":require.resolve("https-browserify"),
 				"http":require.resolve("stream-http"),
 				"url":require.resolve("url/")
 			}
 		},
+
 	},
 	// Server
 	{

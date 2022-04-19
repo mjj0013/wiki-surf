@@ -3,9 +3,9 @@
 import './index.css'
 import React, { useEffect ,useState} from 'react';
 import {AppContext} from './AppContext.js';
-
+// import {chartEvents} from './chartEventHandlers.tsx'
 const userAgents = require("user-agents");
-import {Chart} from 'react-google-charts';
+import { ReactGoogleChartEvent, Chart } from 'react-google-charts';
 import noUiSlider from 'nouislider';
 
 import {WikiSubject, wikiTitleSearch} from './wikiSubject.js';
@@ -28,35 +28,20 @@ import {WikiSubject, wikiTitleSearch} from './wikiSubject.js';
 
 import {abridgedCategories, regionCodes} from '../server/geoHelpers.js';
 var searchTerms = [];
-var mapData = [
-    ["Country","Year"],
-    ["Algeria", 6],
-    ["Angola", 6],
-    ["United States", 7],
-    ["France", 678],
-    ["Germany",987],
-    ["Portugal",2546],
-    ["Spain", 56],
-    ["Russia", 33]
+var regionNames = Object.keys(regionCodes)
+var regionData = [
+    ["Country"],
 ];
-var countryData = [
-    ["Country","Year"],
-    ["Algeria", 6],
-    ["Angola", 6],
-    ["United States", 7],
-    ["France", 678],
-    ["Germany",987],
-    ["Portugal",2546],
-    ["Spain", 56],
-    ["Russia", 33]
-];
+for(let r=0; r < regionNames.length; ++r) {
+    regionData.push([regionNames[r]])
+}
 
 
 var timeSliderCreated = false
 
 
 // console.log('google.visualization,',google.visualization)
-// var mapData = google.visualization.arrayToDataTable([
+// var regionData = google.visualization.arrayToDataTable([
 //     ["Country","Year"],
 //     ["Algeria", new Date(1933, 6, 13)],
 //     ["Angola", new Date(1965, 6, 13)],
@@ -202,12 +187,15 @@ function moduleChanged() {
         document.getElementById('trendDateSection').style.display = 'block';
         document.getElementById('keywordEntrySection').style.display = 'none'
         document.getElementById('categorySection').style.display = 'none'
+        document.getElementsByClassName("formGrid2")[0].style.display = 'none'
     }
     
     else if(moduleName=="interestOverTime") {
         document.getElementById('dateRangeSection').style.display = 'block';
         document.getElementById('trendDateSection').style.display = 'none';
         document.getElementById('keywordEntrySection').style.display = 'flex'   
+        document.getElementsByClassName("formGrid2")[0].style.display = 'grid'
+        document.getElementById('categorySection').style.display = 'block'
     }
     else if(moduleName=="realTimeTrends") {
         document.getElementById('dateRangeSection').style.display = 'none';
@@ -234,6 +222,8 @@ function moduleChanged() {
         document.getElementById('dateRangeSection').style.display = 'block';
         document.getElementById('trendDateSection').style.display = 'none';
         document.getElementById('keywordEntrySection').style.display = 'flex'   
+        document.getElementsByClassName("formGrid2")[0].style.display = 'grid'
+        document.getElementById('categorySection').style.display = 'block'
         var startValue = new Date("2004-01-01").getTime()
         var dateSliderOptions = {
             start:[startValue,Date.now()],
@@ -275,13 +265,14 @@ function moduleChanged() {
 
 
 
+
 export var Home = () => {   
     const zoomIntensity = 0.2;
     var lastZoom = {x:0,y:0};
     var searchTerms = []
     var transformMatrix = [1, 0, 0, 1, 0, 0];
     // setInterval(()=>{
-    //     mapData[3][1] += 1;
+    //     regionData[3][1] += 1;
     //     console.log(document.getElementById("worldMap"))
     // }, 300);
     
@@ -289,11 +280,11 @@ export var Home = () => {
 
     const [countryOptions, setCountryOptions] = useState({region:"US" });       //, displayMode:"regions",resolution:"countries"
     
-    const [data,setMapData] = useState(mapData);
+    const [data,setregionData] = useState(regionData);
     // useEffect(()=> {
     //     setInterval(()=>{
     //         data[3][1] += 25;
-    //         setMapData([...data])
+    //         setregionData([...data])
     //     },50)
     // },[]);
 
@@ -310,11 +301,16 @@ export var Home = () => {
         if(e.target.id=="globalSearchTab") {
             document.getElementById("regionSection").style.display = "none";
             document.getElementById('analyzeButton').style.display = "none";
+            document.getElementById('categorySection').style.gridColumn = 2;
+            document.getElementById('categorySection').style.gridRow = 1;
             moduleChanged()
         }
         if(e.target.id=="byCountrySearchTab") {
             document.getElementById("regionSection").style.display = "block";
             document.getElementById('analyzeButton').style.display = "block";
+            document.getElementById('categorySection').style.gridColumn = 2;
+            document.getElementById('categorySection').style.gridRow = 2;
+           
             moduleChanged()
         }
     }
@@ -380,9 +376,9 @@ export var Home = () => {
             //     header.push(searchTerms[t])
             // }
             var includedCountries = Object.keys(regionCodes)
-            var newMapData = [header]
-            for(let reg=0; reg < data.geoMapData.length; ++reg) {
-                var regData = data.geoMapData[reg];
+            var newregionData = [header]
+            for(let reg=0; reg < data.georegionData.length; ++reg) {
+                var regData = data.georegionData[reg];
                 if(!includedCountries.includes(regData.geoName)) continue;
                 
                 var termData = [regData.geoName]
@@ -390,10 +386,10 @@ export var Home = () => {
                     if(regData.hasData[term]) termData.push(regData.value[term])
                     else termData.push(0)
                 }
-                newMapData.push(termData);
-                // if(regData.hasData[0]) newMapData.push([data.geoMapData[reg].geoName,data.geoMapData[reg].value[0]])
+                newregionData.push(termData);
+                // if(regData.hasData[0]) newregionData.push([data.georegionData[reg].geoName,data.georegionData[reg].value[0]])
             }
-            setMapData(newMapData)
+            setregionData(newregionData)
         }
     }
     
@@ -429,6 +425,26 @@ export var Home = () => {
         }
     
     }
+    const mouseSelectRegion = [
+        {
+            eventName:"select",
+            callback: ({chartWrapper}) => {
+                const chart = chartWrapper.getChart();
+                const selection = chart.getSelection();
+                if(selection.length==1) {
+                    const [selectedItem] = selection;
+                    const dataTable = chartWrapper.getDataTable();
+                    
+                    var regionName = dataTable.getValue(selectedItem.row,0)
+                    setCountryOptions({region:regionCodes[regionName]})
+                    document.getElementById("regionElement").value = regionCodes[regionName]
+                    document.getElementById("regionElement").name = regionName
+                    if(!document.getElementById("byCountrySearch").classList.contains("active")) document.getElementById("byCountrySearchTab").click();
+                }
+            },
+
+        },
+    ]
 
     return (
         <div>
@@ -442,12 +458,12 @@ export var Home = () => {
             </ul>
             <div className="tab-content" id="tabContent">
                 <div id="globalSearch" className="tab-pane fade show active" >
-                    <Chart id="worldMap" className="map" chartType="GeoChart" data={data}  chartPackages={["corechart","controls"]}/>
+                    <Chart id="worldMap" className="map" chartType="GeoChart" data={data}  chartPackages={["corechart","controls"]} chartEvents={mouseSelectRegion} />
                 </div>
                 
                 
                 <div id="byCountrySearch" className="tab-pane fade" >
-                    <Chart id="countryMap" className="map" chartType="GeoChart" data={countryData} options={countryOptions}  chartPackages={["geochart","corechart","controls"]}/>
+                    <Chart id="countryMap" className="map" chartType="GeoChart" data={regionData} options={countryOptions}  chartPackages={["geochart","corechart","controls"]} chartEvents={mouseSelectRegion} />
                 </div>
                 
                 <form className="inputForm">
@@ -473,13 +489,14 @@ export var Home = () => {
                                 {  regionCodesReformatted.map((obj,idx)=>{return (<option key={idx} value={obj.code} selected={obj.name=="United States"? true:false}>{obj.name}</option>)})  }
                             </select>
                         </div>
-                        
-                    </div>
-                    <div className="formGrid2">
                         <div id="categorySection" style={{display:'none'}} className="inputFormSection mb-3">
                             <label htmlFor='categoryElement'>Categories:</label>
                             <select id="categoryElement" onChange={categoryChanged}></select>
                         </div>
+                        
+                    </div>
+                    <div className="formGrid2">
+                        
                         <div id="keywordEntrySection"  className="inputFormSection mb-3">
                      
                             <label className="form-label" htmlFor="keywordField">Keyword(s):</label>

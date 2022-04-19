@@ -269,7 +269,10 @@ var regionCodes = {
     "Syrian Arab Republic":"SY",
     "Greenland":"GL",
     "Papua New Guinea":"PG",
-    "Honduras":"HN"
+    "Honduras":"HN",
+    // "Algeria":"DZ",
+    // "Angola":"AO"
+
 }
 
 var getDateObj = (time) =>{

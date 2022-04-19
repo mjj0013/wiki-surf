@@ -171,6 +171,7 @@ var dailyTrendsModule = (req,res) =>{
         for(let d=0 ; d < days.length; ++d) {
             for(let s=0; s < days[d]["trendingSearches"].length; ++s) {
                 days[d]["trendingSearches"][s].formattedTraffic = days[d]["trendingSearches"][s].formattedTraffic.replace("K+","000" )
+                days[d]["trendingSearches"][s].formattedTraffic = days[d]["trendingSearches"][s].formattedTraffic.replace("M+","000000" )
                 resultData.searches.push(days[d]["trendingSearches"][s])
             }
         }

@@ -64,7 +64,72 @@ code {
   display:none;
 }
 
+
+
+/* #dateRangeSection {
+  display:flex;
+  align-items: flex-start;
+  flex-direction:column;
+  justify-content:space-evenly;
+} */
+
+.inputForm {
+  display:flex;
+  align-items: flex-start;
+  flex-direction:column;
+  justify-content:space-evenly;
+  row-gap:1em;
+}
+
+/* |||||||||||||||||||||||||||||||||||||||||||||||||| */
+.formGrid1 {
+  display:grid;
+  grid-template-columns: repeat(2, 200px);
+  outline:auto;
+  grid-template-rows: repeat(2, 5em);
+}
+
+#moduleSelectSection {
+  grid-column: 1;
+  grid-row:1;
+}
+#regionSection {
+  grid-column:2;
+  grid-row:1;
+}
+
+#trendDateSection{
+  grid-column: 1;
+  grid-row:2;
+}
+/* **************************************** */
+.formGrid2 {
+  display:grid;
+  grid-template-columns: repeat(3, 250px);
+  gap:15px;
+  grid-template-rows: repeat(3, 5em);
+  outline:auto;
+}
+#categorySection{
+  grid-column: 1;
+  grid-row:1;
+}
+#dateRangeSection{
+  grid-column: 1 / 3;
+  grid-row:2;
+  
+
+}
+#keywordEntrySection{
+  grid-column: 1/3;
+  grid-row:3;
+}
+
+
+/* |||||||||||||||||||||||||||||||||||||||||||||||||| */
+
 .formButtonGrid {
+
   display:flex;
   width:500px;
   height:500px;
@@ -74,6 +139,7 @@ code {
   justify-content:space-evenly;
   
 }
+
 
 
 

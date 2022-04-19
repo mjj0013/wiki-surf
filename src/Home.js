@@ -7,7 +7,7 @@ import {AppContext} from './AppContext.js';
 const userAgents = require("user-agents");
 import {Chart} from 'react-google-charts';
 import noUiSlider from 'nouislider';
-import {translateText, langAbbrevs} from "./langTranslator.js"
+
 import {WikiSubject, wikiTitleSearch} from './wikiSubject.js';
 
 // https://www.statista.com/statistics/262966/number-of-internet-users-in-selected-countries/
@@ -50,6 +50,9 @@ var countryData = [
     ["Spain", 56],
     ["Russia", 33]
 ];
+
+
+var timeSliderCreated = false
 
 
 // console.log('google.visualization,',google.visualization)
@@ -229,21 +232,40 @@ function moduleChanged() {
     }
     else if(moduleName=="interestByRegion") {
         document.getElementById('dateRangeSection').style.display = 'block';
-        var startValue = new Date("2004-01-01").getTime()
-        
-        noUiSlider.create(document.getElementById("dateSlider"), {start:[startValue,Date.now()],connect:true,step: 1, range:{'min':startValue, 'max':Date.now()}});
-        document.getElementById("dateSlider").noUiSlider.on('update', function (values, handle) {
-            
-            var startDateObj = new Date(parseInt(values[0]));
-            var endDateObj = new Date(parseInt(values[1]));
-
-            var startInputVal = `${startDateObj.getFullYear()}-${startDateObj.getMonth()<=9?0:''}${startDateObj.getMonth()}-${startDateObj.getDate()<=9?0:''}${startDateObj.getDate()}`
-            var endInputVal = `${endDateObj.getFullYear()}-${endDateObj.getMonth()<=9?0:''}${endDateObj.getMonth()}-${endDateObj.getDate()<=9?0:''}${endDateObj.getDate()}`
-            document.getElementById("startDateElement").value = startInputVal
-            document.getElementById("endDateElement").value = endInputVal
-        })
         document.getElementById('trendDateSection').style.display = 'none';
         document.getElementById('keywordEntrySection').style.display = 'flex'   
+        var startValue = new Date("2004-01-01").getTime()
+        var dateSliderOptions = {
+            start:[startValue,Date.now()],
+            connect:true,
+            step: 1, 
+            behaviour:'tap-drag',
+            range:{'min':startValue, 'max':Date.now()},
+            direction:'ltr',
+           
+            pips: {
+                mode:'range', density:3, 
+                format: {to :  function(val) {return new Date(val).toDateString()}}
+            }
+
+        }
+        
+        /* {
+                    from: function(val) {return },
+                    to: function(val) {return val.getTime()}
+                }*/ 
+        if(!timeSliderCreated) {
+            noUiSlider.create(document.getElementById("dateSlider"), dateSliderOptions);
+            document.getElementById("dateSlider").noUiSlider.on('update', function (values, handle) {
+                var startDateObj = new Date(parseInt(values[0]));
+                var endDateObj = new Date(parseInt(values[1]));
+                document.getElementById("startDateElement").value =  startDateObj.toISOString().substr(0,10)
+                document.getElementById("endDateElement").value = endDateObj.toISOString().substr(0,10)
+            })
+            timeSliderCreated=true;
+        }
+        
+        
     }
 }
 
@@ -263,13 +285,6 @@ export var Home = () => {
     //     console.log(document.getElementById("worldMap"))
     // }, 300);
     
-
-    // useEffect(()=> {
-    //     const getData = async ()=> {
-    //         setStats()
-    //     }
-    // })
-    
     // var a = new WikiSubject({depth:1, wikiTitle:"Depopulation of the Great Plains"})
 
     const [countryOptions, setCountryOptions] = useState({region:"US" });       //, displayMode:"regions",resolution:"countries"
@@ -281,9 +296,7 @@ export var Home = () => {
     //         setMapData([...data])
     //     },50)
     // },[]);
-    // useEffect(()=> {
-    //     initMapControls()
-    // },[]);
+
 
 
     function regionChanged() {
@@ -416,30 +429,30 @@ export var Home = () => {
         }
     
     }
-    translateText("Hello World",langAbbrevs["Chinese"])
+
     return (
         <div>
             <ul className="nav nav-tabs" role="tablist">
                 <li>
-                    <button className="nav-link active" id="globalSearchTab" onClick={(e)=>searchTabChanged(e)} data-bs-toggle="tab" data-bs-target="#globalSearch" type="button" role="tab" aria-controls="globalSearch" aria-selected="true">Global</button>
+                    <button id="globalSearchTab" className="nav-link active"  onClick={(e)=>searchTabChanged(e)} data-bs-toggle="tab" data-bs-target="#globalSearch" type="button" role="tab" aria-controls="globalSearch" aria-selected="true">Global</button>
                 </li>
                 <li> 
-                    <button className="nav-link" id="byCountrySearchTab" onClick={(e)=>searchTabChanged(e)} data-bs-toggle="tab" data-bs-target="#byCountrySearch" type="button" role="tab" aria-controls="byCountrySearch" aria-selected="false">By Country</button>
+                    <button id="byCountrySearchTab" className="nav-link"  onClick={(e)=>searchTabChanged(e)} data-bs-toggle="tab" data-bs-target="#byCountrySearch" type="button" role="tab" aria-controls="byCountrySearch" aria-selected="false">By Country</button>
                 </li>
             </ul>
             <div className="tab-content" id="tabContent">
-                <div className="tab-pane fade show active" id="globalSearch" >
+                <div id="globalSearch" className="tab-pane fade show active" >
                     <Chart id="worldMap" className="map" chartType="GeoChart" data={data}  chartPackages={["corechart","controls"]}/>
                 </div>
                 
                 
-                <div className="tab-pane fade" id="byCountrySearch">
+                <div id="byCountrySearch" className="tab-pane fade" >
                     <Chart id="countryMap" className="map" chartType="GeoChart" data={countryData} options={countryOptions}  chartPackages={["geochart","corechart","controls"]}/>
                 </div>
                 
-                <form>
-                    <div className="mb-3">
-                        <div id="moduleSelectSection">
+                <form className="inputForm">
+                    <div className="formGrid1">
+                        <div id="moduleSelectSection" className="inputFormSection mb-3">
                             <label className="form-label" htmlFor="moduleSelectElement">Module:</label>
                             <select  id="moduleSelectElement" onChange={moduleChanged}>
                                 <option value="dailyTrends">Daily Trends</option>
@@ -448,10 +461,27 @@ export var Home = () => {
                                 <option value="interestByRegion">Interest By Region</option>  
                             </select>
                         </div>
+
+                        <div id="trendDateSection" className="inputFormSection mb-3">
+                            <label htmlFor="trendDateElement">Trend date:</label>
+                            <input type="date" id="trendDateElement" min="2004-01-01"/>
+                        </div>
+
+                        <div id="regionSection" style={{display:'none'}} className="inputFormSection mb-3">
+                            <label htmlFor="regionElement">Region:</label>
+                            <select id="regionElement" onChange={regionChanged} >
+                                {  regionCodesReformatted.map((obj,idx)=>{return (<option key={idx} value={obj.code} selected={obj.name=="United States"? true:false}>{obj.name}</option>)})  }
+                            </select>
+                        </div>
                         
                     </div>
-                    <div className="mb-3">
-                        <div id="keywordEntrySection" >
+                    <div className="formGrid2">
+                        <div id="categorySection" style={{display:'none'}} className="inputFormSection mb-3">
+                            <label htmlFor='categoryElement'>Categories:</label>
+                            <select id="categoryElement" onChange={categoryChanged}></select>
+                        </div>
+                        <div id="keywordEntrySection"  className="inputFormSection mb-3">
+                     
                             <label className="form-label" htmlFor="keywordField">Keyword(s):</label>
                             <div id="keywordField" className="form-control search-container">
                                 <div className='search-container-inputs'>
@@ -462,41 +492,21 @@ export var Home = () => {
                                 </div>    
                                 <div id="termList" className="search-term-container"></div>
                             </div>
+                    
                         </div>
-                    </div>
-                    <div className="mb-3">
-                        <div id="trendDateSection">
-                            <label htmlFor="trendDateElement">Trend date:</label>
-                            <input type="date" id="trendDateElement" min="2004-01-01"/>
-                        </div>
-                    </div>
-                    <div className="mb-3">
-                        <div id="dateRangeSection" style={{display:'none'}}>
-                           
-                           
-                            
+                        <div id="dateRangeSection" style={{display:'none'}} className="inputFormSection mb-3">
+                  
+
                             <label htmlFor="startDateElement">Start date:</label>
                             <input type="date" id="startDateElement" min="2004-01-01"/>
                             <label htmlFor="endDateElement">End date:</label>
                             <input type="date" id="endDateElement" />
+                           
                             <div id="dateSlider"></div>
+              
                         </div>
                     </div>
-                    <div className="mb-3">
-                        <div id="regionSection" style={{display:'none'}}>
-                            <label htmlFor="regionElement">Region:</label>
-                            <select id="regionElement" onChange={regionChanged} >
-                                {  regionCodesReformatted.map((obj,idx)=>{return (<option key={idx} value={obj.code} selected={obj.name=="United States"? true:false}>{obj.name}</option>)})  }
-                            </select>
-                        </div>
-                    </div>
-                    <div className="mb-3">
-                        <div id="categorySection" style={{display:'none'}}>
-                            <label htmlFor='categoryElement'>Categories:</label>
-                            <select id="categoryElement" onChange={categoryChanged}></select>
-                        </div>
-                    </div>
-                    <div className="formButtonGrid">
+                    <div className="formButtonGrid mb-3">
                         <button className="btn btn-primary" type="button" onClick={searchClicked} data-bs-toggle="offcanvas" data-bs-target="#offcanvasScrolling" aria-controls="offcanvasScrolling">Search</button>
                         <button id="analyzeButton" className="btn btn-success" type="button" onClick={countryAnalysisClicked}>Analysis</button>
                     </div>

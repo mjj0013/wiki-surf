@@ -1,7 +1,7 @@
 const { isElementOfType } = require( 'react-dom/test-utils');
 var convert = require('xml-js');
-var {processTableData, isNumber, isEntity,isPlusMinusNumber,isPercent,isPercentVar,isDollarPrice,isDollarRange,isAngleDegree,isTempDegree,isYenPrice,isEuroPrice,
-isPoundPrice,phoneNumTest,isNumberMoreThan,isNumberLessThan,isNumberRangeDash,isNumberRangeVar,isNumberWithUnit} = require('./tableHelpers.js')
+
+var {processTableData} = require('./tableHelpers.js')       //isNumber, isEntity,isPlusMinusNumber,isPercent,isPercentVar,isDollarPrice,isDollarRange,isAngleDegree,isTempDegree,isYenPrice,isEuroPrice,isPoundPrice,phoneNumTest,isNumberMoreThan,isNumberLessThan,isNumberRangeDash,isNumberRangeVar,isNumberWithUnit
 
 // const {fetch} = require('node-fetch');
 //"https://en.wikipedia.org/w/api.php?&origin=*&action=opensearch&search=Belgium&limit=5"
@@ -113,13 +113,10 @@ class WikiSubject {      // extends React.Component
         return new Promise((resolve, reject)=> {
             fetch(req)
             .then(response => {  return response.json();    })
-            .catch((error)=>{
-                return reject(error);
-            })
+            .catch((error)=>{return reject(error);})
             .then(data=> {
                 var results = []
                 var keys = Object.keys(data.query.pages)
-                
                 for(let k=0; k < keys.length; ++k) {
                     results.push(data.query.pages[parseInt(keys[k])])
                 }
@@ -154,7 +151,7 @@ class WikiSubject {      // extends React.Component
             this.fetchSrc(req).then(result=> {
                
                 this.sourceObj =  result;
-                this.extractSubjectData()
+                this.extractSubjectData(true, true)
                 .catch(message=>{
                     if(message.substr(0,4)=="#RE;") {
                         var parts = message.split(';');
@@ -170,7 +167,7 @@ class WikiSubject {      // extends React.Component
         }
     }
     
-     extractSubjectData() {
+     extractSubjectData(extractTables=true, saveTables=false) {
         return new Promise((resolve, reject)=> {
             for(let k=0; k < this.sourceObj.length; ++k) {
                 var title = this.sourceObj[k].title;
@@ -191,7 +188,7 @@ class WikiSubject {      // extends React.Component
                     else {
                         var result = convert.xml2json(data.parse.parsetree, {compact: false, spaces: 4});       //  https://goessner.net/download/prj/jsonxml/
                         var contentLevel = JSON.parse(result)["elements"][0]["elements"]
-                        
+                        console.log('contentLevel',contentLevel)
                         //the 1st text-type element is the introduction
                         //if element has name "h", it's the header for the section following it
         
@@ -202,39 +199,99 @@ class WikiSubject {      // extends React.Component
         
                         var matchTableRE = /\{\|(.*?)\|\}/gi        //for table syntax help:    https://en.wikipedia.org/wiki/Help:Table
                         var matchLinkRE = /\[\[(.*?)\]\]/gi
-        
+                        
+                        var partialTableFound = false;
+                        var matchTableHeaderRE =  /(\{\|)(.*)/gi
+                        var matchTableFooterRE = /(.*)(\|\})/gi 
+                                                
                         for(let e=0; e < contentLevel.length; ++e) {
                             if(contentLevel[e].type=="text") {
-                                
                                 var matchNewLine = /\n(?!\*)/gi     //for unnecessary newline characters; ones that are not used with bullet points.
                                 contentLevel[e].text = contentLevel[e].text.replaceAll(matchNewLine, '')
+
                                 if(!introCompleted && !introInProgress) {
                                     var introElement = {sectionName:"INTRO", text:contentLevel[e].text, idx:[null], sectionLevel:1, sectionOrder:1, children:[], links: [], tables:[]}
                                     var foundLinks = contentLevel[e].text.match(matchLinkRE);
                                     var foundTables = contentLevel[e].text.match(matchTableRE);
-                                    introElement.links = foundLinks != null? introElement.links.concat(foundLinks) : introElement.links;
-                                    if(foundTables) introElement.tables=introElement.tables.concat(foundTables);
+
                                     introInProgress = true;
+                                    introElement.links = foundLinks != null? introElement.links.concat(foundLinks) : introElement.links;
+                                    if(partialTableFound) {
+                                        var footerFoundTables = contentLevel[e].text.match(matchTableFooterRE);
+                                        if(footerFoundTables) {
+                                            if(introElement.tables.length>0) introElement.tables[currentSectionObj.tables.length-1] += headerFoundTables[0];
+                                            else introElement.tables=introElement.tables.concat(headerFoundTables);
+                                            partialTableFound  = false
+                                        }
+                                        else currentSectionObj.tables[currentSectionObj.tables.length-1] += contentLevel[e].text
+                                    }
+                                    else if(foundTables) introElement.tables=introElement.tables.concat(foundTables);
+                                    
+                                    else {
+                                        var headerFoundTables = contentLevel[e].text.match(matchTableHeaderRE);
+                                        if(headerFoundTables) {
+                                            if(introElement.tables.length>0) introElement.tables[currentSectionObj.tables.length-1] += headerFoundTables[0];
+                                            else introElement.tables=introElement.tables.concat(headerFoundTables);
+                                            partialTableFound  = true
+                                        }
+                                    }
                                     this.data.push(introElement)
                                     currentSectionObj = this.data[this.data.length-1]
                                 }
                                 
                                 else {
-                                    if(currentSectionObj.children.length > 0) {
+                                    if(currentSectionObj.children.length > 0) {                 // currentSectionObj is a sub-section 
                                         var parentObj = currentSectionObj.children[currentSectionObj.children.length-1]
                                         parentObj.text += contentLevel[e].text
                                         var foundLinks = contentLevel[e].text.match(matchLinkRE);
                                         var foundTables =  parentObj.text.match(matchTableRE);
                                         parentObj.links =  foundLinks!=null? parentObj.links.concat(foundLinks) :  parentObj.links
-                                        if(foundTables) parentObj.tables=parentObj.tables.concat(foundTables);
+
+                                        if(partialTableFound) {
+                                            var footerFoundTables = contentLevel[e].text.match(matchTableFooterRE);
+                                            if(footerFoundTables) {
+                                                parentObj.tables[parentObj.tables.length-1] += footerFoundTables[0];
+                                                
+                                                partialTableFound  = false
+                                            }
+                                            else currentSectionObj.tables[currentSectionObj.tables.length-1] += contentLevel[e].text
+                                        }
+                                        else if(foundTables) parentObj.tables=parentObj.tables.concat(foundTables);
+                                        else {
+                                            var headerFoundTables = contentLevel[e].text.match(matchTableHeaderRE);
+                                            if(headerFoundTables) {
+                                                if(parentObj.tables.length>0) parentObj.tables[parentObj.tables.length-1] += headerFoundTables[0];
+                                                else parentObj.tables=parentObj.tables.concat(headerFoundTables);
+                                                partialTableFound  = true
+                                            }
+                                        }
+
+                                        
                                     }
                                     
                                     else {
                                         currentSectionObj.text += contentLevel[e].text
                                         var foundLinks = contentLevel[e].text.match(matchLinkRE);
-                                        var foundTables = currentSectionObj.text.match(matchTableRE);
+                                        var foundTables = contentLevel[e].text.match(matchTableRE);
                                         currentSectionObj.links = foundLinks!=null? currentSectionObj.links.concat(foundLinks) : currentSectionObj.links;
-                                        if(foundTables) currentSectionObj.tables=currentSectionObj.tables.concat(foundTables);
+                                        
+                                        if(partialTableFound) { 
+                                            var footerFoundTables = contentLevel[e].text.match(matchTableFooterRE);
+                                            if(footerFoundTables) {
+                                                currentSectionObj.tables[currentSectionObj.tables.length-1] += footerFoundTables[0];
+                                                partialTableFound  = false
+                                            }
+                                            else currentSectionObj.tables[currentSectionObj.tables.length-1] += contentLevel[e].text
+                                        }
+                                        else if(foundTables) currentSectionObj.tables=currentSectionObj.tables.concat(foundTables);
+                                        else {
+                                            var headerFoundTables = contentLevel[e].text.match(matchTableHeaderRE);
+                                            if(headerFoundTables) {
+                                                if(currentSectionObj.tables.length>0) currentSectionObj.tables[currentSectionObj.tables.length-1] += headerFoundTables[0];
+                                                else currentSectionObj.tables=currentSectionObj.tables.concat(headerFoundTables);
+                                                partialTableFound  = true
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -282,8 +339,26 @@ class WikiSubject {      // extends React.Component
                                 }
                             }
                         }
-                        console.log("this.data", this.data)
-                        processTableData(this.data)
+                        if(extractTables) {
+                            var pageTableData = processTableData(this.data);
+                            console.log('pageTableData',pageTableData)
+                            if(saveTables) {
+
+
+
+                                // move this to the server          const jsonfile = require('jsonfile')
+                                // for(let table=0; table < pageTableData.length; ++table) {
+                                //     var jsonData = JSON.stringify(pageTableData[table])
+                                //     var fileName = pageTableData[table].sectionName
+                                //     fileName = fileName.replace(" ", "_")
+                                //     jsonfile.writeFile(`./createdDB/${fileName}.json`,jsonData)
+
+                                   
+                                // }
+                            }
+                        }
+                        
+                        
                         resolve();
                     }  
                 })
@@ -373,7 +448,13 @@ class WikiSubject {      // extends React.Component
         
     }
 }
+
+
+
+var countryBaseData = new WikiSubject({wikiTitle:"List_of_ISO_3166_country_codes",depth:1});
+
 module.exports ={
+    countryBaseData:countryBaseData,
     WikiSubject:WikiSubject,
     reformatURL:reformatURL,
     wikiTitleSearch:wikiTitleSearch

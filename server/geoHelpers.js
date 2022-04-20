@@ -179,7 +179,11 @@ const angloSphere = [
     "Ireland",
     "Australia"
 ]
-
+var regionsNotWorking = [
+    "UAE",
+    "Phillippines",
+    "Ecuador",
+]
 
 // https://en.wikipedia.org/wiki/ISO_3166-2
 var regionCodes = {
@@ -197,7 +201,6 @@ var regionCodes = {
     "Indonesia":"ID",
     "Argentina":"AR",
     "Brazil":"BR",
-    "Phillippines":"PH",
     "Taiwan":"TW",
     "Vietnam" :"VN",
     "Thailand":"TH",
@@ -212,7 +215,6 @@ var regionCodes = {
     "India":"IN",
     "South Korea":"KR",
     "Iran":"IR",
-    // "Ecuador":"EC",
     "Turkey":"TR",
     "Portugal":"PT",
     "Pakistan":"PK",
@@ -228,8 +230,6 @@ var regionCodes = {
     "Ireland":"IE",
     "New Zealand":"NZ",
     "United Kingdom":"GB",
-    // "Czechia":"CZ",
-    "UAE":"AE",
     "Austria":"AT",
     "Venezuela":"VE",
     "Romania":"RO",
@@ -266,12 +266,14 @@ var regionCodes = {
     "Kenya":"KE",
     "Jordan":"JO",
     "Kuwait":"KW",
-    "Syrian Arab Republic":"SY",
     "Greenland":"GL",
     "Papua New Guinea":"PG",
     "Honduras":"HN",
-    // "Algeria":"DZ",
-    // "Angola":"AO"
+    "Algeria":"DZ",
+    "Angola":"AO",
+    "Barbados":"BB",
+
+
 
 }
 

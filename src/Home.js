@@ -8,8 +8,8 @@ const userAgents = require("user-agents");
 import { ReactGoogleChartEvent, Chart } from 'react-google-charts';
 import noUiSlider from 'nouislider';
 
-import {WikiSubject, wikiTitleSearch} from './wikiSubject.js';
-
+import {WikiSubject, wikiTitleSearch, countryBaseData} from './wikiSubject.js';
+console.log('countryBaseData',countryBaseData)
 // https://www.statista.com/statistics/262966/number-of-internet-users-in-selected-countries/
 // https://worldpopulationreview.com/countries
 // also, https://www.cia.gov/the-world-factbook/field/internet-users/country-comparison/

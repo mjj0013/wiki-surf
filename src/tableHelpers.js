@@ -21,17 +21,12 @@ var isNumberRangeDash = /^([0-9,\.]+)(\s*)(\-)+(\s*)([0-9,\.]+)$/
 var isNumberRangeVar = /^([0-9,\.]+)(\s*)(\<|\>)+(\s*)([a-z]+)(\s*)(\<|\>)+(\s*)([0-9,\.]+)$/
 var isNumberWithUnit = /^([0-9]+)(\s*)([a-z\xB5]+)(\.*)(\s*)$/i
 
+var findColSpan = /(?<=colspan\=)\b\d+/gi;
+var findRowSpan = /(?<=rowspan\=)\b\d+/gi;
 
 
 function processTableData(data) {
     var allSectionTables = []
-
-
-    function lookForCaption(row) {
-        if(row.includes("|+")) retur
-    }
-
-
 
     for(let s=0; s < data.length; ++s) {
         var section = data[s];
@@ -42,62 +37,134 @@ function processTableData(data) {
                 var tableDataObj = {caption:null, mainHeaders:[], entities:[]}      
                 // entities are headers inside the table contents ("HORIZONTAL HEADERS"), 
                 // defined in 1st column, describes instance of table attributes 
+
                 var tableStr = section.tables[t];
-                
-                tableStr = tableStr.replace(/\|\-style\=\"(.*)\"\|/i, "")
+                tableStr = tableStr.replace(/align\=center/gi, "")
+                tableStr = tableStr.replace(/data\-sort\-value\=(.*?)(?=\|)/gi, "")
+                tableStr = tableStr.replace(/&nbsp;/gi, "");
+                tableStr = tableStr.replace(/style\=\"(.*?)\"\|/ig, "")
                 tableStr = tableStr.replace(/\|\}$/, "")        //removing table syntax at end of string
+
+
                 //splitting the table into rows
                 var tableRows = tableStr.split("|-");
-                tableDataObj.caption = tableRows[0].includes("|+")? tableRows[0].split("|+")[1] : "<no caption>"
+
+                if(tableRows[0].includes("|+")) {
+                    tableDataObj.caption = tableRows[0].split("|+")[1]
+                }
+                else tableDataObj.caption = "<no caption>";
 
                 var tableMainHeaders = tableRows[1].includes("!")? tableRows[1].split(/\!+\!*\s*/) : [];
                 tableMainHeaders = tableMainHeaders.filter((h)=> {return h.length > 0; })
 
-                var hasMainHeader = tableMainHeaders.length>0
-                
-                
+                var headerStructure = {frontHeaders:[], structure:[]};      // front headers are headers that directly touch table body
 
+                var tableBodyStartIdx = 1;            // row that table body starts
+                var frontHeaders = [];
+                for(let headRow=1; headRow < tableRows.length; ++headRow) {
+                    tableBodyStartIdx = headRow
+                    if(tableRows[headRow].includes("!")) {
+                        frontHeaders = []
+                        var headerCells = tableRows[headRow].split(/\!+\!*\s*/);
+                        headerCells = headerCells.filter((c)=> {return c.length > 0; })
+                        var currentCellIdx = 0
+                        for(let c=0; c < headerCells.length; ++c) {
+                            var headerCellText = headerCells[c]
+                            
+                            var colspan = headerCells[c].match(findColSpan);
+                            var rowspan = headerCells[c].match(findRowSpan);
+                            var cellRange = [currentCellIdx];
+                            if(colspan) {
+                                if(parseInt(colspan[0])>1) {
+                                    headerCellText =  headerCells[c].split("|")[1]
+                                    cellRange.push(cellRange[0] + parseInt(colspan[0]))
+                                    currentCellIdx = cellRange[0] + parseInt(colspan[0])
+                                }
+                                else {
+                                    ++currentCellIdx;
+                                    headerCellText =  headerCells[c].split("|")[1]
+                                } 
+                            }
+                            else ++currentCellIdx;
+                            
+                            var headerCellObj = {rowIdx:headRow, colRange:cellRange, cellText: headerCellText}
+                            frontHeaders.push(headerCellObj)
+                            headerStructure.structure.push(headerCellObj);
+                        }
+                        
+                    }
+                    else break;
+                }
+                headerStructure.frontHeaders = frontHeaders;
                 //finding the data type of each main header column
                 for(let h=0; h < tableMainHeaders.length; ++h) {
-                    
                     tableMainHeaders[h] = tableMainHeaders[h].replace(/(\s*)(scope\=\"col\"+)(\s*)(\|+)(\s*)/, "")
                     tableMainHeaders[h] = tableMainHeaders[h].replace(/(\s*)$/, "")
                     tableDataObj.mainHeaders.push(processCellData(tableMainHeaders[h]))
                 }
                 
-                console.log("tableMainHeaders", tableMainHeaders)
+                console.log("headerStructure", headerStructure)
 
-                var currentHeaders = tableMainHeaders;
                 var currentEntity = null;
 
 
                 //tableRows[0] is always reserved for class description
                 //so, tableRows[1] will be where mainHeaders are, if they exist
-                let tableContentStart = hasMainHeader?2:1
-                for(let r=tableContentStart; r < tableRows.length; ++r) {
-                    
+               
+                for(let r=tableBodyStartIdx; r < tableRows.length; ++r) {
                     tableRows[r] = tableRows[r][0]=='|'? tableRows[r].substr(1) : tableRows[r];
-                    if(tableRows[r]=='') continue;
-                    
-                    if(tableRows[r][0].match(/^(\s*)\!/i)) {
-                        //then this row denotes an instance of the table; just like object of a class
-                        tableRows[r] = tableRows[r].replace(/\'\'\'/gi,"")      // replaces the ''' characters which is markup for bold text
-
+                    // console.log('body',tableRows[r])
+                    // if(tableRows[r]=='') continue;
+                    // if(tableRows[r][0].match(/^(\s*)\!/i)) {
+                    //     //then this row denotes an instance of the table; just like object of a class
+                    //     tableRows[r] = tableRows[r].replace(/\'\'\'/gi,"")      // replaces the ''' characters which is markup for bold text
+                    // }
+                    console.log('tableRows[r]',tableRows[r])
+                    var colspan = tableRows[r].match(findColSpan);
+                    console.log("colspan",colspan)
+                    tableRows[r] = tableRows[r].replace(/id\=.*?(?=\|{1,2})/gi, "")             // remove 'id' column 
+                    var cells = tableRows[r].split(/\|{1,2}/gi)                                 // splitting row into cells, at delimiters | , ||
+                    cells = cells.filter((c)=> {return c.length > 0; })                         // removing cells that are empty
+                    for(let c =0; c < cells.length; ++c) {
+                        if(cells[c].includes("]]") && !cells[c].includes("[[")) {               // rejoining cells that were unneccesarily split
+                            if(c>0) {
+                                cells[c-1] +=' '+cells[c];
+                                cells.splice(c,1)
+                            }
+                        }
                     }
-                    var parRE = /\[\[(.*?)\]\]/gi                       // checks if text in cell is a hyperlink, if so replaces '|' if found in it
-                    var embeddedLink = tableRows[r].match(parRE)
-                    if(embeddedLink) {
-                        embeddedLink[0] = embeddedLink[0].replace("|","~")   //replaces "|" with "~" so it doesn't get captured by the RegExp below
-                        tableRows[r] = tableRows[r].replace(parRE,embeddedLink[0]);
-                    }
 
-                   
-                    var cells = tableRows[r].split(/\|+\|*\s*/)
-                    cells = cells.filter((c)=> {return c.length > 0; })
-                    console.log("cells",cells)
+                    var entryObj = []
+                    var matchLinkRE = /\[\[(.*?)\]\]/gi
+                    var repeatingSeqs = /(\b\w+\b)(?=.*\b\1\b)/gi;
+                    for(let attr=0; attr < headerStructure.frontHeaders.length; ++attr) {
+                        var label = headerStructure.frontHeaders[attr].cellText;
+                        if(label.match(matchLinkRE)) {
+                            label = label.substr(2,label.length-4);
+                            if(label.includes("|")) label = label.split("|")[1]
+                        }
+                        
+                        var value = cells[attr];
+                        if(!value) continue;
+                        if(value.match(matchLinkRE))  value=value.substr(2,value.length-4);
+                        
+                        // var repMatches = value.match(repeatingSeqs)
+                        // if(repMatches) {
+                        //     value = value.replace(RegExp("\\s*\\b(?:"+repMatches.slice(1).join("|")+")\\b","gi"), "");
+                        // }
+                        entryObj.push([label,value])
+                    }
+                    var entry = Object.fromEntries(new Map(entryObj))
+                    tableDataObj.entities.push(entry)
+                    // console.log("entry",entry)
                 }
+                finalObj.data.push(tableDataObj);
+                
+
+
                 
             }
+            allSectionTables.push(finalObj);
         }
         
         if(section.children.length>0) {
@@ -113,7 +180,6 @@ function processTableData(data) {
                         for(let h=0; h < tableMainHeaders.length; ++h) {
                             tableMainHeaders[h] = tableMainHeaders[h].replace(/(\s*)scope\=\"col\"(\s*)\|/, "")
                         }
-                       
                     }
                 }
             }

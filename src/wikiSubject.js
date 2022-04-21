@@ -27,7 +27,6 @@ function reformatURL(url) {
     url = url.replace(/\{/gi, "%7B")
     url = url.replace(/\|/gi, "%7C")
     url = url.replace(/\}/gi, "%7D")
-
     return url;
 }
 
@@ -59,7 +58,9 @@ class WikiSubject {      // extends React.Component
             extractSubjectData() :   data is extracted from page and stored in object
             branchSubjectData()  :   branches are created from links in subject, creating new WikiSubject; if specified, a specific section from subject is 'branched' to create new WikiSubject object
         */
-
+        this.extractTables = props.extractTables? props.extractTables : true;
+        this.saveTables = props.saveTables? props.saveTables : false;
+        
         this.initSubject = this.initSubject.bind(this);
        
         this.extractSubjectData = this.extractSubjectData.bind(this);
@@ -67,6 +68,7 @@ class WikiSubject {      // extends React.Component
 
         this.branchSubjectData = this.branchSubjectData.bind(this);
         this.pagesInCategory = this.pagesInCategory.bind(this);
+        this.build = this.build.bind(this);
         this.data = [];
         this.tableData = [];
         this.subjectNetwork = [];       // other WikiSubject objects that are linked to it.  should be formatted:       [   {sectionName:<...>, objs:[]} , ...    ]
@@ -74,13 +76,30 @@ class WikiSubject {      // extends React.Component
         this.wikiTitle = props.wikiTitle? props.wikiTitle : null;
         this.depth = props.depth? props.depth : -1;             // the 'depth' that the WikiSubject is brought to initialization; default is -1, which means only bring it to initSubject()
         
-        
+        this.waitBuild = props.waitBuild? props.waitBuild : false;
        
         this.sourceObj = null;
-        if(this.wikiTitle==null) this.initSubject(true);
-        else this.initSubject();
+        if(!this.waitBuild) {
+            if(this.wikiTitle==null) this.initSubject(true);
+            else this.initSubject();
+        }
+        
         
      
+    }
+    build() {
+
+        return new Promise((resolve, reject)=> {
+            if(this.wikiTitle==null) this.initSubject(true).then(r=>{resolve()})
+            else this.initSubject().then(r=>{
+                console.log("this.tableData", this.tableData)
+                resolve()
+            })
+            
+    
+           
+        })
+       
     }
 
     pagesInCategory(category, cmlimit="max",getViews=false) {
@@ -124,50 +143,60 @@ class WikiSubject {      // extends React.Component
             })
         })
     }
-
+    // add &grnlimit=2 to specify the number of randomly generated pages
+    // if(random) url = `https://www.wikipedia.org/w/api.php?action=query&generator=random&grnnamespace=0&format=json&origin=*&callback=?&prop=iwlinks`                    
+    // else if(this.wikiTitle) url=`http://en.wikipedia.org/w/api.php?action=query&origin=*&format=json&titles=${this.wikiTitle}&callback=?&prop=iwlinks`
+    // else return "ERROR";
     initSubject(random=false) {
-        var url='';
-
-        // add &grnlimit=2 to specify the number of randomly generated pages
-        // if(random) url = `https://www.wikipedia.org/w/api.php?action=query&generator=random&grnnamespace=0&format=json&origin=*&callback=?&prop=iwlinks`                    
-        // else if(this.wikiTitle) url=`http://en.wikipedia.org/w/api.php?action=query&origin=*&format=json&titles=${this.wikiTitle}&callback=?&prop=iwlinks`
-        // else return "ERROR";
-        if(random)              url=`https://en.wikipedia.org/w/api.php?action=query&generator=random&grnnamespace=0&format=json&origin=*&prop=categories`                    
-        else if(this.wikiTitle) url=`http://en.wikipedia.org/w/api.php?action=query&origin=*&format=json&titles=${this.wikiTitle}&prop=categories`             //&prop=categories|categoryinfo`
-        else return "ERROR";
+        return new Promise((resolve, reject)=> {
+            var url='';
+            if(random)              url=`https://en.wikipedia.org/w/api.php?action=query&generator=random&grnnamespace=0&format=json&origin=*&prop=categories`                    
+            else if(this.wikiTitle) url=`http://en.wikipedia.org/w/api.php?action=query&origin=*&format=json&titles=${this.wikiTitle}&prop=categories`             //&prop=categories|categoryinfo`
+            else return "ERROR";
+            
+            var req = new Request(url,{method:'GET',mode:'cors'})
+            if(this.depth==2) {
+                this.fetchSrc(req).then(result=> {
+                    this.sourceObj =  result;
+                    this.pagesInCategory(this.sourceObj[0].categories[this.sourceObj[0].categories.length-1].title,null,true)
+                    this.extractSubjectData().then(result2=> {
+                        this.branchSubjectData([this.data[0].sectionName], [1])
+                        .then(r=> {resolve();})
+                    })
+                })
+            }
+            if(this.depth==1) {
+                this.fetchSrc(req).then(result=> {
+                   
+                    this.sourceObj =  result;
+                    this.extractSubjectData(this.extractTables)
+                    .catch(message=>{
+                        if(message.substr(0,4)=="#RE;") {
+                            console.log("redirecting");
+                            var parts = message.split(';');
+                            var idx = parseInt(parts[1]);
+                            var redirectUrl = parts[2];
+                            this.sourceObj[idx].title = redirectUrl;
+                            //a compromise..in the case that multiple page titles were returned in the response, this code forces every page to be processed again, even if only one had redirected
+                            // the code is designed to only process one page title per WikiSubject Object
+                            this.extractSubjectData(this.extractTables)    
+                            .then(r=>{resolve();})
+                        }
+                    })
+                    .then(r=>{
+                        this.tableData = r;
+                         
+                        
+                        resolve();
+                    })
+    
+                })
+            }
+        })
         
-        var req = new Request(url,{method:'GET',mode:'cors'})
-        if(this.depth==2) {
-            this.fetchSrc(req).then(result=> {
-                this.sourceObj =  result;
-                console.log(this.sourceObj)
-                this.pagesInCategory(this.sourceObj[0].categories[this.sourceObj[0].categories.length-1].title,null,true)
-                this.extractSubjectData().then(result2=> {
-                    this.branchSubjectData([this.data[0].sectionName], [1])
-                })
-            })
-        }
-        if(this.depth==1) {
-            this.fetchSrc(req).then(result=> {
-               
-                this.sourceObj =  result;
-                this.extractSubjectData(true, true)
-                .catch(message=>{
-                    if(message.substr(0,4)=="#RE;") {
-                        var parts = message.split(';');
-                        var idx = parseInt(parts[1]);
-                        var redirectUrl = parts[2];
-                        this.sourceObj[idx].title = redirectUrl;
-                        //a compromise..in the case that multiple page titles were returned in the response, this code forces every page to be processed again, even if only one had redirected
-                        // the code is designed to only process one page title per WikiSubject Object
-                        this.extractSubjectData()           
-                    }
-                })
-            })
-        }
     }
     
-     extractSubjectData(extractTables=true, saveTables=false) {
+     extractSubjectData(extractTables=true) {
         return new Promise((resolve, reject)=> {
             for(let k=0; k < this.sourceObj.length; ++k) {
                 var title = this.sourceObj[k].title;
@@ -340,27 +369,19 @@ class WikiSubject {      // extends React.Component
                             }
                         }
                         if(extractTables) {
-                            var pageTableData = processTableData(this.data);
-                            console.log('pageTableData',pageTableData)
-                            if(saveTables) {
-
-
-
-                                // move this to the server          const jsonfile = require('jsonfile')
-                                // for(let table=0; table < pageTableData.length; ++table) {
-                                //     var jsonData = JSON.stringify(pageTableData[table])
-                                //     var fileName = pageTableData[table].sectionName
-                                //     fileName = fileName.replace(" ", "_")
-                                //     jsonfile.writeFile(`./createdDB/${fileName}.json`,jsonData)
-
-                                   
-                                // }
-                            }
+                            processTableData(this.data).then(result=>{
+                                
+                                
+                                for(let i =0 ; i < result.length; ++i) {
+                                    result[i]["srcInfo"] = {type:"wikiTitle", value:this.wikiTitle}
+                                }
+                                resolve(result);
+                            });
                         }
                         
-                        
-                        resolve();
+
                     }  
+                   
                 })
             }  
         })
@@ -451,10 +472,10 @@ class WikiSubject {      // extends React.Component
 
 
 
-var countryBaseData = new WikiSubject({wikiTitle:"List_of_ISO_3166_country_codes",depth:1});
+
 
 module.exports ={
-    countryBaseData:countryBaseData,
+
     WikiSubject:WikiSubject,
     reformatURL:reformatURL,
     wikiTitleSearch:wikiTitleSearch

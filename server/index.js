@@ -6,6 +6,7 @@ const https = require('https');
 
 console.log(Object.keys(googleTrends));
 const fs = require('fs');
+const jsonfile = require('jsonfile');
 const path = require("path")
 const bodyParser = require("body-parser");      // a middleware
 // const {fetch} = require('node-fetch');
@@ -25,6 +26,9 @@ app.use(bodyParser.json());
 app.listen(PORT, ()=> { console.log("Server running on port "+PORT); })
 
 
+
+
+                                
 // Twitter API, try: https://www.programmableweb.com/api/twitter-search-tweets-rest-api-v11
 var usDailyTrendsJob = () => {
     var trendDate = getDateObj({offset:{direction:'before', days:15}})          //always gets trends from 15 days before current day, b/c that day will not be recoverable
@@ -179,6 +183,109 @@ var dailyTrendsModule = (req,res) =>{
         res.send({data:resultData, ok:true})
     })
 }
+app.post('/server/savetables',(req,res)=>{
+    res.setHeader("Accept", "application/json");
+    res.setHeader("Content-Type", "application/json");
+    var pageTableData = req.body.data;
+    var isVital= req.body.isVital;
+   
+    for(let table=0; table < pageTableData.length; ++table) {
+        var fileName = pageTableData[table].sectionName
+        var srcInfo = pageTableData[table]["srcInfo"].value;
+    
+        console.log('srcInfo',srcInfo)
+        var jsonData = JSON.stringify(pageTableData[table])
+        var path = `./server/createdDB/${fileName}.json`
+        if(isVital) path = `./server/createdDB/vital/${fileName}.json`
+        if(fs.existsSync(path)) continue;
+
+        fs.writeFile(path,jsonData,  {encoding:'utf8', flag:"w"},(error, data)=>{if(error) console.log(error)})
+
+
+        if(!fs.existsSync("./server/createdDB/tableUrlRefs.json"))  {
+            fs.writeFile("./server/createdDB/tableUrlRefs.json","{}",  {encoding:'utf8', flag:"w"},(error, data)=>{if(error) console.log(error)})
+        }
+        fs.readFile("./server/createdDB/tableUrlRefs.json", (error, data)=> {
+            if(Object.entries(JSON.parse(data)).length==0) {
+                var OBJ = {};
+                var tableFiles = pageTableData.map((x)=>{
+                    if(isVital) return "/vital/"+x.sectionName
+                    else return x.sectionName
+                })
+                OBJ[srcInfo] = tableFiles;
+                var json = JSON.stringify(OBJ);
+                fs.writeFile('./server/createdDB/tableUrlRefs.json',json,()=>{});
+            }
+            else {
+                
+                if(OBJ[srcInfo.value]) {
+                    OBJ[srcInfo.value].concat(pageTableData.map((x)=>{
+                        if(isVital) return "/vital/"+x.sectionName
+                        else return x.sectionName
+                }))}
+                var json = JSON.stringify(OBJ);
+                
+                fs.writeFile('./server/createdDB/tableUrlRefs.json',json,()=>{});
+            } 
+        })
+    }
+})
+
+app.post('/server/fetchData', (req,res)=>{
+    console.log("fasdfasdf")
+    var isVital= req.body.isVital;
+    var fetchBody = req.body;
+    var path = `./server/createdDB/${fetchBody.fileName}.json`
+    if(isVital) path = `./server/createdDB/vital/${fetchBody.fileName}.json`
+
+    if(fs.existsSync(path)) {
+        console.log("fetched resource exists")
+        // fs.readFile(path, {encoding:'utf8'}, (error, data)=>{
+        fs.readFile(path, (error, data)=>{
+            if(error) console.log(error)
+            res.setHeader("Accept", "application/json");
+            res.setHeader("Content-Type", "application/json");
+            res.send({data:data, ok:true})
+        })
+        
+    }
+    else {          // file does not exist
+        res.setHeader("Accept", "application/json");
+        res.setHeader("Content-Type", "application/json");
+        if(fs.existsSync("./server/createdDB/tableUrlRefs.json")) {
+            fs.readFile("./server/createdDB/tableUrlRefs.json", (error, data)=> {
+                var OBJ = JSON.parse(data);
+                var entries = Object.entries(OBJ);
+                var newSrc = null;
+                for(let e=0; e < entries.length; ++e) {
+                    if(fetchBody.fileName == entries[e][0]) {
+                        
+                        if(entries[e][1].length==1) newSrc = entries[e][1][0];      // the request asks for a URL that points to a single table file, so its safe to return the single table file name
+                        else if(entries[e][1].length > 1) { /* ??? */ }          // the request asked for a URL that points to multiple table files
+                    }
+                    else if(fetchBody.fileName == entries[e][1][0]) newSrc = entries[e][1][0];
+                    
+                }
+                if(newSrc) {
+                    // fs.writeFile(path,jsonData,  {encoding:'utf8', flag:"w"},(error, data)=>{if(error) console.log(error)})
+                    
+                    fs.readFile(`./server/createdDB/${newSrc}.json`, (error, data)=> {  
+                        res.send({data:data, ok:true})
+                    })
+                    
+                }
+            })
+        }
+        
+        else res.send({data:null, message:"does not exist", ok:true})
+            
+        
+        // try reading the "tableUrlRefs.json" file to find the file name that the table name points to
+
+       
+    }  
+})
+
 
 app.post('/server',(req,res)=>{
     res.setHeader("Accept", "application/json");

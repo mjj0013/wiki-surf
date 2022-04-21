@@ -9,7 +9,7 @@ import { ReactGoogleChartEvent, Chart } from 'react-google-charts';
 import noUiSlider from 'nouislider';
 
 import {WikiSubject, wikiTitleSearch, countryBaseData} from './wikiSubject.js';
-console.log('countryBaseData',countryBaseData)
+
 // https://www.statista.com/statistics/262966/number-of-internet-users-in-selected-countries/
 // https://worldpopulationreview.com/countries
 // also, https://www.cia.gov/the-world-factbook/field/internet-users/country-comparison/
@@ -239,11 +239,6 @@ function moduleChanged() {
             }
 
         }
-        
-        /* {
-                    from: function(val) {return },
-                    to: function(val) {return val.getTime()}
-                }*/ 
         if(!timeSliderCreated) {
             noUiSlider.create(document.getElementById("dateSlider"), dateSliderOptions);
             document.getElementById("dateSlider").noUiSlider.on('update', function (values, handle) {
@@ -261,16 +256,41 @@ function moduleChanged() {
 
 
 
+function fetchVitalDB(fileName, createIfNotExist=false) {
+
+    // "List_of_ISO_3166_country_codes"
+   
+    var headers = {"Content-Type":"application/json", "Accept":"application/json"}
+    var req1 = new Request("./server/fetchData", {method:"POST", headers:headers, body: JSON.stringify({isVital:true, fileName:fileName, fileType:"json"})})
+    sendRequestToBackend(req1)
+    .then(result=>{
+        if(result.message) {
+            if(result.message == "does not exist") {
+                if(createIfNotExist) {
+                    var obj = new WikiSubject({extractTables:true, wikiTitle:fileName,depth:1, waitBuild:true});
+                    obj.build()
+                    .then(result=> {
+                        var bodyStr = JSON.stringify({data:obj.tableData, isVital:true, fileType:"json", fileName:fileName});
+                        var req = new Request('/server/savetables', {  method:"POST",  headers:headers,    body: bodyStr   })
+                        sendRequestToBackend(req);
+                    })
+                }
+            }
+        }
+    })
+
+
+    
+    
+}
 
 
 
 
 
 export var Home = () => {   
-    const zoomIntensity = 0.2;
-    var lastZoom = {x:0,y:0};
     var searchTerms = []
-    var transformMatrix = [1, 0, 0, 1, 0, 0];
+
     // setInterval(()=>{
     //     regionData[3][1] += 1;
     //     console.log(document.getElementById("worldMap"))
@@ -280,15 +300,15 @@ export var Home = () => {
 
     const [countryOptions, setCountryOptions] = useState({region:"US" });       //, displayMode:"regions",resolution:"countries"
     
-    const [data,setregionData] = useState(regionData);
+    const [data,setRegionData] = useState(regionData);
     // useEffect(()=> {
     //     setInterval(()=>{
     //         data[3][1] += 25;
-    //         setregionData([...data])
+    //         setRegionData([...data])
     //     },50)
     // },[]);
 
-
+    
 
     function regionChanged() {
         var selected = document.getElementById("regionElement")
@@ -315,15 +335,12 @@ export var Home = () => {
         }
     }
     
-
-    function categoryChanged() {
-
-    }
+    function categoryChanged() {}
     function searchClicked() {
-        
         var moduleSelect = document.getElementById("moduleSelectElement").value
         processClientRequest(moduleSelect);
     }
+
 
     function processClientRequest(moduleName) {
         // create form where the user inputs the search criteria (geo, time, phrase) for the trends. put that search criteria in the request body
@@ -389,23 +406,18 @@ export var Home = () => {
                 newregionData.push(termData);
                 // if(regData.hasData[0]) newregionData.push([data.georegionData[reg].geoName,data.georegionData[reg].value[0]])
             }
-            setregionData(newregionData)
+            setRegionData(newregionData)
         }
     }
     
     async function displayResults(moduleName, results) {
         var resultItemList = document.getElementById("resultItemList")
         while(resultItemList.firstChild) resultItemList.removeChild(resultItemList.firstChild);
-        console.log("worldMap", document.getElementById("worldMap"))
-        
-        // document.getElementById('tabContent').appendChild(slider)
         for(let i =0; i < results.length; ++i) {
             var li = document.createElement("li");
             var img = document.createElement("img");
-    
-    
-            li.className = "list-group-item"
-            
+
+            li.className = "list-group-item"   
             if(moduleName=="dailyTrends") {
                 li.innerHTML =results[i].title.query + " | +" + results[i].formattedTraffic + " views";
                 img.src = results[i].image.imageUrl
@@ -414,16 +426,12 @@ export var Home = () => {
                 li.innerHTML = results[i].title;
                 img.src = results[i].image.imgUrl
             }
-            else if(moduleName=="interestByRegion") {
-                
-            }
+            else if(moduleName=="interestByRegion") {}
             // getWikiData(results[i].title.query)
     
             resultItemList.appendChild(li)
-            li.appendChild(img)
-            
+            li.appendChild(img) 
         }
-    
     }
     const mouseSelectRegion = [
         {
@@ -445,7 +453,8 @@ export var Home = () => {
 
         },
     ]
-
+    fetchVitalDB("List_of_ISO_3166_country_codes",true)
+    // fetchVitalDB("Current ISO 3166 country codes", true)
     return (
         <div>
             <ul className="nav nav-tabs" role="tablist">

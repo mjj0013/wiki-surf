@@ -264,7 +264,9 @@ function fetchVitalDB(fileName, createIfNotExist=false) {
     var req1 = new Request("./server/fetchData", {method:"POST", headers:headers, body: JSON.stringify({isVital:true, fileName:fileName, fileType:"json"})})
     sendRequestToBackend(req1)
     .then(result=>{
+        console.log("result", result)
         if(result.message) {
+            
             if(result.message == "does not exist") {
                 if(createIfNotExist) {
                     var obj = new WikiSubject({extractTables:true, wikiTitle:fileName,depth:1, waitBuild:true});
@@ -453,8 +455,8 @@ export var Home = () => {
 
         },
     ]
-    fetchVitalDB("List_of_ISO_3166_country_codes",true)
-    // fetchVitalDB("Current ISO 3166 country codes", true)
+    // fetchVitalDB("List_of_ISO_3166_country_codes",true)
+    fetchVitalDB("ISO_3166-2",true);
     return (
         <div>
             <ul className="nav nav-tabs" role="tablist">

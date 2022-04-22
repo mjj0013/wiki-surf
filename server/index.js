@@ -38,7 +38,6 @@ var usDailyTrendsJob = () => {
         var data = results.toString();
         data = JSON.parse(data);
         var days = data.default["trendingSearchesDays"]
-        
         var resultData = {time:trendDate, searches:[]}
         
         for(let d=0 ; d < days.length; ++d) {
@@ -68,6 +67,8 @@ const jobMountUS = schedule.scheduleJob(ruleMountUS, ()=>{usDailyTrendsJob()})
 const jobPacifUS = schedule.scheduleJob(rulePacifUS, ()=>{usDailyTrendsJob()})
 
 
+const refFilePath = "./server/createdDB/tableUrlRefs.json"
+
 var dateWithinRange = (dateObj) => {        //tests if specified date is more than 15 days in the past OR if date is in future.
     var dayDiff = Date.now() - dateObj.getTime();
     if(Math.round(dayDiff)==0) return 0;
@@ -78,6 +79,8 @@ var dateWithinRange = (dateObj) => {        //tests if specified date is more th
 
 
 var interestByRegionModule = (req, res) => {
+    res.setHeader("Accept", "application/json");
+    res.setHeader("Content-Type", "application/json");
     var query = req.body;
     
     var startTime = query.startTime? new Date(query.startTime) : new Date('2004-01-01');
@@ -94,6 +97,8 @@ var interestByRegionModule = (req, res) => {
 }
 
 var interestOverTimeModule = (req,res) =>{
+    res.setHeader("Accept", "application/json");
+    res.setHeader("Content-Type", "application/json");
     var query = req.body;
     var geo = query.region? query.region : regionCodes["United States"];
     var startTime = query.startTime? new Date(query.startTime) : new Date('2004-01-01');
@@ -110,13 +115,12 @@ var interestOverTimeModule = (req,res) =>{
 
 var realTimeTrendsModule = (req,res) => {
     // categories are abridged: {"All":"all", "Entertainment":"e", "Business":"b", "Science/Tech":"t", "Sports":"s", "Top Stories":"h"}
-
+    res.setHeader("Accept", "application/json");
+    res.setHeader("Content-Type", "application/json");
 
     var query = req.body;
     var geo = query.region? query.region : regionCodes["United States"];
-    
     var category = query.category? query.category : 'all'
-    
     var optionsObj = { geo:geo, category:category}
 
     console.log('optionsObj',optionsObj)
@@ -125,18 +129,14 @@ var realTimeTrendsModule = (req,res) => {
         
         var data = results.toString();
         data = JSON.parse(data);
-        console.log("data",data)
+        // console.log("data",data)
         
         var stories = data["storySummaries"]["trendingStories"]
-        console.log(stories)
+        // console.log(stories)
         var resultData = {searches:[]}
         
         for(let d=0 ; d < stories.length; ++d) {
             resultData.searches.push(stories[d])
-            // console.log('stories[d]',stories[d])
-                
-            // resultData.searches.push(days[d]["trendingSearches"][s])
-            
         }
         console.log("resultData",resultData)
         res.send({data:resultData, ok:true})
@@ -144,7 +144,8 @@ var realTimeTrendsModule = (req,res) => {
 }
 
 var dailyTrendsModule = (req,res) =>{
-    
+    res.setHeader("Accept", "application/json");
+    res.setHeader("Content-Type", "application/json");
     var query = req.body;
     var geo = query.region? query.region : regionCodes["United States"];
     var trendDate = query.trendDate? new Date(query.trendDate) : new Date();
@@ -202,10 +203,10 @@ app.post('/server/savetables',(req,res)=>{
         fs.writeFile(path,jsonData,  {encoding:'utf8', flag:"w"},(error, data)=>{if(error) console.log(error)})
 
 
-        if(!fs.existsSync("./server/createdDB/tableUrlRefs.json"))  {
-            fs.writeFile("./server/createdDB/tableUrlRefs.json","{}",  {encoding:'utf8', flag:"w"},(error, data)=>{if(error) console.log(error)})
+        if(!fs.existsSync(refFilePath))  {
+            fs.writeFile(refFilePath,"{}",  {encoding:'utf8', flag:"w"},(error, data)=>{if(error) console.log(error)})
         }
-        fs.readFile("./server/createdDB/tableUrlRefs.json", (error, data)=> {
+        fs.readFile(refFilePath, (error, data)=> {
             if(Object.entries(JSON.parse(data)).length==0) {
                 var OBJ = {};
                 var tableFiles = pageTableData.map((x)=>{
@@ -214,7 +215,7 @@ app.post('/server/savetables',(req,res)=>{
                 })
                 OBJ[srcInfo] = tableFiles;
                 var json = JSON.stringify(OBJ);
-                fs.writeFile('./server/createdDB/tableUrlRefs.json',json,()=>{});
+                fs.writeFile(refFilePath,json,()=>{});
             }
             else {
                 
@@ -225,14 +226,20 @@ app.post('/server/savetables',(req,res)=>{
                 }))}
                 var json = JSON.stringify(OBJ);
                 
-                fs.writeFile('./server/createdDB/tableUrlRefs.json',json,()=>{});
+                fs.writeFile(refFilePath,json,()=>{});
             } 
         })
     }
 })
 
+
+var resolveSrcRef = () => {                 // accesses file that contains file names in createdDB and the table names that they contain. So if a request asks for a table name, it can resolve the path for 
+
+}
+
+
 app.post('/server/fetchData', (req,res)=>{
-    console.log("fasdfasdf")
+    
     var isVital= req.body.isVital;
     var fetchBody = req.body;
     var path = `./server/createdDB/${fetchBody.fileName}.json`
@@ -245,21 +252,20 @@ app.post('/server/fetchData', (req,res)=>{
             if(error) console.log(error)
             res.setHeader("Accept", "application/json");
             res.setHeader("Content-Type", "application/json");
-            res.send({data:data, ok:true})
+            res.send({data:data, message:"", ok:true})
         })
         
     }
     else {          // file does not exist
         res.setHeader("Accept", "application/json");
         res.setHeader("Content-Type", "application/json");
-        if(fs.existsSync("./server/createdDB/tableUrlRefs.json")) {
-            fs.readFile("./server/createdDB/tableUrlRefs.json", (error, data)=> {
+        if(fs.existsSync(refFilePath)) {
+            fs.readFile(refFilePath, (error, data)=> {
                 var OBJ = JSON.parse(data);
                 var entries = Object.entries(OBJ);
                 var newSrc = null;
                 for(let e=0; e < entries.length; ++e) {
                     if(fetchBody.fileName == entries[e][0]) {
-                        
                         if(entries[e][1].length==1) newSrc = entries[e][1][0];      // the request asks for a URL that points to a single table file, so its safe to return the single table file name
                         else if(entries[e][1].length > 1) { /* ??? */ }          // the request asked for a URL that points to multiple table files
                     }
@@ -268,34 +274,31 @@ app.post('/server/fetchData', (req,res)=>{
                 }
                 if(newSrc) {
                     // fs.writeFile(path,jsonData,  {encoding:'utf8', flag:"w"},(error, data)=>{if(error) console.log(error)})
-                    
                     fs.readFile(`./server/createdDB/${newSrc}.json`, (error, data)=> {  
-                        res.send({data:data, ok:true})
+                        res.send({data:data, message:"", ok:true})
                     })
                     
                 }
             })
         }
-        
         else res.send({data:null, message:"does not exist", ok:true})
-            
-        
-        // try reading the "tableUrlRefs.json" file to find the file name that the table name points to
-
-       
     }  
 })
 
 
 app.post('/server',(req,res)=>{
-    res.setHeader("Accept", "application/json");
-    res.setHeader("Content-Type", "application/json");
-    if(req.body.module=="realTimeTrends") realTimeTrendsModule(req,res)
-    if(req.body.module=="dailyTrends") dailyTrendsModule(req,res)
-    if(req.body.module=="interestByRegion") interestByRegionModule(req,res)
-    if(req.body.module=="interestOverTime") interestOverTimeModule(req,res)
+    switch(req.body.module) {
+        case "realTimeTrends":
+            realTimeTrendsModule(req,res);
+            break;
+        case "dailyTrends":
+            dailyTrendsModule(req,res)
+            break;
+        case "interestByRegion":
+            interestByRegionModule(req,res);
+            break;
+        case "interestOverTime":
+            interestOverTimeModule(req,res);
+            break;
+    }
 })
-
-
-
-

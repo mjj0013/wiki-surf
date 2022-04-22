@@ -95,9 +95,6 @@ class WikiSubject {      // extends React.Component
                 console.log("this.tableData", this.tableData)
                 resolve()
             })
-            
-    
-           
         })
        
     }
@@ -132,7 +129,7 @@ class WikiSubject {      // extends React.Component
         return new Promise((resolve, reject)=> {
             fetch(req)
             .then(response => {  return response.json();    })
-            .catch((error)=>{return reject(error);})
+            .catch((error)=>  {  return reject(error);      })
             .then(data=> {
                 var results = []
                 var keys = Object.keys(data.query.pages)
@@ -185,8 +182,6 @@ class WikiSubject {      // extends React.Component
                     })
                     .then(r=>{
                         this.tableData = r;
-                         
-                        
                         resolve();
                     })
     

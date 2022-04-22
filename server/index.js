@@ -77,6 +77,24 @@ var dateWithinRange = (dateObj) => {        //tests if specified date is more th
     else return 1
 }
 
+//US-AL-691
+var relatedQueriesModule = (req, res) => {
+    var query = req.body;
+    var startTime = query.startTime? new Date(query.startTime) : new Date('2004-01-01');
+    var endTime = query.endTime? new Date(query.endTime) : new Date();
+    var geo = query.region? query.region : regionCodes["United States"];
+    geo = 'US-AL-691';
+    // geo = 'US-AL-630';
+    var keyword = query.keyword;
+    googleTrends.relatedQueries({keyword: keyword, startTime: startTime, endTime: endTime, geo: geo})
+    .then(results=> {
+        var data = results.toString();
+        data = JSON.parse(data);
+        res.send({data:data.default, ok:true})
+      
+    })
+}
+
 
 var interestByRegionModule = (req, res) => {
     res.setHeader("Accept", "application/json");
@@ -299,6 +317,9 @@ app.post('/server',(req,res)=>{
             break;
         case "interestOverTime":
             interestOverTimeModule(req,res);
+            break;
+        case "relatedQueries":
+            relatedQueriesModule(req,res);
             break;
     }
 })

@@ -7,6 +7,7 @@ import {AppContext} from './AppContext.js';
 const userAgents = require("user-agents");
 import { ReactGoogleChartEvent, Chart } from 'react-google-charts';
 import noUiSlider from 'nouislider';
+import { Offcanvas } from 'bootstrap';
 
 import {WikiSubject, wikiTitleSearch, countryBaseData} from './wikiSubject.js';
 
@@ -179,6 +180,34 @@ function keyDownOnKeywordInput(e) {
 function keyUpOnKeywordInput(e) {
     if(e.key=="Enter") addKeywordPressed();
 }
+
+var startDateDefault = new Date("2004-01-01").getTime()
+var dateSliderOptions = {
+    start:[startDateDefault,Date.now()],
+    connect:true,
+    step: 1, 
+    behaviour:'tap-drag',
+    range:{'min':startDateDefault, 'max':Date.now()},
+    direction:'ltr',
+   
+    pips: {
+        mode:'range', density:3, 
+        format: {to :  function(val) {return new Date(val).toDateString()}}
+    }
+}
+
+function createSlider() {
+    if(!timeSliderCreated) {
+        noUiSlider.create(document.getElementById("dateSlider"), dateSliderOptions);
+        document.getElementById("dateSlider").noUiSlider.on('update', function (values, handle) {
+            var startDateObj = new Date(parseInt(values[0]));
+            var endDateObj = new Date(parseInt(values[1]));
+            document.getElementById("startDateElement").value =  startDateObj.toISOString().substr(0,10)
+            document.getElementById("endDateElement").value = endDateObj.toISOString().substr(0,10)
+        })
+        timeSliderCreated=true;
+    }
+}
 function moduleChanged() {
     var moduleName = document.getElementById('moduleSelectElement').value;
     document.getElementById("moduleSelectSection").style.display = 'block';
@@ -189,7 +218,6 @@ function moduleChanged() {
         document.getElementById('categorySection').style.display = 'none'
         document.getElementsByClassName("formGrid2")[0].style.display = 'none'
     }
-    
     else if(moduleName=="interestOverTime") {
         document.getElementById('dateRangeSection').style.display = 'block';
         document.getElementById('trendDateSection').style.display = 'none';
@@ -218,48 +246,27 @@ function moduleChanged() {
         }
         
     }
+    else if(moduleName=="relatedQueries") { 
+        document.getElementById('dateRangeSection').style.display = 'block';
+        document.getElementById('trendDateSection').style.display = 'none';
+        document.getElementById('keywordEntrySection').style.display = 'flex'   
+        document.getElementsByClassName("formGrid2")[0].style.display = 'grid'
+        document.getElementById('categorySection').style.display = 'block'
+        createSlider();
+    }
     else if(moduleName=="interestByRegion") {
         document.getElementById('dateRangeSection').style.display = 'block';
         document.getElementById('trendDateSection').style.display = 'none';
         document.getElementById('keywordEntrySection').style.display = 'flex'   
         document.getElementsByClassName("formGrid2")[0].style.display = 'grid'
         document.getElementById('categorySection').style.display = 'block'
-        var startValue = new Date("2004-01-01").getTime()
-        var dateSliderOptions = {
-            start:[startValue,Date.now()],
-            connect:true,
-            step: 1, 
-            behaviour:'tap-drag',
-            range:{'min':startValue, 'max':Date.now()},
-            direction:'ltr',
-           
-            pips: {
-                mode:'range', density:3, 
-                format: {to :  function(val) {return new Date(val).toDateString()}}
-            }
-
-        }
-        if(!timeSliderCreated) {
-            noUiSlider.create(document.getElementById("dateSlider"), dateSliderOptions);
-            document.getElementById("dateSlider").noUiSlider.on('update', function (values, handle) {
-                var startDateObj = new Date(parseInt(values[0]));
-                var endDateObj = new Date(parseInt(values[1]));
-                document.getElementById("startDateElement").value =  startDateObj.toISOString().substr(0,10)
-                document.getElementById("endDateElement").value = endDateObj.toISOString().substr(0,10)
-            })
-            timeSliderCreated=true;
-        }
-        
+        createSlider();
         
     }
 }
-
-
-
 function fetchVitalDB(fileName, createIfNotExist=false) {
 
     // "List_of_ISO_3166_country_codes"
-   
     var headers = {"Content-Type":"application/json", "Accept":"application/json"}
     var req1 = new Request("./server/fetchData", {method:"POST", headers:headers, body: JSON.stringify({isVital:true, fileName:fileName, fileType:"json"})})
     sendRequestToBackend(req1)
@@ -338,8 +345,19 @@ export var Home = () => {
     }
     
     function categoryChanged() {}
-    function searchClicked() {
-        var moduleSelect = document.getElementById("moduleSelectElement").value
+
+    function searchClicked(e) {
+        e.stopPropagation()
+        var moduleSelect = document.getElementById("moduleSelectElement").value;
+        
+        
+        if(moduleSelect=="dailyTrends" || moduleSelect=="realTimeTrends") {
+            
+            let offCanvas = new bootstrap.Offcanvas(document.getElementById("resultsOffcanvas"))
+            offCanvas.show();
+            
+           
+        }
         processClientRequest(moduleSelect);
     }
 
@@ -352,7 +370,7 @@ export var Home = () => {
     
         var tempCriteria = {
             module:moduleName,     
-            region:region? region : null,
+            region:region?region:null,
         }
     
         if(moduleName=="dailyTrends") {
@@ -362,8 +380,8 @@ export var Home = () => {
         else if(moduleName=="realTimeTrends") {
             tempCriteria["category"] = abridgedCategories[document.getElementById("categoryElement").value]
         }
-        
-        else if(moduleName=="interestOverTime" || moduleName=="interestByRegion") {
+
+        else if(moduleName=="interestOverTime" || moduleName=="interestByRegion" || moduleName=="relatedQueries") {
             var startDate = document.getElementById("startDateElement").value
             var endDate = document.getElementById("endDateElement").value
             searchTerms = []
@@ -476,7 +494,10 @@ export var Home = () => {
                 <div id="byCountrySearch" className="tab-pane fade" >
                     <Chart id="countryMap" className="map" chartType="GeoChart" data={regionData} options={countryOptions}  chartPackages={["geochart","corechart","controls"]} chartEvents={mouseSelectRegion} />
                 </div>
-                
+            </div>
+            
+
+            <div id="inputFormCollapse" className="collapse collapse-end">
                 <form className="inputForm">
                     <div className="formGrid1">
                         <div id="moduleSelectSection" className="inputFormSection mb-3">
@@ -486,6 +507,7 @@ export var Home = () => {
                                 <option value="realTimeTrends">Real Time Trends</option>
                                 <option value="interestOverTime">Interest Over Time</option>
                                 <option value="interestByRegion">Interest By Region</option>  
+                                <option value="relatedQueries">Related Queries</option>
                             </select>
                         </div>
 
@@ -507,7 +529,6 @@ export var Home = () => {
                         
                     </div>
                     <div className="formGrid2">
-                        
                         <div id="keywordEntrySection"  className="inputFormSection mb-3">
                      
                             <label className="form-label" htmlFor="keywordField">Keyword(s):</label>
@@ -535,29 +556,46 @@ export var Home = () => {
                         </div>
                     </div>
                     <div className="formButtonGrid mb-3">
-                        <button className="btn btn-primary" type="button" onClick={searchClicked} data-bs-toggle="offcanvas" data-bs-target="#offcanvasScrolling" aria-controls="offcanvasScrolling">Search</button>
+                        <button className="btn btn-primary"  type="button" onClick={(e)=>searchClicked(e)} >Search</button>
+                        {/* data-bs-toggle="offcanvas" data-bs-target="#resultsOffcanvas" aria-controls="resultsOffcanvas" */}
                         <button id="analyzeButton" className="btn btn-success" type="button" onClick={countryAnalysisClicked}>Analysis</button>
                     </div>
                     
                 </form>
-
-                <div id="offcanvasScrolling" className="offcanvas offcanvas-start" data-bs-backdrop="false" tabIndex="-1"  aria-labelledby="offcanvasScrollingLabel">
+            </div>
+            {/* <div className="d-flex align-items-end flex-column" > */}
+                {/* <div id="inputFormOffcanvas" className="nav bg-dark nav-pills flex-column me-3" role="tablist" aria-orientation="vertical">
+                     */}
+                <nav className="navbar navbar-dark bg-dark navbar-end">
+                    <div className="container-fluid">
+                        <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#inputFormCollapse" aria-controls="inputFormCollapse" aria-expanded="false" aria-label="Toggle navigation">
+                            <span className="navbar-toggler-icon" />
+                        </button>
+                    </div>
+                   
+                
+                    
+                </nav>
+            {/* </div> */}
             
-                    <div className="offcanvas-header">
-                        <h5 className="offcanvas-title" id="offcanvasScrollingLabel">Colored with scrolling</h5>
-                        <button type="button" className="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-                    </div>
-                    <div className="offcanvas-body">
-                        <div className="card" style={{"width":"18rem"}}>
-                            <div className="card-header">Results</div>
-                            <ul id="resultItemList" className="list-group list-group-flush"></ul>
-                        </div>
-                        
-                    </div>
+            <div id="resultsOffcanvas" className="offcanvas offcanvas-start" data-bs-backdrop="false" tabIndex="-1"  aria-labelledby="resultsOffcanvasLabel">
+        
+                <div className="offcanvas-header">
+                    <h5 className="offcanvas-title" id="resultsOffcanvasLabel">Colored with scrolling</h5>
+                    
+                    <button type="button" id="offCanvasCloseBtn" className="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
                 </div>
+                <div className="offcanvas-body">
+                    <div className="card" style={{"width":"18rem"}}>
+                        <div className="card-header">Results</div>
+                        <ul id="resultItemList" className="list-group list-group-flush"></ul>
+                    </div>
+                    
+                </div>
+            </div>
 
                     
-            </div>
+            
         </div>
         
     )

@@ -90,7 +90,7 @@ var relatedQueriesModule = (req, res) => {
     .then(results=> {
         var data = results.toString();
         data = JSON.parse(data);
-        res.send({data:data.default, ok:true})
+        res.send({data:data.default, ok:true, moduleName:"relatedQueries"})
       
     })
 }
@@ -110,7 +110,7 @@ var interestByRegionModule = (req, res) => {
     .then((results)=> {
         var data = results.toString();
         data = JSON.parse(data);
-        res.send({data:data.default, ok:true})
+        res.send({data:data.default, ok:true, moduleName:"interestByRegion"})
     })
 }
 
@@ -126,7 +126,7 @@ var interestOverTimeModule = (req,res) =>{
     .then((results)=> {
         var data = results.toString();
         data = JSON.parse(data);
-        res.send({data:data.default, ok:true})
+        res.send({data:data.default, ok:true, moduleName:"interestOverTime"})
     })
     
 }
@@ -157,7 +157,7 @@ var realTimeTrendsModule = (req,res) => {
             resultData.searches.push(stories[d])
         }
         console.log("resultData",resultData)
-        res.send({data:resultData, ok:true})
+        res.send({data:resultData, ok:true, moduleName:"realTimeTrends"})
     })
 }
 
@@ -189,7 +189,7 @@ var dailyTrendsModule = (req,res) =>{
         var data = results.toString();
         data = JSON.parse(data);
         var days = data.default["trendingSearchesDays"]
-        var resultData = {searches:[]}
+        var resultData = {searches:[], ok:true}
         
         for(let d=0 ; d < days.length; ++d) {
             for(let s=0; s < days[d]["trendingSearches"].length; ++s) {
@@ -199,7 +199,7 @@ var dailyTrendsModule = (req,res) =>{
             }
         }
         console.log("resultData",resultData)
-        res.send({data:resultData, ok:true})
+        res.send({data:resultData, ok:true, moduleName:"dailyTrends"})
     })
 }
 app.post('/server/savetables',(req,res)=>{

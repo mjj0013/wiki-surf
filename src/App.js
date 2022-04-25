@@ -8,9 +8,8 @@ import {HashRouter, Route, Routes} from 'react-router-dom'
 
 import {AppContextProvider} from './AppContext';
 import {WikiSearchPage} from './wikiSearchPage'
-import {TrendsPage} from './searchTrends.js'
 
-import {sendRequestToBackend} from './frontEndHelpers.js';
+import {TrendsPage} from './searchTrends.js'
 
 
 export function App() {
@@ -20,6 +19,7 @@ export function App() {
   return (
     <HashRouter>
       <NavBar />
+
       <AppContextProvider value={{currentUserIdx:0,users:[{name:'abel',email:'abel@mit.edu',password:'secret',balance:100, id:0}]}}>
         <div className="container" style={{padding: "20px"}}>
           <Routes>
@@ -28,6 +28,7 @@ export function App() {
           </Routes>
         </div>
       </AppContextProvider>      
+
 
     </HashRouter>
   );

@@ -4,7 +4,7 @@ import './index.css';
 import App from './App';
 
 
-
+// import 'semantic-ui-css/semantic.min.css';
 
 /* GOAL: create a 'product' selector-like website where pages are generated from random topics on Wikipedia; 
     -For each randomly generated topic, fetch links from its 'See Also' section Wiki page and include those somehow

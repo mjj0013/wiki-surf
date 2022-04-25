@@ -277,6 +277,23 @@ var regionCodes = {
 
 }
 
+const regions = Object.keys(regionCodes)
+const regionCodesReformatted = regions.map(i=>{return {name:i, code:regionCodes[i]}})
+
+regionCodesReformatted.sort(function(a,b){
+    if(a.name < b.name) return -1;
+    if(a.name > b.name) return 1;
+    return 0;
+})
+
+var regionNames = Object.keys(regionCodes)
+var regionData = [
+    ["Country"],
+];
+for(let r=0; r < regionNames.length; ++r) {
+    regionData.push([regionNames[r]])
+}
+
 var getDateObj = (time) =>{
     // time     :   {date:Object,  offset: <>}
     //offset    :   {direction:<before, after>, minutes:<int>, hours:<int>, day:<int>, months:<int>, years:<int>, }
@@ -301,5 +318,7 @@ module.exports = {
     getDateObj:getDateObj,
     regionCodes:regionCodes,
     allCategories: allCategories,
-    abridgedCategories:abridgedCategories
+    abridgedCategories:abridgedCategories,
+    regionData:regionData,
+    regionCodesReformatted:regionCodesReformatted
 }

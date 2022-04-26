@@ -252,7 +252,7 @@ export var Home = () => {
     });
     return (
 
-            <SideBarWrapper setInputData={setInputData} inputData={inputData} readyResults={readyResults} setReadyResults={setReadyResults} searchClicked={searchClicked} setSearchClicked={setSearchClicked} setCurrentTab={setCurrentTab} setCountryOptions={setCountryOptions} isVisible={sideBarVisible} setVisible={setSideBarVisible}>
+            <SideBarWrapper setInputData={setInputData} inputData={inputData} readyResults={readyResults} setReadyResults={setReadyResults} searchClicked={searchClicked} setSearchClicked={setSearchClicked} setCurrentTab={setCurrentTab} countryOptions={countryOptions} setCountryOptions={setCountryOptions} isVisible={sideBarVisible} setVisible={setSideBarVisible}>
             <div>
                 <button type="button" className="btn-primary" aria-label="Show" onClick={(e, data) => setSideBarVisible(sideBarVisible?false:true)} />
                 <ul className="nav nav-tabs" role="tablist">

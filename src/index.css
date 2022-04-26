@@ -74,8 +74,8 @@ code {
   display:flex;
   align-items: flex-start;
   flex-direction:column;
-  justify-content:space-evenly;
-  row-gap:1em;
+  /* justify-content:space-evenly;
+  row-gap:1em; */
 }
 
 /* |||||||||||||||||||||||||||||||||||||||||||||||||| */
@@ -151,10 +151,33 @@ code {
 #inputSideBar {
   opacity:.95;
 }
-#inputSideBar > * {
+/* #inputSideBar > * {
   opacity:1.0;
+} */
+
+
+
+
+
+/* .ui.dropdown .menu > .item{
+  z-index: 999999 !important;
+  pointer-events:all;
+} */
+
+
+/* .ui.dropdown.menu {
+  overflow:visible;
+} */
+.dropdown .menu .item {
+ 
+  
+  z-index:999999 !important;
+
+  pointer-events:all;
 }
 
 
-
-
+.grid .row .column {
+  
+  pointer-events:all;
+}

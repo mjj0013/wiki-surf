@@ -1,6 +1,6 @@
 // import noUiSlider from 'nouislider';
 import React, { useEffect ,useState} from 'react';
-import {Image, List, Menu, Segment, Sidebar } from 'semantic-ui-react'
+import {Container, Dropdown, Grid, Image, Label, List, Menu, Segment, Sidebar } from 'semantic-ui-react'
 import './index.css'
 
 import {sendRequestToBackend} from './frontEndHelpers.js';
@@ -344,66 +344,126 @@ export const SideBarWrapper = ({setInputData, inputData, setReadyResults, readyR
         
      <Sidebar.Pushable as={Segment}>
          {/* width="very wide" */}
-        <Sidebar id="inputSideBar" as={Menu} animation='overlay' icon='labeled' inverted vertical 
-        visible={isVisible}  direction="right" >
+        <Sidebar id="inputSideBar" as={Menu} animation='overlay' icon='labeled' inverted vertical visible={isVisible}  direction="right" >
             <Menu.Item>
-           
-                <button  className="btn-close btn-danger" type="button" aria-label="Close" onClick={closeButtonClicked}></button>
+                <button  className="ui icon button" onClick={closeButtonClicked}>
+                    <i aria-hidden="true" className="close icon"></i>
+                </button>
             </Menu.Item>
-            <Menu.Item className="formGrid1">
-            
-                <div id="moduleSelectSection" className="inputFormSection mb-3">
-                    <label className="form-label" htmlFor="moduleSelectElement">Module:</label>
-                    <select  id="moduleSelectElement" onChange={moduleChanged}>
-                        <option value="dailyTrends">Daily Trends</option>
-                        <option value="realTimeTrends">Real Time Trends</option>
-                        <option value="interestOverTime">Interest Over Time</option>
-                        <option value="interestByRegion">Interest By Region</option>  
-                        <option value="relatedQueries">Related Queries</option>
-                    </select>
-                </div>
+            <Menu.Item>
+                <Grid columns={2}>
 
-                <div id="trendDateSection" className="inputFormSection mb-3">
-                    <label htmlFor="trendDateElement">Trend date:</label>
-                    <input type="date" id="trendDateElement" min="2004-01-01"/>
-                </div>
+                    <Grid.Row>
+                        <Grid.Column width={3} id="moduleSelectSection" >
+                            <Label>
+                                Module
+                                <Label.Detail> 
+                                    <Dropdown fluid floating id="moduleSelectElement" onChange={moduleChanged}>
+                                        <Dropdown.Menu >
+                                            <Dropdown.Item value="dailyTrends" key="Daily Trends" text="Daily Trends"></Dropdown.Item>
+                                            <Dropdown.Item value="realTimeTrends" key="Real Time Trends" text="Real Time Trends"></Dropdown.Item>
+                                            <Dropdown.Item role="option" value="interestOverTime" key="Interest Over Time" text="Interest Over Time"></Dropdown.Item>
+                                            <Dropdown.Item role="option"  value="interestByRegion" key="Interest By Region" text="Interest By Region"></Dropdown.Item>
+                                            <Dropdown.Item role="option" value="relatedQueries" key="Related Queries" text="Related Queries"></Dropdown.Item>
+                                        </Dropdown.Menu>
+                                    </Dropdown>
+                                </Label.Detail>
+                            </Label>
+                        </Grid.Column>
+                        <Grid.Column  id="trendDateSection">
+                            <Label>
+                                Trend date
+                                <Label.Detail>
+                                    <input type="date" id="trendDateElement" min="2004-01-01"/>
+                                </Label.Detail>
+                            </Label> 
+                        </Grid.Column>
+                    </Grid.Row>
 
-                <div id="regionSection" style={{display:'none'}} className="inputFormSection mb-3">
-                    <label htmlFor="regionElement">Region:</label>
-                    <select id="regionElement" onChange={regionChanged} >
-                        {  regionCodesReformatted.map((obj,idx)=>{return (<option key={idx} value={obj.code} selected={obj.name=="United States"? true:false}>{obj.name}</option>)})  }
-                    </select>
-                </div>
-                <div id="categorySection" style={{display:'none'}} className="inputFormSection mb-3">
-                    <label htmlFor='categoryElement'>Categories:</label>
-                    <select id="categoryElement" onChange={categoryChanged}></select>
-                </div>
-                
+                    <Grid.Row stretched>
+                        <Grid.Column width={3}  id="regionSection" >
+                            <Label>
+                                Region
+                                <Label.Detail>
+                                    <Dropdown id="regionElement" onChange={regionChanged}>
+                                        <Dropdown.Menu>
+                                            {regionCodesReformatted.map((obj,idx)=>{return (<Dropdown.Item key={idx} text={obj.name} value={obj.code} selected={obj.name=="United States"?true:false}></Dropdown.Item>)})  }
+                                        </Dropdown.Menu>
+                                    </Dropdown>
+                                </Label.Detail>
+                            </Label>
+      
+                        </Grid.Column>    
+                        <Grid.Column id="categorySection">
+                            <Label>
+                                Category
+                                <Label.Detail>
+                                    <Dropdown id="categoryElement" onChange={categoryChanged}>
+                                        <Dropdown.Menu>
+                                        <Dropdown.Item text="blank"></Dropdown.Item>
+                                        </Dropdown.Menu>
+                                    </Dropdown>
+                                </Label.Detail>
+                            </Label>
+                        </Grid.Column>
+                    </Grid.Row>                    
+                </Grid>
             </Menu.Item>
-            <Menu.Item className="formGrid2">
-                <div id="keywordEntrySection"  className="inputFormSection mb-3">
-                
-                    <label className="form-label" htmlFor="keywordField">Keyword(s):</label>
-                    <div id="keywordField" className="form-control search-container">
-                        <div className='search-container-inputs'>
-                        <input id='keywordInput' onKeyUp={(e)=> keyUpOnKeywordInput(e)} onKeyDown={(e)=> keyDownOnKeywordInput(e)}/>
-                        <button  id="addKeywordButton"type="button"  onClick={addKeywordPressed} style={{display:'block'}}>
-                            <img src="plus.svg" width="25" height="25"/>
-                        </button>
-                        </div>    
-                        <div id="termList" className="search-term-container"></div>
-                    </div>
-            
-                </div>
-                <div id="dateRangeSection" style={{display:'none'}} className="inputFormSection mb-3">
+            <Menu.Item>
+                <Grid columns={3} divided>
+                    <Grid.Row stretched>
+                        <Grid.Column id="keywordEntrySection">
+                            <Label>
+                                Keyword(s)
+                                <Label.Detail>
+                                    <div id="keywordField" className="form-control search-container">
+                                        <div className='search-container-inputs'>
+                                        <input id='keywordInput' onKeyUp={(e)=> keyUpOnKeywordInput(e)} onKeyDown={(e)=> keyDownOnKeywordInput(e)}/>
+                                        <button  id="addKeywordButton"type="button"  onClick={addKeywordPressed} style={{display:'block'}}>
+                                            <img src="plus.svg" width="25" height="25"/>
+                                        </button>
+                                        </div>    
+                                        <div id="termList" className="search-term-container"></div>
+                                    </div>
+                                </Label.Detail>
+                            </Label>
+                        </Grid.Column>
+                    </Grid.Row>
+                    <Grid.Row id="dateRangeSection">
+                        <Grid.Column>
+                            <Label>
+                                Start Date
+                                <Label.Detail>
+                                    <input type="date" id="startDateElement" min="2004-01-01"/>
+
+                                </Label.Detail>
+                            </Label>
+                        </Grid.Column>
+                        <Grid.Column><br/></Grid.Column>
+                        <Grid.Column>
+                            <Label>
+                                End Date
+                                <Label.Detail>
+                                    <input type="date" id="endDateElement" />
+
+                                </Label.Detail>
+                            </Label>
+                        </Grid.Column>
+                    </Grid.Row>
+                    <Grid.Row stretched>
+                        <div id="dateSlider"></div>
+                    </Grid.Row>
+                </Grid>
+             
+                {/* <div  style={{display:'none'}} className="inputFormSection mb-3">
                     <label htmlFor="startDateElement">Start date:</label>
-                    <input type="date" id="startDateElement" min="2004-01-01"/>
+                    
                     <label htmlFor="endDateElement">End date:</label>
                     <input type="date" id="endDateElement" />
                     
                     <div id="dateSlider"></div>
         
-                </div>
+                </div> */}
             </Menu.Item>
             <Menu.Item className="formButtonGrid mb-3">
                 <button className="btn btn-primary"  type="button" onClick={(e)=>searchBtnHandler(e)} >Search</button>

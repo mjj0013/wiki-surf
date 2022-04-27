@@ -180,7 +180,7 @@ code {
 
 #inputSideBar {
   opacity:.95;
-  width:60%;
+  width:550px;
 }
 #dateSlider {
   display:block;
@@ -194,4 +194,52 @@ code {
   /* margin-right:25%; */
 
 }
+
+#sideBarHandle > * {
+  pointer-events: none;
+}
+
+
+#sideBarHandle {
+  position:absolute;
+  display:block;
+  top:0%;
+  right:0%;
+
+
+
+  -webkit-transform: initial;
+  transform: initial;
+  
+  
+  transition: transform 500ms ease;
+  z-index:999;
+  
+}
+
+#sideBarHandle.showing {
+  -webkit-transform: translate3d(-550px, 0, 0);
+  transform: translate3d(-550px, 0, 0);
+  
+}
+
+#backToGlobalBtn {
+  position:absolute;
+  display:none;
+  opacity: 0;
+  top:0%;
+  left:0%;
+  z-index:999;
+
+  transition: opacity 1s ease, display .5s ease;
+}
+
+#backToGlobalBtn.showing {
+  opacity: 1.0;
+  display:block;
+}
+
+
+
+
 

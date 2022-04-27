@@ -187,6 +187,9 @@ var regionsNotWorking = [
 
 // https://en.wikipedia.org/wiki/ISO_3166-2
 var regionCodes = {
+   
+
+
     "South Africa": "SA",
     "France":"FR",
     "Russia":"RU",

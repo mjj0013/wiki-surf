@@ -6,7 +6,7 @@ import {AppContext} from './AppContext.js';
 // import {chartEvents} from './chartEventHandlers.tsx'
 const userAgents = require("user-agents");
 import { ReactGoogleChartEvent, Chart } from 'react-google-charts';
-
+import {Button} from 'semantic-ui-react';
 
 import {WikiSubject, wikiTitleSearch, countryBaseData} from './wikiSubject.js';
 import { SideBarWrapper } from './sideBarForm.js';
@@ -30,9 +30,6 @@ import {abridgedCategories, regionCodes, regionData, regionCodesReformatted} fro
 //  Egypt: 75.66 million   internet users       106,156,692 total,      , 71.27%   106/km² density
 //  France: 60.92 million  internet users        65,426,179 total       , 93%,         119/km²
 
-
-
-var countryOptions = {region:"US" }
 
 
 
@@ -205,9 +202,8 @@ export var Home = () => {
                     
                     var regionName = dataTable.getValue(selectedItem.row,0)
                     setCountryOptions({region:regionCodes[regionName]})
-                    document.getElementById("regionElement").value = regionCodes[regionName]
-                    document.getElementById("regionElement").name = regionName
-                    if(!document.getElementById("byCountrySearch").classList.contains("active")) document.getElementById("byCountrySearchTab").click();
+               
+                    // if(!document.getElementById("byCountrySearch").classList.contains("active")) document.getElementById("byCountrySearchTab").click();
                 }
             },
 
@@ -231,7 +227,7 @@ export var Home = () => {
         })
     }
     // fetchVitalDB("List_of_ISO_3166_country_codes",true)
-    fetchVitalDB("ISO_3166-2",true);
+    // fetchVitalDB("ISO_3166-2",true);
    
     const [sideBarVisible, setSideBarVisible] = useState(false);
     const [countryOptions, setCountryOptions] = useState({region:"US" });       //, displayMode:"regions",resolution:"countries"
@@ -252,9 +248,8 @@ export var Home = () => {
     });
     return (
 
-            <SideBarWrapper setInputData={setInputData} inputData={inputData} readyResults={readyResults} setReadyResults={setReadyResults} searchClicked={searchClicked} setSearchClicked={setSearchClicked} setCurrentTab={setCurrentTab} countryOptions={countryOptions} setCountryOptions={setCountryOptions} isVisible={sideBarVisible} setVisible={setSideBarVisible}>
-            <div>
-                <button type="button" className="btn-primary" aria-label="Show" onClick={(e, data) => setSideBarVisible(sideBarVisible?false:true)} />
+            <SideBarWrapper sideBarVisible={sideBarVisible} setSideBarVisible={setSideBarVisible} setInputData={setInputData} inputData={inputData} readyResults={readyResults} setReadyResults={setReadyResults} searchClicked={searchClicked} setSearchClicked={setSearchClicked} setCurrentTab={setCurrentTab} countryOptions={countryOptions} setCountryOptions={setCountryOptions} isVisible={sideBarVisible} setVisible={setSideBarVisible}>
+            {/* <div>
                 <ul className="nav nav-tabs" role="tablist">
                     <li>
                         <button id="globalSearchTab" className="nav-link active"  onClick={(e)=>searchTabChanged(e)} data-bs-toggle="tab" data-bs-target="#globalSearch" type="button" role="tab" aria-controls="globalSearch" aria-selected="true">Global</button>
@@ -264,6 +259,9 @@ export var Home = () => {
                     </li>
                 </ul>
                 <div className="tab-content" id="tabContent">
+                    
+                    
+                    
                     <div id="globalSearch" className="tab-pane fade show active" >
                         <Chart id="worldMap" className="map" chartType="GeoChart" data={regionData}  chartPackages={["corechart","controls"]} chartEvents={mouseSelectRegion} />
                     </div>
@@ -272,28 +270,12 @@ export var Home = () => {
                     <div id="byCountrySearch" className="tab-pane fade" >
                         <Chart id="countryMap" className="map" chartType="GeoChart" data={regionData} options={countryOptions}  chartPackages={["geochart","corechart","controls"]} chartEvents={mouseSelectRegion} />
                     </div>
-                </div>
-                
-
-                {/* <div id="resultsOffcanvas" className="offcanvas offcanvas-start" data-bs-backdrop="false" tabIndex="-1"  aria-labelledby="resultsOffcanvasLabel">
-            
-                    <div className="offcanvas-header">
-                        <h5 className="offcanvas-title" id="resultsOffcanvasLabel">Colored with scrolling</h5>
-                        
-                        <button type="button" id="offCanvasCloseBtn" className="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-                    </div>
-                    <div className="offcanvas-body">
-                        <div className="card" style={{"width":"18rem"}}>
-                            <div className="card-header">Results</div>
-                            <ul id="resultItemList" className="list-group list-group-flush"></ul>
-                        </div>
-                        
-                    </div>
-                </div> */}
-
-               
-                
+                </div> 
+            </div> */}
+            <div id="globalSearch" >
+                <Chart id="worldMap" className="map" chartType="GeoChart" data={regionData}  chartPackages={["corechart","controls"]} chartEvents={mouseSelectRegion} />
             </div>
+
             </SideBarWrapper>
         
     )

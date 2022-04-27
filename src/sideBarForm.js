@@ -1,10 +1,10 @@
 // import noUiSlider from 'nouislider';
 import React, { useEffect ,useState} from 'react';
-import {Button, Input, Container, Dropdown, Grid, Image, Label, List, Menu, Segment, Sidebar } from 'semantic-ui-react'
+import {Button, Input, Container, Dropdown, Grid, Image, Label, List, Menu, Segment, Sidebar , Transition} from 'semantic-ui-react'
 import './index.css'
 
 import {sendRequestToBackend} from './frontEndHelpers.js';
-
+import { DateRangeSlider } from './dateRangeSlider';
 
 
 var searchTermColors = []
@@ -129,25 +129,25 @@ var dateSliderOptions = {
 function categoryChanged() {}
 
 
-function searchTabChanged(e) {
-    if(e.target.id=="globalSearchTab") {
-        setCurrentTab("globalSearchTab");
-        document.getElementById("regionSection").style.display = "none";
-        document.getElementById('analyzeButton').style.display = "none";
-        document.getElementById('categorySection').style.gridColumn = 2;
-        document.getElementById('categorySection').style.gridRow = 1;
-        moduleChanged()
-    }
-    if(e.target.id=="byCountrySearchTab") {
-        setCurrentTab("byCountrySearchTab");
-        document.getElementById("regionSection").style.display = "block";
-        document.getElementById('analyzeButton').style.display = "block";
-        document.getElementById('categorySection').style.gridColumn = 2;
-        document.getElementById('categorySection').style.gridRow = 2;
+// function searchTabChanged(e) {
+//     if(e.target.id=="globalSearchTab") {
+//         setCurrentTab("globalSearchTab");
+//         document.getElementById("regionSection").style.display = "none";
+//         document.getElementById('analyzeButton').style.display = "none";
+//         document.getElementById('categorySection').style.gridColumn = 2;
+//         document.getElementById('categorySection').style.gridRow = 1;
+//         moduleChanged()
+//     }
+//     if(e.target.id=="byCountrySearchTab") {
+//         setCurrentTab("byCountrySearchTab");
+//         document.getElementById("regionSection").style.display = "block";
+//         document.getElementById('analyzeButton').style.display = "block";
+//         document.getElementById('categorySection').style.gridColumn = 2;
+//         document.getElementById('categorySection').style.gridRow = 2;
        
-        moduleChanged()
-    }
-}
+//         moduleChanged()
+//     }
+// }
 
 
 
@@ -158,7 +158,11 @@ function searchTabChanged(e) {
     
         {/* <form className="inputForm"> */}
         {/* <div className="ui inverted vertical labeled icon ui overlay left thin visible sidebar menu"> */}
-export const SideBarWrapper = ({setInputData, inputData, setReadyResults, readyResults, setSearchClicked, searchClicked, setCurrentTab, setCountryOptions, countryOptions, isVisible, setVisible,...props}) => {
+
+
+
+
+export const SideBarWrapper = ({sideBarVisible, setSideBarVisible,setInputData, inputData, setReadyResults, readyResults, setSearchClicked, searchClicked, setCurrentTab, setCountryOptions, countryOptions, isVisible, setVisible,...props}) => {
     
     // const [countryOptions, setCountryOptions] = useState({region:"US" });       //, displayMode:"regions",resolution:"countries"
     const [data,setRegionData] = useState(regionData);
@@ -168,14 +172,18 @@ export const SideBarWrapper = ({setInputData, inputData, setReadyResults, readyR
     const [timeSliderCreated, setTimeSliderCreated] = useState(false);
     
     
-    
-        
-    
-
 
     function regionChanged() {
         var selected = document.getElementById("regionElement")
-        console.log('selected.value',selected.value)
+        
+        if(selected.value=="ALL") {
+            document.getElementById("backToGlobalBtn").classList.remove("showing");
+        }
+        else {
+            document.getElementById("backToGlobalBtn").classList.add("showing");
+        }
+        
+
         if(selected.value=="US") setCountryOptions({...countryOptions,region:selected.value})           // resolution:"provinces", 
         else setCountryOptions({...countryOptions,  region:selected.value})         //resolution:"countries",
     
@@ -190,7 +198,7 @@ export const SideBarWrapper = ({setInputData, inputData, setReadyResults, readyR
                 body["trendDate"] = trendDate;
             }
             else if(moduleName=="realTimeTrends") {
-                body["category"] = abridgedCategories[document.getElementById("categoryElement").value]
+                // body["category"] = abridgedCategories[document.getElementById("categoryElement").value]
             }
         
             else if(moduleName=="interestOverTime" || moduleName=="interestByRegion" || moduleName=="relatedQueries") {
@@ -210,22 +218,7 @@ export const SideBarWrapper = ({setInputData, inputData, setReadyResults, readyR
         })
         
     }
-    function createSlider() {
-        
-        if(!timeSliderCreated) {
-            console.log("creating slider")
-            noUiSlider.create(document.getElementById("dateSlider"), dateSliderOptions);
-            document.getElementById("dateSlider").noUiSlider.on('update', function (values, handle) {
-                var startDateObj = new Date(parseInt(values[0]));
-                var endDateObj = new Date(parseInt(values[1]));
-                document.getElementById("startDateElement").value =  startDateObj.toISOString().substr(0,10)
-                document.getElementById("endDateElement").value = endDateObj.toISOString().substr(0,10)
-            })
-            setTimeSliderCreated(true)
-            
-            
-        }
-    }
+    
     function searchBtnHandler(e) {
         e.stopPropagation()
         buildRequestBody()
@@ -248,60 +241,63 @@ export const SideBarWrapper = ({setInputData, inputData, setReadyResults, readyR
         var modName = data.value
         setModuleName(modName)
         
-        document.getElementById("moduleSelectSection").style.display = 'block';
+        // document.getElementById("moduleSelectSection").style.display = 'block';
         if(modName=="dailyTrends") {
             // document.getElementById('dateRangeSection').style.display = 'none';
-            document.getElementById('trendDateSection').style.display = 'block';
-            document.getElementById('keywordEntrySection').style.display = 'none'
-            document.getElementById('categorySection').style.display = 'none'
+            // document.getElementById('trendDateSection').style.display = 'block';
+            // document.getElementById('keywordEntrySection').style.display = 'none'
+            // document.getElementById('categorySection').style.display = 'none'
             // document.getElementsByClassName("formGrid2")[0].style.display = 'none'
         }
         else if(modName=="interestOverTime") {
             // document.getElementById('dateRangeSection').style.display = 'block';
-            document.getElementById('trendDateSection').style.display = 'none';
-            document.getElementById('keywordEntrySection').style.display = 'flex'   
+            // document.getElementById('trendDateSection').style.display = 'none';
+            // document.getElementById('keywordEntrySection').style.display = 'flex'   
             // document.getElementsByClassName("formGrid2")[0].style.display = 'grid'
-            document.getElementById('categorySection').style.display = 'block'
+            // document.getElementById('categorySection').style.display = 'block'
+            // createSlider();
         }
         else if(modName=="realTimeTrends") {
             // document.getElementById('dateRangeSection').style.display = 'none';
-            document.getElementById('trendDateSection').style.display = 'none';
-            document.getElementById('keywordEntrySection').style.display = 'none'   
-            document.getElementById('categorySection').style.display = 'block'
+            // document.getElementById('trendDateSection').style.display = 'none';
+            // document.getElementById('keywordEntrySection').style.display = 'none'   
+            // document.getElementById('categorySection').style.display = 'block'
             
     
             //abridgedCategories
-            var categoryElement = document.getElementById('categoryElement');
-            while(categoryElement.firstChild) categoryElement.remove(categoryElement.firstChild);
-            var abridgedCats = Object.keys(abridgedCategories);
-            for(let c=0; c < abridgedCats.length; ++c) {
-                let opt = document.createElement('option');
-                opt.key=c;
-                opt.innerHTML = abridgedCats[c];
-                opt.value = abridgedCats[c];
-                categoryElement.appendChild(opt);
-            }
+            // var categoryElement = document.getElementById('categoryElement');
+            // while(categoryElement.firstChild) categoryElement.remove(categoryElement.firstChild);
+            // var abridgedCats = Object.keys(abridgedCategories);
+            // for(let c=0; c < abridgedCats.length; ++c) {
+            //     let opt = document.createElement('option');
+            //     opt.key=c;
+            //     opt.innerHTML = abridgedCats[c];
+            //     opt.value = abridgedCats[c];
+            //     categoryElement.appendChild(opt);
+            // }
+            
             
         }
         else if(modName=="relatedQueries") { 
             // document.getElementById('dateRangeSection').style.display = 'block';
-            document.getElementById('trendDateSection').style.display = 'none';
-            document.getElementById('keywordEntrySection').style.display = 'flex'   
+            // document.getElementById('trendDateSection').style.display = 'none';
+            // document.getElementById('keywordEntrySection').style.display = 'flex'   
             // document.getElementsByClassName("formGrid2")[0].style.display = 'grid'
-            document.getElementById('categorySection').style.display = 'block'
-            createSlider();
+            // // document.getElementById('categorySection').style.display = 'block'
+            
+            // createSlider();
         }
         else if(modName=="interestByRegion") {
             // document.getElementById('dateRangeSection').style.display = 'block';
-            document.getElementById('trendDateSection').style.display = 'none';
-            document.getElementById('keywordEntrySection').style.display = 'flex'   
+            // document.getElementById('trendDateSection').style.display = 'none';
+            // document.getElementById('keywordEntrySection').style.display = 'flex'   
             // document.getElementsByClassName("formGrid2")[0].style.display = 'grid'
-            document.getElementById('categorySection').style.display = 'block'
+            // document.getElementById('categorySection').style.display = 'block'
+            document.getElementById("dateSlider").display='block'
             createSlider();
             
         }
     }
-    var closeButtonClicked = () => {setVisible(false)};
    
     async function displayResults(moduleName, results) {
         var resultItems = document.getElementById("resultItems")
@@ -359,103 +355,122 @@ export const SideBarWrapper = ({setInputData, inputData, setReadyResults, readyR
         {value:"relatedQueries", key:"Related Queries", text:"Related Queries"}
 
     ]
-  
+    function sideBarHandleClicked(e){
+        var sideBarHandle = document.getElementById('sideBarHandle');
+        setSideBarVisible(sideBarVisible?false:true);
+        
+        sideBarHandle.classList.toggle('showing')
+
+        // e.target.firstChild.classList.toggle('left')
+        // e.target.firstChild.classList.toggle('right')
+ 
+    }
+
+    function createSlider() {
+        if(!timeSliderCreated) {
+            // var dateSlider = document.createElement("div");
+            // dateSlider.id = "dateSlider"
+            var dateSlider = document.getElementById("dateSlider")
+            // document.getElementById('sliderRow').appendChild(dateSlider);
+            noUiSlider.create(dateSlider, dateSliderOptions);
+            dateSlider.noUiSlider.on('update', function (values, handle) {
+                var startDateObj = new Date(parseInt(values[0]));
+                var endDateObj = new Date(parseInt(values[1]));
+                if(document.getElementById("startDateElement")) document.getElementById("startDateElement").value =  startDateObj.toISOString().substr(0,10)
+                if(document.getElementById("endDateElement")) document.getElementById("endDateElement").value = endDateObj.toISOString().substr(0,10)
+            })
+            setTimeSliderCreated(true)
+            return dateSlider;
+        }
+    }
     
+
     return (
         
      <Sidebar.Pushable as={Segment}>
-         {/* width="very wide" */}
-        <Sidebar id="inputSideBar" as={Menu} animation='overlay' icon='labeled' vertical visible={isVisible} width="very wide" direction="left" >
-            <Menu.Item>
+        {/* <Transition.Group> */}
+        {/* <Button id="sideBarHandle" attached icon="caret square left outline" onClick={(e)=>sideBarHandleClicked(e)} /> */}
+
+        <Button id="backToGlobalBtn" attached icon="arrow left" />
+        <Button id="sideBarHandle" attached icon="chart line" onClick={(e)=>sideBarHandleClicked(e)} />
+        {/* </Transition.Group> */}
+        
+        <Sidebar id="inputSideBar" as={Menu} animation='overlay' icon='labeled' vertical visible={isVisible}  direction="right" >
+            <Menu.Header>
+                Input Form
+            </Menu.Header>
+            <Menu.Item  >
                 <Grid columns={3}>
-                    <Grid.Row>
-                        <Grid.Column/>
-                        <Grid.Column/>
-                        <Grid.Column>
-                            <Button icon="caret square left outline" onClick={closeButtonClicked}>
-                                {/* <i aria-hidden="true"  className="close icon"></i> */}
-                            </Button>
-                        </Grid.Column>
-                        
-                    </Grid.Row>
-                </Grid>
-                
-            </Menu.Item>
-            <Menu.Item>
-                <Grid columns={3} stretched>
 
                     <Grid.Row>
                         <Grid.Column id="moduleSelectSection" >
-                            <Dropdown labeled button placeholder="Module" fluid id="moduleSelectElement" options={moduleOptions} onChange={(e,d)=>moduleChanged(e,d)}>
+                            <Dropdown fluid labeled button placeholder="Module"  id="moduleSelectElement" options={moduleOptions} onChange={(e,d)=>moduleChanged(e,d)}>
                             </Dropdown>
                         </Grid.Column>
-                        <Grid.Column  id="trendDateSection">
-                            <Input label="Trend date" type="date" id="trendDateElement" min="2004-01-01"/>
-                        </Grid.Column>
+                        
                     </Grid.Row>
 
-                    <Grid.Row stretched>
+                    <Grid.Row>
                         <Grid.Column  id="regionSection" >
                             <Dropdown  scrolling floating labeled button placeholder='Select Region' fluid id="regionElement" onChange={regionChanged} options={regionOptions}>  
                             </Dropdown>
       
                         </Grid.Column>    
                         <Grid.Column id="categorySection">
-                            {/* <Menu compact> */}
-
                                 <Dropdown fluid floating labeled button text="Category" id="categoryElement" onChange={categoryChanged}>
                                     <Dropdown.Menu >
                                         <Dropdown.Item text="blank"></Dropdown.Item>
                                     </Dropdown.Menu>
                                 </Dropdown>
-                            {/* </Menu> */}
                         </Grid.Column>
                     </Grid.Row>                    
            
                     <Grid.Row stretched>
-                        <Grid.Column id="keywordEntrySection">
+                       { (moduleName!="dailyTrends" && moduleName!="realTimeTrends") &&<Grid.Column id="keywordEntrySection">
                             
                             <div id="keywordField" className="form-control search-container">
                                 <div className='search-container-inputs'>
                                     <Input label="Keyword(s)" id='keywordInput' onKeyUp={(e)=> keyUpOnKeywordInput(e)} onKeyDown={(e)=> keyDownOnKeywordInput(e)}
                                         action={
-                                        <button  className="ui icon button"  id="addKeywordButton"type="button"  onClick={addKeywordPressed} style={{display:'block'}}>
-                                            <img src="plus.svg" width="20" height="20"/>
-                                        </button>} />
+                                            <button  className="ui icon button"  id="addKeywordButton"type="button"  onClick={addKeywordPressed} style={{display:'block'}}>
+                                                <img src="plus.svg" width="20" height="20"/>
+                                            </button>} />
                                 </div>    
                                 <div id="termList" className="search-term-container"></div>
                             </div>
 
-                        </Grid.Column>
+                        </Grid.Column>}
                     </Grid.Row>
                     <Grid.Row stretched>
+
+
+                        {(moduleName=="dailyTrends") && <Grid.Column  id="trendDateSection">
+                            <Input label="Trend date" type="date" id="trendDateElement" min="2004-01-01"/>
+                        </Grid.Column>}
+
+                        {(moduleName!="dailyTrends") && <Grid.Column>
+                            <Input label={<Label attached='top'>Start Date</Label>} type="date" id="startDateElement" min="2004-01-01"/>
+                        </Grid.Column>}
+
+                        {(moduleName!="dailyTrends") &&<Grid.Column><br/></Grid.Column>}
+
+                        {(moduleName!="dailyTrends") && 
                         <Grid.Column>
-                            <Input label="Start Date" type="date" id="startDateElement" min="2004-01-01"/>
-                        </Grid.Column>
-                        <Grid.Column><br/></Grid.Column>
-                        <Grid.Column>
-                        <Input label="End Date" type="date" id="endDateElement" />
-                        </Grid.Column>
+                            <Input label={<Label  attached='top'>End Date</Label>} type="date" id="endDateElement" />
+                        </Grid.Column>}
+
+
                     </Grid.Row>
-                    <Grid.Row stretched width={5}>
-                        <div id="dateSlider"></div> 
+
+                    <Grid.Row id="sliderRow" stretched width={5}>
+                        <div id="dateSlider" />
                        
-                        {/* <Grid.Column>
+                       
                         
-                        </Grid.Column> */}
                      
+                    
                     </Grid.Row>
                 </Grid>
-             
-                {/* <div  style={{display:'none'}} className="inputFormSection mb-3">
-                    <label htmlFor="startDateElement">Start date:</label>
-                    
-                    <label htmlFor="endDateElement">End date:</label>
-                    <input type="date" id="endDateElement" />
-                    
-                    <div id="dateSlider"></div>
-        
-                </div> */}
             </Menu.Item>
             <Menu.Item className="formButtonGrid mb-3">
                 <button className="btn btn-primary"  type="button" onClick={(e)=>searchBtnHandler(e)} >Search</button>
@@ -477,7 +492,11 @@ export const SideBarWrapper = ({setInputData, inputData, setReadyResults, readyR
             </List>
             
         </Sidebar>
-        <Sidebar.Pusher>{props.children}</Sidebar.Pusher>
+        
+        <Sidebar.Pusher>
+            
+            {props.children}
+        </Sidebar.Pusher>
         
         
     </Sidebar.Pushable>)

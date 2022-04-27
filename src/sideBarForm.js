@@ -6,16 +6,11 @@ import './index.css'
 import {sendRequestToBackend} from './frontEndHelpers.js';
 import { DateRangeSlider } from './dateRangeSlider';
 
-
-var searchTermColors = []
-
 import {abridgedCategories, regionCodes, regionData, regionCodesReformatted} from '../server/geoHelpers.js';
-
 import noUiSlider from 'nouislider';
 
-
 var searchTerms = [];
-
+var searchTermColors = []
 
 function countryAnalysisClicked() {
     var selectElement =  document.getElementById("regionElement");
@@ -28,7 +23,6 @@ function countryAnalysisClicked() {
     wikiTitleSearch(mainTitle)
     .catch((err)=>{mainExists=false})
     .then(result=> {   console.log('main result', result) })
-
 
     // checking for country's demographics Wiki page
     wikiTitleSearch(demographicsTitle)
@@ -43,14 +37,8 @@ function countryAnalysisClicked() {
         var demoPage = new WikiSubject({wikiTitle:demographicsTitle, depth:1});
         console.log('demoPage',demoPage)
     }
-
-    // console.log('titleSearch',titleSearch)
     // var countryPage = new WikiSubject()
 }
-
-
-
-
 
 function getRandomInt(min, max) {
     min = Math.ceil(min);
@@ -64,8 +52,7 @@ function addKeywordPressed() {
     if(keywordInput.value.length==0) return;
 
     var item = document.createElement('div');
-    var hue;
-    var sat;
+    var hue; var sat;
     var uniqueColorCreated = false;
 
     while(!uniqueColorCreated) {
@@ -166,13 +153,9 @@ export const SideBarWrapper = ({sideBarVisible, setSideBarVisible,setInputData, 
     
     // const [countryOptions, setCountryOptions] = useState({region:"US" });       //, displayMode:"regions",resolution:"countries"
     const [data,setRegionData] = useState(regionData);
-
     const [moduleName, setModuleName] = useState("dailyTrends");
-
     const [timeSliderCreated, setTimeSliderCreated] = useState(false);
     
-    
-
     function regionChanged() {
         var selected = document.getElementById("regionElement")
         
@@ -183,7 +166,6 @@ export const SideBarWrapper = ({sideBarVisible, setSideBarVisible,setInputData, 
             document.getElementById("backToGlobalBtn").classList.add("showing");
         }
         
-
         if(selected.value=="US") setCountryOptions({...countryOptions,region:selected.value})           // resolution:"provinces", 
         else setCountryOptions({...countryOptions,  region:selected.value})         //resolution:"countries",
     
@@ -224,46 +206,25 @@ export const SideBarWrapper = ({sideBarVisible, setSideBarVisible,setInputData, 
         buildRequestBody()
         .then(result=> {
             setInputData(result);
-
             setSearchClicked(searchClicked? false:true)
         })
-        
-        
-        
-        
-        
-
     }
     
     function moduleChanged(e,data) {
-        
-        
         var modName = data.value
         setModuleName(modName)
         
         // document.getElementById("moduleSelectSection").style.display = 'block';
         if(modName=="dailyTrends") {
-            // document.getElementById('dateRangeSection').style.display = 'none';
-            // document.getElementById('trendDateSection').style.display = 'block';
-            // document.getElementById('keywordEntrySection').style.display = 'none'
-            // document.getElementById('categorySection').style.display = 'none'
-            // document.getElementsByClassName("formGrid2")[0].style.display = 'none'
+            // dateRangeSection --> none, trendDateSection--> block, keywordEntrySection-->none,  categorySection-->none
         }
         else if(modName=="interestOverTime") {
-            // document.getElementById('dateRangeSection').style.display = 'block';
-            // document.getElementById('trendDateSection').style.display = 'none';
-            // document.getElementById('keywordEntrySection').style.display = 'flex'   
-            // document.getElementsByClassName("formGrid2")[0].style.display = 'grid'
-            // document.getElementById('categorySection').style.display = 'block'
+            // dateRangeSection --> block, trendDateSection--> none, keywordEntrySection-->flex,  categorySection-->block
             // createSlider();
         }
         else if(modName=="realTimeTrends") {
-            // document.getElementById('dateRangeSection').style.display = 'none';
-            // document.getElementById('trendDateSection').style.display = 'none';
-            // document.getElementById('keywordEntrySection').style.display = 'none'   
-            // document.getElementById('categorySection').style.display = 'block'
+            // dateRangeSection --> none, trendDateSection--> none, keywordEntrySection-->none,  categorySection-->block
             
-    
             //abridgedCategories
             // var categoryElement = document.getElementById('categoryElement');
             // while(categoryElement.firstChild) categoryElement.remove(categoryElement.firstChild);
@@ -279,23 +240,14 @@ export const SideBarWrapper = ({sideBarVisible, setSideBarVisible,setInputData, 
             
         }
         else if(modName=="relatedQueries") { 
-            // document.getElementById('dateRangeSection').style.display = 'block';
-            // document.getElementById('trendDateSection').style.display = 'none';
-            // document.getElementById('keywordEntrySection').style.display = 'flex'   
-            // document.getElementsByClassName("formGrid2")[0].style.display = 'grid'
-            // // document.getElementById('categorySection').style.display = 'block'
+            // dateRangeSection --> block, trendDateSection--> none, keywordEntrySection-->flex,  categorySection-->block
             
             // createSlider();
         }
         else if(modName=="interestByRegion") {
-            // document.getElementById('dateRangeSection').style.display = 'block';
-            // document.getElementById('trendDateSection').style.display = 'none';
-            // document.getElementById('keywordEntrySection').style.display = 'flex'   
-            // document.getElementsByClassName("formGrid2")[0].style.display = 'grid'
-            // document.getElementById('categorySection').style.display = 'block'
+            // dateRangeSection --> block, trendDateSection--> none, keywordEntrySection-->flex,  categorySection-->block
             document.getElementById("dateSlider").display='block'
             createSlider();
-            
         }
     }
    
@@ -303,23 +255,12 @@ export const SideBarWrapper = ({sideBarVisible, setSideBarVisible,setInputData, 
         var resultItems = document.getElementById("resultItems")
         while(resultItems.firstChild) resultItems.removeChild(resultItems.firstChild);
 
-        
         for(let i =0; i < results.length; ++i) {
-
-
-            /*
-                item
-                    img
-                    content
-                        header
-                        description
-            */
             var li = document.createElement("item");
             var img = document.createElement("img");
             var content = document.createElement("content");
             var header = document.createElement("header");
             var description = document.createElement("description");
-            
             
             if(moduleName=="dailyTrends") {
                 header.innerHTML = results[i].title.query
@@ -328,7 +269,6 @@ export const SideBarWrapper = ({sideBarVisible, setSideBarVisible,setInputData, 
             }
             else if(moduleName=="realTimeTrends") {
                 header.innerHTML = results[i].title;
-                
                 img.src = results[i].image.imgUrl
             }
             else if(moduleName=="interestByRegion") {}
@@ -353,25 +293,17 @@ export const SideBarWrapper = ({sideBarVisible, setSideBarVisible,setInputData, 
         {value:"interestOverTime", key:"Interest Over Time", text:"Interest Over Time"},
         {value:"interestByRegion", key:"Interest By Region", text:"Interest By Region"},
         {value:"relatedQueries", key:"Related Queries", text:"Related Queries"}
-
     ]
     function sideBarHandleClicked(e){
         var sideBarHandle = document.getElementById('sideBarHandle');
         setSideBarVisible(sideBarVisible?false:true);
-        
         sideBarHandle.classList.toggle('showing')
-
-        // e.target.firstChild.classList.toggle('left')
-        // e.target.firstChild.classList.toggle('right')
  
     }
 
     function createSlider() {
         if(!timeSliderCreated) {
-            // var dateSlider = document.createElement("div");
-            // dateSlider.id = "dateSlider"
             var dateSlider = document.getElementById("dateSlider")
-            // document.getElementById('sliderRow').appendChild(dateSlider);
             noUiSlider.create(dateSlider, dateSliderOptions);
             dateSlider.noUiSlider.on('update', function (values, handle) {
                 var startDateObj = new Date(parseInt(values[0]));
@@ -388,33 +320,21 @@ export const SideBarWrapper = ({sideBarVisible, setSideBarVisible,setInputData, 
     return (
         
      <Sidebar.Pushable as={Segment}>
-        {/* <Transition.Group> */}
-        {/* <Button id="sideBarHandle" attached icon="caret square left outline" onClick={(e)=>sideBarHandleClicked(e)} /> */}
-
         <Button id="backToGlobalBtn" attached icon="arrow left" />
         <Button id="sideBarHandle" attached icon="chart line" onClick={(e)=>sideBarHandleClicked(e)} />
-        {/* </Transition.Group> */}
-        
         <Sidebar id="inputSideBar" as={Menu} animation='overlay' icon='labeled' vertical visible={isVisible}  direction="right" >
-            <Menu.Header>
-                Input Form
-            </Menu.Header>
-            <Menu.Item  >
+            <Menu.Header>Input Form</Menu.Header>
+            <Menu.Item >
                 <Grid columns={3}>
-
                     <Grid.Row>
                         <Grid.Column id="moduleSelectSection" >
-                            <Dropdown fluid labeled button placeholder="Module"  id="moduleSelectElement" options={moduleOptions} onChange={(e,d)=>moduleChanged(e,d)}>
-                            </Dropdown>
+                            <Dropdown fluid labeled button placeholder="Module"  id="moduleSelectElement" options={moduleOptions} onChange={(e,d)=>moduleChanged(e,d)} />
                         </Grid.Column>
-                        
                     </Grid.Row>
 
                     <Grid.Row>
                         <Grid.Column  id="regionSection" >
-                            <Dropdown  scrolling floating labeled button placeholder='Select Region' fluid id="regionElement" onChange={regionChanged} options={regionOptions}>  
-                            </Dropdown>
-      
+                            <Dropdown scrolling floating labeled button placeholder='Select Region' fluid id="regionElement" onChange={regionChanged} options={regionOptions} />  
                         </Grid.Column>    
                         <Grid.Column id="categorySection">
                                 <Dropdown fluid floating labeled button text="Category" id="categoryElement" onChange={categoryChanged}>
@@ -438,12 +358,9 @@ export const SideBarWrapper = ({sideBarVisible, setSideBarVisible,setInputData, 
                                 </div>    
                                 <div id="termList" className="search-term-container"></div>
                             </div>
-
                         </Grid.Column>}
                     </Grid.Row>
                     <Grid.Row stretched>
-
-
                         {(moduleName=="dailyTrends") && <Grid.Column  id="trendDateSection">
                             <Input label="Trend date" type="date" id="trendDateElement" min="2004-01-01"/>
                         </Grid.Column>}
@@ -458,17 +375,10 @@ export const SideBarWrapper = ({sideBarVisible, setSideBarVisible,setInputData, 
                         <Grid.Column>
                             <Input label={<Label  attached='top'>End Date</Label>} type="date" id="endDateElement" />
                         </Grid.Column>}
-
-
                     </Grid.Row>
 
                     <Grid.Row id="sliderRow" stretched width={5}>
-                        <div id="dateSlider" />
-                       
-                       
-                        
-                     
-                    
+                        <div id="dateSlider"/>
                     </Grid.Row>
                 </Grid>
             </Menu.Item>
@@ -490,15 +400,9 @@ export const SideBarWrapper = ({sideBarVisible, setSideBarVisible,setInputData, 
                     )
                 })}
             </List>
-            
         </Sidebar>
-        
-        <Sidebar.Pusher>
-            
-            {props.children}
-        </Sidebar.Pusher>
-        
-        
+
+        <Sidebar.Pusher>{props.children}</Sidebar.Pusher>
     </Sidebar.Pushable>)
 }
 

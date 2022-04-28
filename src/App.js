@@ -4,7 +4,7 @@ import React, {Component, useState, useEffect} from 'react';
 import {Home} from './Home.js';
 import {NavBar} from './NavBar.js';
 import {HashRouter, Route, Routes} from 'react-router-dom'
-
+import * as d3 from "d3";
 
 import {AppContextProvider} from './AppContext';
 import {WikiSearchPage} from './wikiSearchPage'

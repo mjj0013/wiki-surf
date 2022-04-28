@@ -190,6 +190,84 @@ export var Home = () => {
             li.appendChild(img) 
         }
     }
+    var lastZoom = {x:0,y:0}
+    var transformMatrix = [1, 0, 0, 1, 0, 0];
+    var zoomIntensity = 0.2;
+    var dragStart = {x:0, y:0}
+    var zoomHasHappened = 0;
+    var captureZoomEvent = (e) => {
+        lastZoom.x = e.offsetX;
+        lastZoom.y = e.offsetY;
+        let delta = e.wheelDelta/1000;
+        if(delta) updateZoom(delta);
+        zoomHasHappened = 1;
+        return false;
+    }
+    var updateZoom = (delta) => {
+        let wheelNorm = delta;
+        let zoomVar = Math.pow(zoomIntensity,wheelNorm);
+        for(var i =0; i < 6; ++i) transformMatrix[i] *=(zoomVar)
+        
+        transformMatrix[4] += (1-zoomVar)*(lastZoom.x);
+        transformMatrix[5] += (1-zoomVar)*(lastZoom.y);
+
+        document.getElementById('regions').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
+       
+        zoomHasHappened = 0;
+    }
+
+    var closeDragElement = () =>{
+       
+        document.onmouseup = null;
+        document.onmousemove = null;
+       
+    }
+    function getTransformedPt(x,y, transformMatrix) {
+        var focalPt = new DOMPoint();
+        focalPt.x = x;
+        focalPt.y = y;
+        var matrix = new DOMMatrix(transformMatrix)
+        return focalPt.matrixTransform(matrix.inverse());
+    }
+    
+    var dragMouseDown = (e) =>{
+        e = e || window.event;
+        console.log(e.target.id);
+        
+        
+        // else return e.preventDefault() && false;
+        // if(e.target.id=="resultSVGBackground" && this.currentSVGCursorMode=="drag") {
+        //     document.getElementById("resultSVG").style.cursor = 'grabbing'
+        // }
+        lastZoom.x = e.offsetX;
+        lastZoom.y = e.offsetY;
+        dragStart = getTransformedPt(lastZoom.x, lastZoom.y, transformMatrix);
+        console.log("dragStrt", dragStart)
+        document.onmouseup = closeDragElement;
+        document.onmousemove = elementDrag;
+        return e.preventDefault() && false;
+    }
+    
+    
+    var elementDrag = (e) => {    
+        
+        e = e || window.event;
+        lastZoom = {x:e.offsetX, y:e.offsetY}
+        if(dragStart) {
+            var pt = getTransformedPt(lastZoom.x, lastZoom.y, transformMatrix);
+            
+            panSVG((pt.x-dragStart.x)/4, (pt.y-dragStart.y)/4)
+        }
+        return e.preventDefault() && false;
+    }
+
+    var panSVG = (dx,dy) =>{
+        transformMatrix[4] += dx;
+        transformMatrix[5] += dy;
+        document.getElementById('regions').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
+        // document.getElementById('curveGroup').setAttributeNS(null, "transform", `matrix(${this.transformMatrix.join(' ')})`);
+        // document.getElementById('ptGroup').setAttributeNS(null, "transform", `matrix(${this.transformMatrix.join(' ')})`);
+    }
     const mouseSelectRegion = [
         {
             eventName:"select",
@@ -230,11 +308,22 @@ export var Home = () => {
     // fetchVitalDB("ISO_3166-2",true);
    
     const [sideBarVisible, setSideBarVisible] = useState(false);
-    const [countryOptions, setCountryOptions] = useState({region:"US" });       //, displayMode:"regions",resolution:"countries"
+    const [countryOptions, setCountryOptions] = useState({});       //, displayMode:"regions",resolution:"countries"
     const [currentTab, setCurrentTab] = useState("globalSearchTab"); 
     const [searchClicked, setSearchClicked] = useState(false);
     const [readyResults, setReadyResults] = useState(null);
     const [inputData, setInputData] = useState(null);
+
+
+    function getRandomInt(min, max) {
+        min = Math.ceil(min);
+        max = Math.floor(max);
+        return Math.floor(Math.random() * (max - min) + min);
+    }
+    var W =  1160;
+    var H = 1000;
+    
+   
     useEffect(()=> {
         if(searchClicked) {
             // if(inputData.module=="dailyTrends" || inputData.module=="realTimeTrends") {
@@ -244,8 +333,38 @@ export var Home = () => {
             processClientRequest(inputData)
 
         }
+        var svg = d3.selectAll("#regions")
+        // .attr("className","map")
+        // .attr("width",W)
+        // .attr("height",H)
+        d3.json("./world.json", function(error, data) {
+            for(let p=0; p < data.objects.admin.geometries.length; ++p) {
+                svg.append("path")
+                .datum(topojson.feature(data, data.objects.admin.geometries[p]))
+                .attr("d", d3.geo.path().projection(d3.geo.mercator()))
+                .attr("fill", `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`)
+            }
+        })
+        // var svg = document.getElementById("worldMap");
+        
+        // d3.json("./world.json", function(error, data) {
+        //     for(let p=0; p < data.objects.admin.geometries.length; ++p) {
+        //         svg.append("path")
+        //         .datum(topojson.feature(data, data.objects.admin.geometries[p]))
+        //         .attr("d", d3.geo.path().projection(d3.geo.mercator()))
+        //         .attr("fill", `rgb(${getRandomInt(0,255)}, ${getRandomInt(0,255)}, ${getRandomInt(0,255)})`)
+        //     }
+        // })
+        var worldMap = document.getElementById("worldMap")
+        worldMap.addEventListener("wheel",captureZoomEvent,false);
+        worldMap.addEventListener("DOMMouseScroll", captureZoomEvent,false);
         
     });
+    
+
+
+    // https://www.naturalearthdata.com/downloads/10m-cultural-vectors/
+    
     return (
 
             <SideBarWrapper sideBarVisible={sideBarVisible} setSideBarVisible={setSideBarVisible} setInputData={setInputData} inputData={inputData} readyResults={readyResults} setReadyResults={setReadyResults} searchClicked={searchClicked} setSearchClicked={setSearchClicked} setCurrentTab={setCurrentTab} countryOptions={countryOptions} setCountryOptions={setCountryOptions} isVisible={sideBarVisible} setVisible={setSideBarVisible}>
@@ -273,7 +392,10 @@ export var Home = () => {
                 </div> 
             </div> */}
             <div id="globalSearch" >
-                <Chart id="worldMap" className="map" chartType="GeoChart" data={regionData}  chartPackages={["corechart","controls"]} chartEvents={mouseSelectRegion} />
+                {/* <Chart id="worldMap" className="map" chartType="GeoChart" data={regionData} options={countryOptions} chartPackages={["corechart","controls"]} chartEvents={mouseSelectRegion} /> */}
+                <svg id="worldMap" className="map" width={W} height={H} >
+                    <g id="regions"/>
+                </svg>
             </div>
 
             </SideBarWrapper>

@@ -1,10 +1,10 @@
 // import noUiSlider from 'nouislider';
 import React, { useEffect ,useState} from 'react';
-import {Button, Input, Container, Dropdown, Grid, Image, Label, List, Menu, Segment, Sidebar , Transition} from 'semantic-ui-react'
+import {Item,Card, Button, Input, Container, Dropdown, Grid, Image, Label, List, Menu, Segment, Sidebar , Transition} from 'semantic-ui-react'
 import './index.css'
 
 import {sendRequestToBackend} from './frontEndHelpers.js';
-import { DateRangeSlider } from './dateRangeSlider';
+
 
 import {abridgedCategories, regionCodes, regionData, regionCodesReformatted} from '../server/geoHelpers.js';
 import noUiSlider from 'nouislider';
@@ -146,7 +146,16 @@ function categoryChanged() {}
         {/* <form className="inputForm"> */}
         {/* <div className="ui inverted vertical labeled icon ui overlay left thin visible sidebar menu"> */}
 
-
+var moduleOptions = [
+    {value:"dailyTrends", key:"Daily Trends", text:"Daily Trends"},
+    {value:"realTimeTrends", key:"Real Time Trends", text:"Real Time Trends"},
+    {value:"interestOverTime", key:"Interest Over Time", text:"Interest Over Time"},
+    {value:"interestByRegion", key:"Interest By Region", text:"Interest By Region"},
+    {value:"relatedQueries", key:"Related Queries", text:"Related Queries"}
+]
+var regionOptions  = regionCodesReformatted.map((obj,idx)=>{ 
+    return {key:idx, text:obj.name, value:obj.code, selected:obj.name=="United States"?true:false}
+})
 
 
 export const SideBarWrapper = ({sideBarVisible, setSideBarVisible,setInputData, inputData, setReadyResults, readyResults, setSearchClicked, searchClicked, setCurrentTab, setCountryOptions, countryOptions, isVisible, setVisible,...props}) => {
@@ -156,6 +165,8 @@ export const SideBarWrapper = ({sideBarVisible, setSideBarVisible,setInputData, 
     const [moduleName, setModuleName] = useState("dailyTrends");
     const [timeSliderCreated, setTimeSliderCreated] = useState(false);
     
+
+
     function regionChanged() {
         var selected = document.getElementById("regionElement")
         
@@ -166,8 +177,10 @@ export const SideBarWrapper = ({sideBarVisible, setSideBarVisible,setInputData, 
             document.getElementById("backToGlobalBtn").classList.add("showing");
         }
         
+
+        // remember, some modules can access the city/county level of US region
         if(selected.value=="US") setCountryOptions({...countryOptions,region:selected.value})           // resolution:"provinces", 
-        else setCountryOptions({...countryOptions,  region:selected.value})         //resolution:"countries",
+        else setCountryOptions({...countryOptions,region:selected.value})         //resolution:"countries",
     
     }
     function buildRequestBody() {
@@ -315,13 +328,37 @@ export const SideBarWrapper = ({sideBarVisible, setSideBarVisible,setInputData, 
             return dateSlider;
         }
     }
+
+    useEffect(()=>{
+        if(moduleName == "dailyTrends" || moduleName == "realTimeTrends") {
+            document.getElementById("dateSlider").classList.add('hidden')
+        }
+        else document.getElementById("dateSlider").classList.remove('hidden')
+    })
     
 
     return (
         
      <Sidebar.Pushable as={Segment}>
-        <Button id="backToGlobalBtn" attached icon="arrow left" />
-        <Button id="sideBarHandle" attached icon="chart line" onClick={(e)=>sideBarHandleClicked(e)} />
+        
+        <Card id="sideBarHandle">
+            <Card.Content>
+                <Item.Group>
+                    <Item id="sideBarBtnWrapper">
+                        <Item.Content>
+                            <Button id="sideBarBtn" attached icon="chart line" onClick={(e)=>sideBarHandleClicked(e)} />
+                        </Item.Content>
+                        
+                    </Item>
+                
+                </Item.Group>
+            </Card.Content>
+        </Card>
+        
+        {
+            <Button id="backToGlobalBtn" attached icon="arrow left" />
+        }
+
         <Sidebar id="inputSideBar" as={Menu} animation='overlay' icon='labeled' vertical visible={isVisible}  direction="right" >
             <Menu.Header>Input Form</Menu.Header>
             <Menu.Item >

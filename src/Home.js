@@ -358,6 +358,7 @@ export var Home = () => {
         var worldMap = document.getElementById("worldMap")
         worldMap.addEventListener("wheel",captureZoomEvent,false);
         worldMap.addEventListener("DOMMouseScroll", captureZoomEvent,false);
+        worldMap.addEventListener("mousedown", dragMouseDown, false);
         
     });
     

@@ -333,16 +333,44 @@ export var Home = () => {
             processClientRequest(inputData)
 
         }
+        // var mercator = d3.geoProjection(function(x,y) {
+        //     return [x, Math.log(Math.tan(Math.PI/4 + y/2))];
+        // })
         var svg = d3.selectAll("#regions")
         // .attr("className","map")
         // .attr("width",W)
         // .attr("height",H)
         d3.json("./world.json", function(error, data) {
             for(let p=0; p < data.objects.admin.geometries.length; ++p) {
+                // console.log('data.objects.admin.geometries[p]',data.objects.admin.geometries[p])
+                var testP = topojson.feature(data, data.objects.admin.geometries[p]);
+                // console.log('testP',testP)
+              
                 svg.append("path")
                 .datum(topojson.feature(data, data.objects.admin.geometries[p]))
                 .attr("d", d3.geo.path().projection(d3.geo.mercator()))
                 .attr("fill", `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`)
+            
+                
+                // svg.append("text")
+                // .datum(topojson.feature(data, data.objects.admin.geometries[p]))
+               
+                // .attr("x",(d)=>{
+                //     var p = d3.geo.mercator(d);
+                //     return d3.geo.path().centroid(p)[0];
+                // })
+                // .attr("y",(d)=>{
+                //     var p = d3.geo.mercator(d);
+                //     return d3.geo.path().centroid(p)[1];
+                // })
+                
+                // .text(data.objects.admin.geometries[p].properties["ADMIN"])
+                // .data(data,()=> d3.geo.path().centroid(d3.geo.mercator()))
+                // .enter().append("text")
+                //     .attr("x", (d)=>{return d[0]})
+                //     .attr("y",(d)=>{return d[1]})
+
+                // .text("innerHTML", d3.geo.path().centroid(d3.geo.mercator()))
             }
         })
         // var svg = document.getElementById("worldMap");

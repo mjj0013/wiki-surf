@@ -234,15 +234,16 @@ export var Home = () => {
         e = e || window.event;
         console.log(e.target.id);
         
-        
-        // else return e.preventDefault() && false;
-        // if(e.target.id=="resultSVGBackground" && this.currentSVGCursorMode=="drag") {
-        //     document.getElementById("resultSVG").style.cursor = 'grabbing'
-        // }
         lastZoom.x = e.offsetX;
         lastZoom.y = e.offsetY;
         dragStart = getTransformedPt(lastZoom.x, lastZoom.y, transformMatrix);
-        console.log("dragStrt", dragStart)
+
+
+        // these would be used for orthographic projection
+        // projection.rotate([lambda(dragStart.x), theta(dragStart.y)]);
+        // svg.selectAll("path").attr("d", path);
+        
+
         document.onmouseup = closeDragElement;
         document.onmousemove = elementDrag;
         return e.preventDefault() && false;
@@ -255,7 +256,9 @@ export var Home = () => {
         lastZoom = {x:e.offsetX, y:e.offsetY}
         if(dragStart) {
             var pt = getTransformedPt(lastZoom.x, lastZoom.y, transformMatrix);
+
             
+
             panSVG((pt.x-dragStart.x)/4, (pt.y-dragStart.y)/4)
         }
         return e.preventDefault() && false;
@@ -320,10 +323,21 @@ export var Home = () => {
         max = Math.floor(max);
         return Math.floor(Math.random() * (max - min) + min);
     }
-    var W =  1160;
-    var H = 1000;
-    
-   
+    var W =  1160;      //960 , 1160
+    var H = 1000;      // 500 , 1000
+    var projection = d3.geo.orthographic()
+            .scale(250)
+            .translate([W/2, H/2])
+            .clipAngle(90)
+    var lambda = d3.scale.linear()
+        .domain([0,W])
+        .range([-180,180])
+    var theta = d3.scale.linear()
+        .domain([0,H])
+        .range([-90,90])
+    var path = d3.geo.path()
+    .projection(projection)
+    var svg;
     useEffect(()=> {
         if(searchClicked) {
             // if(inputData.module=="dailyTrends" || inputData.module=="realTimeTrends") {
@@ -333,45 +347,45 @@ export var Home = () => {
             processClientRequest(inputData)
 
         }
+
+
+        
         // var mercator = d3.geoProjection(function(x,y) {
         //     return [x, Math.log(Math.tan(Math.PI/4 + y/2))];
         // })
-        var svg = d3.selectAll("#regions")
-        // .attr("className","map")
-        // .attr("width",W)
-        // .attr("height",H)
+        
+        svg = d3.selectAll("#regions")
+        
+    
+
+        var countryData = []
+
         d3.json("./world.json", function(error, data) {
             for(let p=0; p < data.objects.admin.geometries.length; ++p) {
                 // console.log('data.objects.admin.geometries[p]',data.objects.admin.geometries[p])
-                var testP = topojson.feature(data, data.objects.admin.geometries[p]);
+                
                 // console.log('testP',testP)
-              
-                svg.append("path")
-                .datum(topojson.feature(data, data.objects.admin.geometries[p]))
-                .attr("d", d3.geo.path().projection(d3.geo.mercator()))
-                .attr("fill", `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`)
-            
-                
-                // svg.append("text")
+                // svg.append("path")
                 // .datum(topojson.feature(data, data.objects.admin.geometries[p]))
-               
-                // .attr("x",(d)=>{
-                //     var p = d3.geo.mercator(d);
-                //     return d3.geo.path().centroid(p)[0];
-                // })
-                // .attr("y",(d)=>{
-                //     var p = d3.geo.mercator(d);
-                //     return d3.geo.path().centroid(p)[1];
-                // })
+                // .attr("d", d3.geo.path().projection(d3.geo.mercator()))
                 
-                // .text(data.objects.admin.geometries[p].properties["ADMIN"])
-                // .data(data,()=> d3.geo.path().centroid(d3.geo.mercator()))
-                // .enter().append("text")
-                //     .attr("x", (d)=>{return d[0]})
-                //     .attr("y",(d)=>{return d[1]})
-
-                // .text("innerHTML", d3.geo.path().centroid(d3.geo.mercator()))
+                //mercator , orthographic
+                svg.append("path")
+                    .attr("d",path)
+                    .datum(topojson.feature(data, data.objects.admin.geometries[p]))
+                    .attr("id", data.objects.admin.geometries[p].properties["ADM0_A3"])
+                    .attr("d", d3.geo.path().projection(d3.geo.mercator()))
+                    .attr("fill", `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`)
             }
+            // var paths=svg.selectAll("path")
+            // for(let p=0; p < paths.data().length; ++p) {
+            //     var P = paths.data()[p];  
+            //     svg.append("text")
+            //         .text(data.objects.admin.geometries[p].properties["ADMIN"])
+            //         .datum(d3.geo.path().projection(d3.geo.mercator()))
+            //         .attr("x", (d)=> d3.geo.centroid(P)[0])
+            //         .attr("y", (d)=> d3.geo.centroid(P)[1])
+            // }
         })
         // var svg = document.getElementById("worldMap");
         

@@ -348,7 +348,7 @@ export var Home = () => {
 
         }
 
-
+        
         
         // var mercator = d3.geoProjection(function(x,y) {
         //     return [x, Math.log(Math.tan(Math.PI/4 + y/2))];
@@ -400,8 +400,8 @@ export var Home = () => {
         worldMap.addEventListener("mousedown", dragMouseDown, false);
         
     });
-    
 
+    //for orthographic projcetion: https://bl.ocks.org/mbostock/3795040
 
     // https://www.naturalearthdata.com/downloads/10m-cultural-vectors/
     

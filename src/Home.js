@@ -336,7 +336,7 @@ export var Home = () => {
         .domain([0,H])
         .range([-90,90])
     var path = d3.geo.path()
-    .projection(projection)
+        .projection(projection)
     var svg;
     useEffect(()=> {
         if(searchClicked) {
@@ -355,9 +355,6 @@ export var Home = () => {
         // })
         
         svg = d3.selectAll("#regions")
-        
-    
-
         var countryData = []
 
         d3.json("./world.json", function(error, data) {

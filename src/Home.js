@@ -380,7 +380,20 @@ export var Home = () => {
                             .datum(topojson.feature(data, geometries))
                             .attr("id", geometries.properties["ADM0_A3"])
                             .attr("d", d3.geo.path().projection(d3.geo.mercator()))
-                            // .attr("fill", `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`)
+                            .attr("fill", ()=> {
+                                if(mapColorView=="default") {
+                                    return `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
+                                    
+                                }
+                                if(mapColorView=="continent") {
+                                    console.log("continent picked")
+                                    var continentHues = {"Asia":0, "South_America":90, "Africa":180, "Europe":120, "North_America":60, "Oceania":180, "Antarctica":300, "Seven_seas_open_ocean":240}
+                                  
+                                   
+                                    return `hsl( ${continentHues[contName]},${getRandomInt(40,55)}%, ${getRandomInt(30,45)}%)`;
+                                }
+                                // `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
+                            })
                     continents.push(contName);
                 }
                 else {
@@ -392,23 +405,17 @@ export var Home = () => {
                         .attr("d", d3.geo.path().projection(d3.geo.mercator()))
                         .attr("fill", ()=> {
                             if(mapColorView=="default") {
-                                var regionKeys= Object.keys(allRegionProperties);
-                                for(let k=0; k < regionKeys.length; ++k) {
-                                    var region = document.getElementById(regionKeys[k]);
-                                    return `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
-                                }
+                                
+                                return `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
+                             
                             }
                             if(mapColorView=="continent") {
                                 console.log("continent picked")
                                 var continentHues = {"Asia":0, "South_America":90, "Africa":180, "Europe":120, "North_America":60, "Oceania":180, "Antarctica":300, "Seven_seas_open_ocean":240}
-                                var regionKeys= Object.keys(allRegionProperties);
-                                for(let k=0; k < regionKeys.length; ++k) {
-                                    var region = document.getElementById(regionKeys[k]);
-                                    
-                                    return `hsl( ${continentHues[region.parentElement.id]}, ${50}%, ${50}%)`;
-                                }
+                                return `hsl( ${continentHues[contName]}, ${getRandomInt(40,55)}%, ${getRandomInt(30,45)}%)`
+                                
                             }
-                            `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
+                            // `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
                         })
                 }
                 // svg.append("path")

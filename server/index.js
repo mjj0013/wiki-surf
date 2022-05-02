@@ -310,6 +310,7 @@ app.post('/server',(req,res)=>{
             realTimeTrendsModule(req,res);
             break;
         case "dailyTrends":
+            console.log("skdfjidf");
             dailyTrendsModule(req,res)
             break;
         case "interestByRegion":

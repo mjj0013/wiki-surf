@@ -115,7 +115,7 @@ export var Home = () => {
     
     // var a = new WikiSubject({depth:1, wikiTitle:"Depopulation of the Great Plains"})
 
-    // const [countryOptions, setCountryOptions] = useState({region:"US" });       //, displayMode:"regions",resolution:"countries"
+    // const [countryOptions, setCountryOptions] = useState({region:"US" });       //, displayMode:"continents",resolution:"countries"
     
     const [data,setRegionData] = useState(regionData);
     // useEffect(()=> {
@@ -211,7 +211,7 @@ export var Home = () => {
         transformMatrix[4] += (1-zoomVar)*(lastZoom.x);
         transformMatrix[5] += (1-zoomVar)*(lastZoom.y);
 
-        document.getElementById('regions').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
+        document.getElementById('continents').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
        
         zoomHasHappened = 0;
     }
@@ -267,7 +267,7 @@ export var Home = () => {
     var panSVG = (dx,dy) =>{
         transformMatrix[4] += dx;
         transformMatrix[5] += dy;
-        document.getElementById('regions').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
+        document.getElementById('continents').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
         // document.getElementById('curveGroup').setAttributeNS(null, "transform", `matrix(${this.transformMatrix.join(' ')})`);
         // document.getElementById('ptGroup').setAttributeNS(null, "transform", `matrix(${this.transformMatrix.join(' ')})`);
     }
@@ -311,11 +311,16 @@ export var Home = () => {
     // fetchVitalDB("ISO_3166-2",true);
    
     const [sideBarVisible, setSideBarVisible] = useState(false);
-    const [countryOptions, setCountryOptions] = useState({});       //, displayMode:"regions",resolution:"countries"
+    const [countryOptions, setCountryOptions] = useState({});       //, displayMode:"continents",resolution:"countries"
     const [currentTab, setCurrentTab] = useState("globalSearchTab"); 
     const [searchClicked, setSearchClicked] = useState(false);
     const [readyResults, setReadyResults] = useState(null);
     const [inputData, setInputData] = useState(null);
+
+
+    const [mapColorView, setMapColorView] = useState("default");
+
+    
 
 
     function getRandomInt(min, max) {
@@ -338,6 +343,9 @@ export var Home = () => {
     var path = d3.geo.path()
         .projection(projection)
     var svg;
+    var allRegionProperties = {}
+    var continents = []
+    var mapCreated = false;
     useEffect(()=> {
         if(searchClicked) {
             // if(inputData.module=="dailyTrends" || inputData.module=="realTimeTrends") {
@@ -353,27 +361,67 @@ export var Home = () => {
         // var mercator = d3.geoProjection(function(x,y) {
         //     return [x, Math.log(Math.tan(Math.PI/4 + y/2))];
         // })
-        
-        svg = d3.selectAll("#regions")
-        var countryData = []
-
+       
+        svg = d3.selectAll("#continents")
         d3.json("./world.json", function(error, data) {
             for(let p=0; p < data.objects.admin.geometries.length; ++p) {
-                // console.log('data.objects.admin.geometries[p]',data.objects.admin.geometries[p])
-                
-                // console.log('testP',testP)
-                // svg.append("path")
-                // .datum(topojson.feature(data, data.objects.admin.geometries[p]))
-                // .attr("d", d3.geo.path().projection(d3.geo.mercator()))
+            
+                var geometries = data.objects.admin.geometries[p];
                 
                 //mercator , orthographic
-                svg.append("path")
-                    .attr("d",path)
-                    .datum(topojson.feature(data, data.objects.admin.geometries[p]))
-                    .attr("id", data.objects.admin.geometries[p].properties["ADM0_A3"])
-                    .attr("d", d3.geo.path().projection(d3.geo.mercator()))
-                    .attr("fill", `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`)
+                var contName = geometries.properties["CONTINENT"];
+                contName = contName.replace(/\(|\)/gi, '')
+                contName = contName.replace(/\s/gi, '_')
+                if(!continents.includes(contName)) {
+
+                    svg.append("g")
+                        .attr("id",contName)
+                        .append("path")
+                            .datum(topojson.feature(data, geometries))
+                            .attr("id", geometries.properties["ADM0_A3"])
+                            .attr("d", d3.geo.path().projection(d3.geo.mercator()))
+                            // .attr("fill", `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`)
+                    continents.push(contName);
+                }
+                else {
+                
+                    var group = d3.selectAll(`#${contName}`)
+                    group.append("path")
+                        .datum(topojson.feature(data, geometries))
+                        .attr("id", geometries.properties["ADM0_A3"])
+                        .attr("d", d3.geo.path().projection(d3.geo.mercator()))
+                        .attr("fill", ()=> {
+                            if(mapColorView=="default") {
+                                var regionKeys= Object.keys(allRegionProperties);
+                                for(let k=0; k < regionKeys.length; ++k) {
+                                    var region = document.getElementById(regionKeys[k]);
+                                    return `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
+                                }
+                            }
+                            if(mapColorView=="continent") {
+                                console.log("continent picked")
+                                var continentHues = {"Asia":0, "South_America":90, "Africa":180, "Europe":120, "North_America":60, "Oceania":180, "Antarctica":300, "Seven_seas_open_ocean":240}
+                                var regionKeys= Object.keys(allRegionProperties);
+                                for(let k=0; k < regionKeys.length; ++k) {
+                                    var region = document.getElementById(regionKeys[k]);
+                                    
+                                    return `hsl( ${continentHues[region.parentElement.id]}, ${50}%, ${50}%)`;
+                                }
+                            }
+                            `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
+                        })
+                }
+                // svg.append("path")
+                //     .datum(topojson.feature(data, geometries))
+                //     .attr("id", geometries.properties["ADM0_A3"])
+                //     .attr("d", d3.geo.path().projection(d3.geo.mercator()))
+                //     .attr("fill", `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`)
+
+                allRegionProperties[geometries.properties["ADM0_A3"]] = geometries.properties;
+
             }
+            console.log("allRegionProperties",allRegionProperties)
+
             // var paths=svg.selectAll("path")
             // for(let p=0; p < paths.data().length; ++p) {
             //     var P = paths.data()[p];  
@@ -383,23 +431,22 @@ export var Home = () => {
             //         .attr("x", (d)=> d3.geo.centroid(P)[0])
             //         .attr("y", (d)=> d3.geo.centroid(P)[1])
             // }
+            
+            // var svgBlob = new Blob(['<?xml version="1.0" standalone"no"?\r\n', svg.html()], 
+            //         {type:"image/svg+xml;charset=utf-8"})
+            
+
         })
-        // var svg = document.getElementById("worldMap");
         
-        // d3.json("./world.json", function(error, data) {
-        //     for(let p=0; p < data.objects.admin.geometries.length; ++p) {
-        //         svg.append("path")
-        //         .datum(topojson.feature(data, data.objects.admin.geometries[p]))
-        //         .attr("d", d3.geo.path().projection(d3.geo.mercator()))
-        //         .attr("fill", `rgb(${getRandomInt(0,255)}, ${getRandomInt(0,255)}, ${getRandomInt(0,255)})`)
-        //     }
-        // })
+        
+        
+
         var worldMap = document.getElementById("worldMap")
         worldMap.addEventListener("wheel",captureZoomEvent,false);
         worldMap.addEventListener("DOMMouseScroll", captureZoomEvent,false);
         worldMap.addEventListener("mousedown", dragMouseDown, false);
         
-    });
+    },[searchClicked, mapColorView]);
 
     //for orthographic projcetion: https://bl.ocks.org/mbostock/3795040
 
@@ -407,7 +454,7 @@ export var Home = () => {
     
     return (
 
-            <SideBarWrapper sideBarVisible={sideBarVisible} setSideBarVisible={setSideBarVisible} setInputData={setInputData} inputData={inputData} readyResults={readyResults} setReadyResults={setReadyResults} searchClicked={searchClicked} setSearchClicked={setSearchClicked} setCurrentTab={setCurrentTab} countryOptions={countryOptions} setCountryOptions={setCountryOptions} isVisible={sideBarVisible} setVisible={setSideBarVisible}>
+            <SideBarWrapper mapColorView={mapColorView} setMapColorView={setMapColorView} sideBarVisible={sideBarVisible} setSideBarVisible={setSideBarVisible} setInputData={setInputData} inputData={inputData} readyResults={readyResults} setReadyResults={setReadyResults} searchClicked={searchClicked} setSearchClicked={setSearchClicked} setCurrentTab={setCurrentTab} countryOptions={countryOptions} setCountryOptions={setCountryOptions} isVisible={sideBarVisible} setVisible={setSideBarVisible}>
             {/* <div>
                 <ul className="nav nav-tabs" role="tablist">
                     <li>
@@ -434,7 +481,7 @@ export var Home = () => {
             <div id="globalSearch" >
                 {/* <Chart id="worldMap" className="map" chartType="GeoChart" data={regionData} options={countryOptions} chartPackages={["corechart","controls"]} chartEvents={mouseSelectRegion} /> */}
                 <svg id="worldMap" className="map" width={W} height={H} >
-                    <g id="regions"/>
+                    <g id="continents"/>
                 </svg>
             </div>
 

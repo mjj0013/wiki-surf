@@ -1,6 +1,6 @@
 // import noUiSlider from 'nouislider';
 import React, { useEffect ,useState} from 'react';
-import {Item,Card, Button, Input, Container, Dropdown, Grid, Image, Label, List, Menu, Segment, Sidebar , Transition} from 'semantic-ui-react'
+import {Icon,  Item,Card, Button, Input, Container, Dropdown, Grid, Image, Label, List, Menu, Segment, Sidebar , Transition} from 'semantic-ui-react'
 import './index.css'
 
 import {sendRequestToBackend} from './frontEndHelpers.js';
@@ -146,19 +146,17 @@ function categoryChanged() {}
         {/* <form className="inputForm"> */}
         {/* <div className="ui inverted vertical labeled icon ui overlay left thin visible sidebar menu"> */}
 
-var moduleOptions = [
-    {value:"dailyTrends", key:"Daily Trends", text:"Daily Trends"},
-    {value:"realTimeTrends", key:"Real Time Trends", text:"Real Time Trends"},
-    {value:"interestOverTime", key:"Interest Over Time", text:"Interest Over Time"},
-    {value:"interestByRegion", key:"Interest By Region", text:"Interest By Region"},
-    {value:"relatedQueries", key:"Related Queries", text:"Related Queries"}
-]
+
+
+
+
+
 var regionOptions  = regionCodesReformatted.map((obj,idx)=>{ 
     return {key:idx, text:obj.name, value:obj.code, selected:obj.name=="United States"?true:false}
 })
 
 
-export const SideBarWrapper = ({sideBarVisible, setSideBarVisible,setInputData, inputData, setReadyResults, readyResults, setSearchClicked, searchClicked, setCurrentTab, setCountryOptions, countryOptions, isVisible, setVisible,...props}) => {
+export const SideBarWrapper = ({mapColorView, setMapColorView, sideBarVisible, setSideBarVisible,setInputData, inputData, setReadyResults, readyResults, setSearchClicked, searchClicked, setCurrentTab, setCountryOptions, countryOptions, isVisible, setVisible,...props}) => {
     
     // const [countryOptions, setCountryOptions] = useState({region:"US" });       //, displayMode:"regions",resolution:"countries"
     const [data,setRegionData] = useState(regionData);
@@ -230,6 +228,7 @@ export const SideBarWrapper = ({sideBarVisible, setSideBarVisible,setInputData, 
         // document.getElementById("moduleSelectSection").style.display = 'block';
         if(modName=="dailyTrends") {
             // dateRangeSection --> none, trendDateSection--> block, keywordEntrySection-->none,  categorySection-->none
+            setHideSlider(true)
         }
         else if(modName=="interestOverTime") {
             // dateRangeSection --> block, trendDateSection--> none, keywordEntrySection-->flex,  categorySection-->block
@@ -237,7 +236,7 @@ export const SideBarWrapper = ({sideBarVisible, setSideBarVisible,setInputData, 
         }
         else if(modName=="realTimeTrends") {
             // dateRangeSection --> none, trendDateSection--> none, keywordEntrySection-->none,  categorySection-->block
-            
+            setHideSlider(true)
             //abridgedCategories
             // var categoryElement = document.getElementById('categoryElement');
             // while(categoryElement.firstChild) categoryElement.remove(categoryElement.firstChild);
@@ -307,12 +306,65 @@ export const SideBarWrapper = ({sideBarVisible, setSideBarVisible,setInputData, 
         {value:"interestByRegion", key:"Interest By Region", text:"Interest By Region"},
         {value:"relatedQueries", key:"Related Queries", text:"Related Queries"}
     ]
-    function sideBarHandleClicked(e){
+
+
+    var regionViewOptions = [
+        {value:"default", key:"Default", text:"Default"},
+        {value:"continent", key:"Continent", text:"Continent"},
+        {value:"sovereignty", key:"Sovereignty", text:"Sovereignty"},
+        {value:"sphere", key:"Cultural Sphere", text:"Cultural Sphere"},
+        
+    ]
+
+    function sideBarBtnClicked(e){
+        
         var sideBarHandle = document.getElementById('sideBarHandle');
-        setSideBarVisible(sideBarVisible?false:true);
-        sideBarHandle.classList.toggle('showing')
+        console.log(e.target.id)
+
+        if(sideBarVisible) {
+            if(e.target.id == sideBarTab) {
+                setSideBarVisible(sideBarVisible?false:true);
+                sideBarHandle.classList.toggle('showing')
+            }
+            else {
+                // then don't toggle showing class
+                if(e.target.id=="settingsBtn") {
+                    setSideBarTab("settingsBtn")
+                    document.getElementById("trendsTab").classList.remove("showing")
+                }
+                else if(e.target.id=="trendsBtn") {
+                    setSideBarTab("trendsBtn")
+                    document.getElementById("trendsTab").classList.add("showing")
+                }
+
+
+            }
+        }
+
+        else {
+            if(e.target.id=="settingsBtn") {
+                setSideBarTab("settingsBtn")
+                document.getElementById("trendsTab").classList.remove("showing")
+                document.getElementById("settingsTab").classList.add("showing")
+            }
+            else if(e.target.id=="trendsBtn") {
+                setSideBarTab("trendsBtn")
+                document.getElementById("trendsTab").classList.add("showing")
+                document.getElementById("settingsTab").classList.remove("showing")
+            }
+            setSideBarVisible(sideBarVisible?false:true);
+            sideBarHandle.classList.toggle('showing')
+        }
+        
+        
+
+        
+
+
+
  
     }
+
 
     function createSlider() {
         if(!timeSliderCreated) {
@@ -329,115 +381,145 @@ export const SideBarWrapper = ({sideBarVisible, setSideBarVisible,setInputData, 
         }
     }
 
+
+
+    const [showSlider, setHideSlider] = useState(false)
+    const [sideBarTab,setSideBarTab] = useState("trendsBtn");
+
     useEffect(()=>{
         if(moduleName == "dailyTrends" || moduleName == "realTimeTrends") {
             document.getElementById("dateSlider").classList.add('hidden')
         }
         else document.getElementById("dateSlider").classList.remove('hidden')
-    })
-    
+    }, [sideBarTab,showSlider]);
 
+
+
+ 
+    function regionViewChanged(e,data) {
+        var choice = data.value;
+        setMapColorView(choice)
+    }
     return (
         
      <Sidebar.Pushable as={Segment}>
-        
         <Card id="sideBarHandle">
             <Card.Content>
-                <Item.Group>
-                    <Item id="sideBarBtnWrapper">
-                        <Item.Content>
-                            <Button id="sideBarBtn" attached icon="chart line" onClick={(e)=>sideBarHandleClicked(e)} />
-                        </Item.Content>
-                        
-                    </Item>
+                <Container id="sideBarBtns" >
                 
-                </Item.Group>
+                    <Button id="settingsBtn" fluid className="sideBarBtn" attached onClick={(e)=>sideBarBtnClicked(e)} >
+                       <Icon className="setting large fitted"  />
+                    </Button>
+                    <Button id="trendsBtn" fluid className="sideBarBtn" attached onClick={(e)=>sideBarBtnClicked(e)}>
+                        <Icon className="chart line large fitted"  />
+                    </Button>
+                 
+                </Container>
             </Card.Content>
         </Card>
         
-        {
-            <Button id="backToGlobalBtn" attached icon="arrow left" />
-        }
+        { <Button id="backToGlobalBtn" attached icon="arrow left" /> }
 
         <Sidebar id="inputSideBar" as={Menu} animation='overlay' icon='labeled' vertical visible={isVisible}  direction="right" >
+            
             <Menu.Header>Input Form</Menu.Header>
-            <Menu.Item >
-                <Grid columns={3}>
-                    <Grid.Row>
-                        <Grid.Column id="moduleSelectSection" >
-                            <Dropdown fluid labeled button placeholder="Module"  id="moduleSelectElement" options={moduleOptions} onChange={(e,d)=>moduleChanged(e,d)} />
-                        </Grid.Column>
-                    </Grid.Row>
+            <Menu.Item id="settingsTab">
+                <Segment>
+                    <Dropdown fluid floating labeled button text="Map View" options={regionViewOptions} onChange={(e,d)=>regionViewChanged(e,d)}>
 
-                    <Grid.Row>
-                        <Grid.Column  id="regionSection" >
-                            <Dropdown scrolling floating labeled button placeholder='Select Region' fluid id="regionElement" onChange={regionChanged} options={regionOptions} />  
-                        </Grid.Column>    
-                        <Grid.Column id="categorySection">
-                                <Dropdown fluid floating labeled button text="Category" id="categoryElement" onChange={categoryChanged}>
-                                    <Dropdown.Menu >
-                                        <Dropdown.Item text="blank"></Dropdown.Item>
-                                    </Dropdown.Menu>
-                                </Dropdown>
-                        </Grid.Column>
-                    </Grid.Row>                    
-           
-                    <Grid.Row stretched>
-                       { (moduleName!="dailyTrends" && moduleName!="realTimeTrends") &&<Grid.Column id="keywordEntrySection">
-                            
-                            <div id="keywordField" className="form-control search-container">
-                                <div className='search-container-inputs'>
-                                    <Input label="Keyword(s)" id='keywordInput' onKeyUp={(e)=> keyUpOnKeywordInput(e)} onKeyDown={(e)=> keyDownOnKeywordInput(e)}
-                                        action={
-                                            <button  className="ui icon button"  id="addKeywordButton"type="button"  onClick={addKeywordPressed} style={{display:'block'}}>
-                                                <img src="plus.svg" width="20" height="20"/>
-                                            </button>} />
-                                </div>    
-                                <div id="termList" className="search-term-container"></div>
+                    </Dropdown>
+                </Segment>
+            </Menu.Item>
+            <Menu.Item id="trendsTab" >
+                <Item.Group divided >
+                    <Item>
+                        <Item.Content>
+                            <Grid columns={3}>
+                                <Grid.Row>
+                                    <Grid.Column id="moduleSelectSection" >
+                                        <Dropdown fluid labeled button placeholder="Module"  id="moduleSelectElement" options={moduleOptions} onChange={(e,d)=>moduleChanged(e,d)} />
+                                    </Grid.Column>
+                                </Grid.Row>
+
+                                <Grid.Row>
+                                    <Grid.Column  id="regionSection" >
+                                        <Dropdown scrolling floating labeled button placeholder='Select Region' fluid id="regionElement" onChange={regionChanged} options={regionOptions} />  
+                                    </Grid.Column>    
+                                    <Grid.Column id="categorySection">
+                                            <Dropdown fluid floating labeled button text="Category" id="categoryElement" onChange={categoryChanged}>
+                                                <Dropdown.Menu >
+                                                    <Dropdown.Item text="blank"></Dropdown.Item>
+                                                </Dropdown.Menu>
+                                            </Dropdown>
+                                    </Grid.Column>
+                                </Grid.Row>                    
+                    
+                                <Grid.Row stretched>
+                                { (moduleName!="dailyTrends" && moduleName!="realTimeTrends") &&<Grid.Column id="keywordEntrySection">
+                                        
+                                        <div id="keywordField" className="form-control search-container">
+                                            <div className='search-container-inputs'>
+                                                <Input label="Keyword(s)" id='keywordInput' onKeyUp={(e)=> keyUpOnKeywordInput(e)} onKeyDown={(e)=> keyDownOnKeywordInput(e)}
+                                                    action={
+                                                        <button  className="ui icon button"  id="addKeywordButton"type="button"  onClick={addKeywordPressed} style={{display:'block'}}>
+                                                            <img src="plus.svg" width="20" height="20"/>
+                                                        </button>} />
+                                            </div>    
+                                            <div id="termList" className="search-term-container"></div>
+                                        </div>
+                                    </Grid.Column>}
+                                </Grid.Row>
+                                <Grid.Row stretched>
+                                    {(moduleName=="dailyTrends") && <Grid.Column  id="trendDateSection">
+                                        <Input label="Trend date" type="date" id="trendDateElement" min="2004-01-01"/>
+                                    </Grid.Column>}
+
+                                    {(moduleName!="dailyTrends") && <Grid.Column style={{maxWidth:"33%"}}>
+                                        <Input label={<Label attached='top'>Start Date</Label>} type="date" id="startDateElement" min="2004-01-01"/>
+                                    </Grid.Column>}
+
+                                    {(moduleName!="dailyTrends") &&<Grid.Column style={{maxWidth:"33%"}}><br/></Grid.Column>}
+
+                                    {(moduleName!="dailyTrends") && 
+                                    <Grid.Column style={{maxWidth:"33%"}}>
+                                        <Input label={<Label  attached='top'>End Date</Label>} type="date" id="endDateElement" />
+                                    </Grid.Column>}
+                                </Grid.Row>
+
+                                <Grid.Row id="sliderRow" stretched width={5} style={{maxWidth:"90%", marginLeft:"10px"}}>
+                                    <div id="dateSlider" />
+                                </Grid.Row>
+                            </Grid>
+                        </Item.Content>
+                    </Item>
+                    <Item>
+                        <Item.Content>
+                            <div>
+                                <Button color="blue" onClick={(e)=>searchBtnHandler(e)} >Search</Button>
+                                <Button color="blue" id="analyzeButton" onClick={countryAnalysisClicked}>Analysis</Button>
                             </div>
-                        </Grid.Column>}
-                    </Grid.Row>
-                    <Grid.Row stretched>
-                        {(moduleName=="dailyTrends") && <Grid.Column  id="trendDateSection">
-                            <Input label="Trend date" type="date" id="trendDateElement" min="2004-01-01"/>
-                        </Grid.Column>}
-
-                        {(moduleName!="dailyTrends") && <Grid.Column>
-                            <Input label={<Label attached='top'>Start Date</Label>} type="date" id="startDateElement" min="2004-01-01"/>
-                        </Grid.Column>}
-
-                        {(moduleName!="dailyTrends") &&<Grid.Column><br/></Grid.Column>}
-
-                        {(moduleName!="dailyTrends") && 
-                        <Grid.Column>
-                            <Input label={<Label  attached='top'>End Date</Label>} type="date" id="endDateElement" />
-                        </Grid.Column>}
-                    </Grid.Row>
-
-                    <Grid.Row id="sliderRow" stretched width={5}>
-                        <div id="dateSlider"/>
-                    </Grid.Row>
-                </Grid>
-            </Menu.Item>
-            <Menu.Item className="formButtonGrid mb-3">
-                <button className="btn btn-primary"  type="button" onClick={(e)=>searchBtnHandler(e)} >Search</button>
-                <button id="analyzeButton" className="btn btn-success" type="button" onClick={countryAnalysisClicked}>Analysis</button>
-            </Menu.Item>
-
-            <List id="resultItems" divided relaxed>
-                {readyResults && readyResults.data.searches.map((item,key)=> {
-                    return (
-                        <List.Item key={key}>
-                            <img src={item.image.imgUrl}/>
-                            <List.Content>
-                                <List.Header>{item.title.query}</List.Header>
-                                {readyResults.moduleName=="dailyTrends" &&  <List.Description>{item.formattedTraffic + " views"}</List.Description>}
-                            </List.Content>
-                        </List.Item>
-                    )
-                })}
-            </List>
-        </Sidebar>
+                        </Item.Content>
+                    </Item>
+               
+            
+                </Item.Group>
+                </Menu.Item>
+                <List id="resultItems" divided relaxed>
+                    {readyResults && readyResults.data.searches.map((item,key)=> {
+                        return (
+                            <List.Item key={key}>
+                                <img src={item.image.imgUrl}/>
+                                <List.Content>
+                                    <List.Header>{item.title.query}</List.Header>
+                                    {readyResults.moduleName=="dailyTrends" &&  <List.Description>{item.formattedTraffic + " views"}</List.Description>}
+                                </List.Content>
+                            </List.Item>
+                        )
+                    })}
+                </List>
+        
+                
+            </Sidebar>
 
         <Sidebar.Pusher>{props.children}</Sidebar.Pusher>
     </Sidebar.Pushable>)

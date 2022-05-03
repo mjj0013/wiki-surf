@@ -5,7 +5,6 @@ import './index.css'
 
 import {sendRequestToBackend} from './frontEndHelpers.js';
 
-
 import {abridgedCategories, regionCodes, regionData, regionCodesReformatted} from '../server/geoHelpers.js';
 import noUiSlider from 'nouislider';
 
@@ -50,9 +49,9 @@ function addKeywordPressed() {
     var termList = document.getElementById("termList");
     var keywordInput = document.getElementById('keywordInput');
     if(keywordInput.value.length==0) return;
-
     var item = document.createElement('div');
-    var hue; var sat;
+    var hue; 
+    var sat;
     var uniqueColorCreated = false;
 
     while(!uniqueColorCreated) {
@@ -115,55 +114,20 @@ var dateSliderOptions = {
 }
 function categoryChanged() {}
 
-
-// function searchTabChanged(e) {
-//     if(e.target.id=="globalSearchTab") {
-//         setCurrentTab("globalSearchTab");
-//         document.getElementById("regionSection").style.display = "none";
-//         document.getElementById('analyzeButton').style.display = "none";
-//         document.getElementById('categorySection').style.gridColumn = 2;
-//         document.getElementById('categorySection').style.gridRow = 1;
-//         moduleChanged()
-//     }
-//     if(e.target.id=="byCountrySearchTab") {
-//         setCurrentTab("byCountrySearchTab");
-//         document.getElementById("regionSection").style.display = "block";
-//         document.getElementById('analyzeButton').style.display = "block";
-//         document.getElementById('categorySection').style.gridColumn = 2;
-//         document.getElementById('categorySection').style.gridRow = 2;
-       
-//         moduleChanged()
-//     }
-// }
-
-
-
-
-
-{/* <Sidebar.Pushable as={Segment}> */}
-{/* <div className="ui segment pushable"> */}
-    
-        {/* <form className="inputForm"> */}
-        {/* <div className="ui inverted vertical labeled icon ui overlay left thin visible sidebar menu"> */}
-
-
-
-
-
-
 var regionOptions  = regionCodesReformatted.map((obj,idx)=>{ 
     return {key:idx, text:obj.name, value:obj.code, selected:obj.name=="United States"?true:false}
 })
 
-
 export const SideBarWrapper = ({setCountryOptions,countryOptions, regionView,setRegionView,mapColorView, setMapColorView, sideBarVisible, setSideBarVisible,setInputData, inputData, setReadyResults, readyResults, setSearchClicked, searchClicked, setCurrentTab,  isVisible, setVisible,...props}) => {
     
     // const [countryOptions, setCountryOptions] = useState({region:"US" });       //, displayMode:"regions",resolution:"countries"
+    
     const [data,setRegionData] = useState(regionData);
     const [moduleName, setModuleName] = useState("dailyTrends");
     const [timeSliderCreated, setTimeSliderCreated] = useState(false);
+    const [showSlider, setHideSlider] = useState(false)
+    const [sideBarTab,setSideBarTab] = useState("trendsBtn");
     
-
 
     function regionChanged() {
         var selected = document.getElementById("regionElement")
@@ -252,7 +216,6 @@ export const SideBarWrapper = ({setCountryOptions,countryOptions, regionView,set
         }
         else if(modName=="relatedQueries") { 
             // dateRangeSection --> block, trendDateSection--> none, keywordEntrySection-->flex,  categorySection-->block
-            
             // createSlider();
         }
         else if(modName=="interestByRegion") {
@@ -312,14 +275,10 @@ export const SideBarWrapper = ({setCountryOptions,countryOptions, regionView,set
         {value:"continent", key:"Continent", text:"Continent"},
         {value:"sovereignty", key:"Sovereignty", text:"Sovereignty"},
         {value:"sphere", key:"Cultural Sphere", text:"Cultural Sphere"},
-        
     ]
 
     function sideBarBtnClicked(e){
-        
         var sideBarHandle = document.getElementById('sideBarHandle');
-        console.log(e.target.id)
-
         if(sideBarVisible) {
             if(e.target.id == sideBarTab) {
                 setSideBarVisible(sideBarVisible?false:true);
@@ -352,7 +311,6 @@ export const SideBarWrapper = ({setCountryOptions,countryOptions, regionView,set
             setSideBarVisible(sideBarVisible?false:true);
             sideBarHandle.classList.toggle('showing')
         }
-
     }
 
     function createSlider() {
@@ -370,8 +328,7 @@ export const SideBarWrapper = ({setCountryOptions,countryOptions, regionView,set
         }
     }
 
-    const [showSlider, setHideSlider] = useState(false)
-    const [sideBarTab,setSideBarTab] = useState("trendsBtn");
+    
 
     useEffect(()=>{
         if(moduleName == "dailyTrends" || moduleName == "realTimeTrends") {

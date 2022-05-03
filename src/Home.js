@@ -232,8 +232,12 @@ export var Home = () => {
     
     var dragMouseDown = (e) =>{
         e = e || window.event;
-        console.log(e.target.id);
         
+        var regionKeys = Object.keys(allRegionProperties);
+        if(regionKeys.includes(e.target.id)) {
+            console.log(allRegionProperties[e.target.id]);
+        }
+        else console.log(e.target.id);
         lastZoom.x = e.offsetX;
         lastZoom.y = e.offsetY;
         dragStart = getTransformedPt(lastZoom.x, lastZoom.y, transformMatrix);
@@ -316,8 +320,6 @@ export var Home = () => {
     const [searchClicked, setSearchClicked] = useState(false);
     const [readyResults, setReadyResults] = useState(null);
     const [inputData, setInputData] = useState(null);
-
-
     const [mapColorView, setMapColorView] = useState("default");
 
     
@@ -343,17 +345,24 @@ export var Home = () => {
     var path = d3.geo.path()
         .projection(projection)
     var svg;
-    var allRegionProperties = {}
+    var svgConts;
+
+    const [allRegionProperties,setAllRegionProperties]  = useState({});
     var continents = []
-    var mapCreated = false;
+
+    const [mapCreated, setMapCreated] = useState(false);
+
+
+    const [regionView, setRegionView] = useState(false);
+    var continentHues = {"Asia":0, "South_America":90, "Africa":180, "Europe":120, "North_America":60, "Oceania":180, "Antarctica":300, "Seven_seas_open_ocean":240}
+    
+
+    
+
     useEffect(()=> {
         if(searchClicked) {
-            // if(inputData.module=="dailyTrends" || inputData.module=="realTimeTrends") {
-            //     let offCanvas = new bootstrap.Offcanvas(document.getElementById("resultsOffcanvas"))
-            //     offCanvas.show();
-            // }
+            // if(inputData.module=="dailyTrends" || inputData.module=="realTimeTrends") { }
             processClientRequest(inputData)
-
         }
 
         
@@ -361,136 +370,143 @@ export var Home = () => {
         // var mercator = d3.geoProjection(function(x,y) {
         //     return [x, Math.log(Math.tan(Math.PI/4 + y/2))];
         // })
-       
-        svg = d3.selectAll("#continents")
-        d3.json("./world.json", function(error, data) {
-            for(let p=0; p < data.objects.admin.geometries.length; ++p) {
-            
-                var geometries = data.objects.admin.geometries[p];
-                
-                //mercator , orthographic
-                var contName = geometries.properties["CONTINENT"];
-                contName = contName.replace(/\(|\)/gi, '')
-                contName = contName.replace(/\s/gi, '_')
-                if(!continents.includes(contName)) {
-
-                    svg.append("g")
-                        .attr("id",contName)
-                        .append("path")
+        
+        var idExists = (parent, queryStr) => {
+            var selection = d3.select(parent).select(queryStr);
+            if(selection.size==1 && selection[0]==null) {           //its empty
+                return;
+            }
+            else return selection[0][0]; 
+        }
+        svg = d3.select("#worldMap")
+        if(!mapCreated) {
+            svgConts = d3.select("#continents")
+            d3.json("./world.json", function(error, data) {
+                for(let p=0; p < data.objects.admin.geometries.length; ++p) {
+                    var geometries = data.objects.admin.geometries[p];
+                    
+                    //mercator , orthographic
+                    var contName = geometries.properties["CONTINENT"];
+                    contName = contName.replace(/\(|\)/gi, '')
+                    contName = contName.replace(/\s/gi, '_')
+    
+                    
+                    if(!continents.includes(contName)) {                // this section is for initializing continents and adding the region belonging to the newly created continent
+                        
+                        svgConts.append("g")
+                            .attr("id",contName)
+                            .append("path")
+                                .datum(topojson.feature(data, geometries))
+                                .attr("id", geometries.properties["ADM0_A3"])
+                                .attr("d", d3.geo.path().projection(d3.geo.mercator()))
+                                .attr("fill", ()=> {
+                                    if(mapColorView=="default") {
+                                        return `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
+                                    }
+                                    if(mapColorView=="continent") {
+                                        return `hsl( ${continentHues[contName]},${getRandomInt(40,55)}%, ${getRandomInt(30,45)}%)`;
+                                    }
+                                })
+                        continents.push(contName);
+                        allRegionProperties[geometries.properties["ADM0_A3"]] = geometries.properties;
+                    }
+                    else {                                          // this section is for adding region to already existing continent
+                        var group = d3.selectAll(`#${contName}`)
+                        var regionObj = idExists("#continents",`#${geometries.properties["ADM0_A3"]}`)
+                    
+                        if(regionObj) {
+                            regionObj.attr("fill", ()=> {
+                                if(mapColorView=="default") {
+                                    return `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
+                                }
+                                if(mapColorView=="continent") {
+                                    return `hsl( ${continentHues[contName]}, ${getRandomInt(40,55)}%, ${getRandomInt(30,45)}%)`
+                                }
+                            })
+                            continue;
+                        }
+                        group.append("path")
                             .datum(topojson.feature(data, geometries))
                             .attr("id", geometries.properties["ADM0_A3"])
                             .attr("d", d3.geo.path().projection(d3.geo.mercator()))
                             .attr("fill", ()=> {
                                 if(mapColorView=="default") {
                                     return `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
-                                    
                                 }
                                 if(mapColorView=="continent") {
-                                    console.log("continent picked")
-                                    var continentHues = {"Asia":0, "South_America":90, "Africa":180, "Europe":120, "North_America":60, "Oceania":180, "Antarctica":300, "Seven_seas_open_ocean":240}
-                                  
-                                   
-                                    return `hsl( ${continentHues[contName]},${getRandomInt(40,55)}%, ${getRandomInt(30,45)}%)`;
+                                    return `hsl( ${continentHues[contName]}, ${getRandomInt(40,55)}%, ${getRandomInt(30,45)}%)`    
                                 }
-                                // `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
                             })
-                    continents.push(contName);
+                        allRegionProperties[geometries.properties["ADM0_A3"]] = geometries.properties;
+                        
+                    }
+    
                 }
-                else {
+                console.log("allRegionProperties",allRegionProperties)
                 
-                    var group = d3.selectAll(`#${contName}`)
-                    group.append("path")
-                        .datum(topojson.feature(data, geometries))
-                        .attr("id", geometries.properties["ADM0_A3"])
-                        .attr("d", d3.geo.path().projection(d3.geo.mercator()))
-                        .attr("fill", ()=> {
-                            if(mapColorView=="default") {
-                                
-                                return `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
-                             
-                            }
-                            if(mapColorView=="continent") {
-                                console.log("continent picked")
-                                var continentHues = {"Asia":0, "South_America":90, "Africa":180, "Europe":120, "North_America":60, "Oceania":180, "Antarctica":300, "Seven_seas_open_ocean":240}
-                                return `hsl( ${continentHues[contName]}, ${getRandomInt(40,55)}%, ${getRandomInt(30,45)}%)`
-                                
-                            }
-                            // `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
-                        })
-                }
-                // svg.append("path")
-                //     .datum(topojson.feature(data, geometries))
-                //     .attr("id", geometries.properties["ADM0_A3"])
-                //     .attr("d", d3.geo.path().projection(d3.geo.mercator()))
-                //     .attr("fill", `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`)
+                // var paths=svg.selectAll("path")
+                // for(let p=0; p < paths.data().length; ++p) {
+                //     var P = paths.data()[p];  
+                //     svg.append("text")
+                //         .text(data.objects.admin.geometries[p].properties["ADMIN"])
+                //         .datum(d3.geo.path().projection(d3.geo.mercator()))
+                //         .attr("x", (d)=> d3.geo.centroid(P)[0])
+                //         .attr("y", (d)=> d3.geo.centroid(P)[1])
+                // }
+                
+                // var svgBlob = new Blob(['<?xml version="1.0" standalone"no"?\r\n', svg.html()], 
+                //         {type:"image/svg+xml;charset=utf-8"})
+                
+                
+            })
+            var worldMap = document.getElementById("worldMap")
+            worldMap.addEventListener("wheel",captureZoomEvent,false);
+            worldMap.addEventListener("DOMMouseScroll", captureZoomEvent,false);
+            worldMap.addEventListener("mousedown", dragMouseDown, false);
 
-                allRegionProperties[geometries.properties["ADM0_A3"]] = geometries.properties;
+            setMapCreated(true)
+        }
+        else {
+            var regionKeys = Object.keys(allRegionProperties);
+            
+            for(let k=0; k < regionKeys.length; ++k) {
+                var key = regionKeys[k];
+                var regionObj = allRegionProperties[key];
+                var contName = regionObj["CONTINENT"];
+                contName = contName.replace(/\(|\)/gi, '')
+                contName = contName.replace(/\s/gi, '_')
 
+                svg.select("#continents").select(`#${contName}`)
+                .select(`#${key}`)
+                .attr("fill", ()=> {
+                    if(mapColorView=="default") {
+                        return `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
+                    }
+                    if(mapColorView=="continent") {
+                        return `hsl( ${continentHues[contName]}, ${getRandomInt(40,55)}%, ${getRandomInt(30,45)}%)`    
+                    }
+                })
             }
-            console.log("allRegionProperties",allRegionProperties)
+        }
+       
 
-            // var paths=svg.selectAll("path")
-            // for(let p=0; p < paths.data().length; ++p) {
-            //     var P = paths.data()[p];  
-            //     svg.append("text")
-            //         .text(data.objects.admin.geometries[p].properties["ADMIN"])
-            //         .datum(d3.geo.path().projection(d3.geo.mercator()))
-            //         .attr("x", (d)=> d3.geo.centroid(P)[0])
-            //         .attr("y", (d)=> d3.geo.centroid(P)[1])
-            // }
-            
-            // var svgBlob = new Blob(['<?xml version="1.0" standalone"no"?\r\n', svg.html()], 
-            //         {type:"image/svg+xml;charset=utf-8"})
-            
 
-        })
-        
-        
-        
 
-        var worldMap = document.getElementById("worldMap")
-        worldMap.addEventListener("wheel",captureZoomEvent,false);
-        worldMap.addEventListener("DOMMouseScroll", captureZoomEvent,false);
-        worldMap.addEventListener("mousedown", dragMouseDown, false);
+        console.log("regionView", regionView)
         
-    },[searchClicked, mapColorView]);
+    },[searchClicked, mapColorView, regionView]);
 
     //for orthographic projcetion: https://bl.ocks.org/mbostock/3795040
-
     // https://www.naturalearthdata.com/downloads/10m-cultural-vectors/
     
     return (
 
-            <SideBarWrapper mapColorView={mapColorView} setMapColorView={setMapColorView} sideBarVisible={sideBarVisible} setSideBarVisible={setSideBarVisible} setInputData={setInputData} inputData={inputData} readyResults={readyResults} setReadyResults={setReadyResults} searchClicked={searchClicked} setSearchClicked={setSearchClicked} setCurrentTab={setCurrentTab} countryOptions={countryOptions} setCountryOptions={setCountryOptions} isVisible={sideBarVisible} setVisible={setSideBarVisible}>
-            {/* <div>
-                <ul className="nav nav-tabs" role="tablist">
-                    <li>
-                        <button id="globalSearchTab" className="nav-link active"  onClick={(e)=>searchTabChanged(e)} data-bs-toggle="tab" data-bs-target="#globalSearch" type="button" role="tab" aria-controls="globalSearch" aria-selected="true">Global</button>
-                    </li>
-                    <li> 
-                        <button id="byCountrySearchTab" className="nav-link"  onClick={(e)=>searchTabChanged(e)} data-bs-toggle="tab" data-bs-target="#byCountrySearch" type="button" role="tab" aria-controls="byCountrySearch" aria-selected="false">By Country</button>
-                    </li>
-                </ul>
-                <div className="tab-content" id="tabContent">
-                    
-                    
-                    
-                    <div id="globalSearch" className="tab-pane fade show active" >
-                        <Chart id="worldMap" className="map" chartType="GeoChart" data={regionData}  chartPackages={["corechart","controls"]} chartEvents={mouseSelectRegion} />
-                    </div>
-                    
-                    
-                    <div id="byCountrySearch" className="tab-pane fade" >
-                        <Chart id="countryMap" className="map" chartType="GeoChart" data={regionData} options={countryOptions}  chartPackages={["geochart","corechart","controls"]} chartEvents={mouseSelectRegion} />
-                    </div>
-                </div> 
-            </div> */}
-            <div id="globalSearch" >
-                {/* <Chart id="worldMap" className="map" chartType="GeoChart" data={regionData} options={countryOptions} chartPackages={["corechart","controls"]} chartEvents={mouseSelectRegion} /> */}
-                <svg id="worldMap" className="map" width={W} height={H} >
-                    <g id="continents"/>
-                </svg>
-            </div>
+            <SideBarWrapper regionView={regionView} setRegionView={setRegionView} mapColorView={mapColorView} setMapColorView={setMapColorView} sideBarVisible={sideBarVisible} setSideBarVisible={setSideBarVisible} setInputData={setInputData} inputData={inputData} readyResults={readyResults} setReadyResults={setReadyResults} searchClicked={searchClicked} setSearchClicked={setSearchClicked} setCurrentTab={setCurrentTab} countryOptions={countryOptions} setCountryOptions={setCountryOptions} isVisible={sideBarVisible} setVisible={setSideBarVisible}>
+                <div id="globalSearch" >
+                    <svg id="worldMap" className="map" width={W} height={H} >
+                        <g id="continents"/>
+                    </svg>
+                </div>
 
             </SideBarWrapper>
         

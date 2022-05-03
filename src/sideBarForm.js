@@ -156,7 +156,7 @@ var regionOptions  = regionCodesReformatted.map((obj,idx)=>{
 })
 
 
-export const SideBarWrapper = ({mapColorView, setMapColorView, sideBarVisible, setSideBarVisible,setInputData, inputData, setReadyResults, readyResults, setSearchClicked, searchClicked, setCurrentTab, setCountryOptions, countryOptions, isVisible, setVisible,...props}) => {
+export const SideBarWrapper = ({setCountryOptions,countryOptions, regionView,setRegionView,mapColorView, setMapColorView, sideBarVisible, setSideBarVisible,setInputData, inputData, setReadyResults, readyResults, setSearchClicked, searchClicked, setCurrentTab,  isVisible, setVisible,...props}) => {
     
     // const [countryOptions, setCountryOptions] = useState({region:"US" });       //, displayMode:"regions",resolution:"countries"
     const [data,setRegionData] = useState(regionData);
@@ -167,7 +167,6 @@ export const SideBarWrapper = ({mapColorView, setMapColorView, sideBarVisible, s
 
     function regionChanged() {
         var selected = document.getElementById("regionElement")
-        
         if(selected.value=="ALL") {
             document.getElementById("backToGlobalBtn").classList.remove("showing");
         }
@@ -175,7 +174,7 @@ export const SideBarWrapper = ({mapColorView, setMapColorView, sideBarVisible, s
             document.getElementById("backToGlobalBtn").classList.add("showing");
         }
         
-
+        setRegionView(selected.value);
         // remember, some modules can access the city/county level of US region
         if(selected.value=="US") setCountryOptions({...countryOptions,region:selected.value})           // resolution:"provinces", 
         else setCountryOptions({...countryOptions,region:selected.value})         //resolution:"countries",
@@ -336,8 +335,6 @@ export const SideBarWrapper = ({mapColorView, setMapColorView, sideBarVisible, s
                     setSideBarTab("trendsBtn")
                     document.getElementById("trendsTab").classList.add("showing")
                 }
-
-
             }
         }
 
@@ -355,16 +352,8 @@ export const SideBarWrapper = ({mapColorView, setMapColorView, sideBarVisible, s
             setSideBarVisible(sideBarVisible?false:true);
             sideBarHandle.classList.toggle('showing')
         }
-        
-        
 
-        
-
-
-
- 
     }
-
 
     function createSlider() {
         if(!timeSliderCreated) {
@@ -380,8 +369,6 @@ export const SideBarWrapper = ({mapColorView, setMapColorView, sideBarVisible, s
             return dateSlider;
         }
     }
-
-
 
     const [showSlider, setHideSlider] = useState(false)
     const [sideBarTab,setSideBarTab] = useState("trendsBtn");

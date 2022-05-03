@@ -127,15 +127,15 @@ export const SideBarWrapper = ({setCountryOptions,countryOptions, regionView,set
     const [timeSliderCreated, setTimeSliderCreated] = useState(false);
     const [showSlider, setHideSlider] = useState(false)
     const [sideBarTab,setSideBarTab] = useState("trendsBtn");
-    
+
 
     function regionChanged() {
         var selected = document.getElementById("regionElement")
         if(selected.value=="ALL") {
-            document.getElementById("backToGlobalBtn").classList.remove("showing");
+            document.getElementById("backRegionBtn").classList.remove("showing");
         }
         else {
-            document.getElementById("backToGlobalBtn").classList.add("showing");
+            document.getElementById("backRegionBtn").classList.add("showing");
         }
         
         setRegionView(selected.value);
@@ -283,16 +283,27 @@ export const SideBarWrapper = ({setCountryOptions,countryOptions, regionView,set
             if(e.target.id == sideBarTab) {
                 setSideBarVisible(sideBarVisible?false:true);
                 sideBarHandle.classList.toggle('showing')
+                document.getElementById("settingsBtn").classList.remove("primary");
+                document.getElementById("trendsBtn").classList.remove("primary");
             }
             else {
                 // then don't toggle showing class
                 if(e.target.id=="settingsBtn") {
                     setSideBarTab("settingsBtn")
+                    document.getElementById("settingsBtn").classList.add("primary");
+                    document.getElementById("trendsBtn").classList.remove("primary");
+
                     document.getElementById("trendsTab").classList.remove("showing")
+                    document.getElementById("settingsTab").classList.add("showing")
+
                 }
                 else if(e.target.id=="trendsBtn") {
                     setSideBarTab("trendsBtn")
+                    document.getElementById("trendsBtn").classList.add("primary");
+                    document.getElementById("settingsBtn").classList.remove("primary");
+
                     document.getElementById("trendsTab").classList.add("showing")
+                    document.getElementById("settingsTab").classList.remove("showing")
                 }
             }
         }
@@ -300,11 +311,18 @@ export const SideBarWrapper = ({setCountryOptions,countryOptions, regionView,set
         else {
             if(e.target.id=="settingsBtn") {
                 setSideBarTab("settingsBtn")
+                document.getElementById("settingsBtn").classList.add("primary");
+                document.getElementById("trendsBtn").classList.remove("primary");
+
                 document.getElementById("trendsTab").classList.remove("showing")
                 document.getElementById("settingsTab").classList.add("showing")
             }
             else if(e.target.id=="trendsBtn") {
                 setSideBarTab("trendsBtn")
+
+                document.getElementById("trendsBtn").classList.add("primary");
+                document.getElementById("settingsBtn").classList.remove("primary");
+
                 document.getElementById("trendsTab").classList.add("showing")
                 document.getElementById("settingsTab").classList.remove("showing")
             }
@@ -362,8 +380,8 @@ export const SideBarWrapper = ({setCountryOptions,countryOptions, regionView,set
             </Card.Content>
         </Card>
         
-        { <Button id="backToGlobalBtn" attached icon="arrow left" /> }
-
+        { <Button id="backRegionBtn" attached icon="arrow left" /> }
+        { <Button id="fwdRegionBtn" attached icon="arrow right" /> }
         <Sidebar id="inputSideBar" as={Menu} animation='overlay' icon='labeled' vertical visible={isVisible}  direction="right" >
             
             <Menu.Header>Input Form</Menu.Header>

@@ -1,5 +1,8 @@
 //  https://github.com/pat310/google-trends-api/wiki/Google-Trends-Categories
 const abridgedCategories = {"All":"all", "Entertainment":"e", "Business":"b", "Science/Tech":"t", "Sports":"s", "Top Stories":"h"}
+// const fs = require('fs');
+
+
 
 const allCategories = {
     "All Categories":0,
@@ -184,6 +187,9 @@ var regionsNotWorking = [
     "Phillippines",
     "Ecuador",
 ]
+
+
+
 
 // https://en.wikipedia.org/wiki/ISO_3166-2
 var regionCodes = {

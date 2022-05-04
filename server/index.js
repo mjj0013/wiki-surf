@@ -6,7 +6,6 @@ const https = require('https');
 
 console.log(Object.keys(googleTrends));
 const fs = require('fs');
-const jsonfile = require('jsonfile');
 const path = require("path")
 const bodyParser = require("body-parser");      // a middleware
 // const {fetch} = require('node-fetch');
@@ -24,6 +23,12 @@ app.use(express.static(DIST_DIR));
 app.use(bodyParser.urlencoded({extended:false}));
 app.use(bodyParser.json());
 app.listen(PORT, ()=> { console.log("Server running on port "+PORT); })
+
+const permittedRegionsISOA2 = Object.entries(regionCodes).map(x=>{return x[1]})
+
+
+
+
 
 
 
@@ -301,6 +306,36 @@ app.post('/server/fetchData', (req,res)=>{
         }
         else res.send({data:null, message:"does not exist", ok:true})
     }  
+})
+
+app.get('/server/getRegionDb',(req,res)=>{
+    fs.readFile(`./public/world.json`, (error, data)=> {  
+        if(error) console.log(error)
+        else {
+            var D = data.toString();
+            var objD = JSON.parse(D);
+            var regionDb = []
+            var regionGeos = objD.objects.admin.geometries;
+            for(let r=0; r < regionGeos.length; ++r) {
+                // ADMIN,  ADM0_A3,  ISO_A2
+                var regionObj = {
+                    "ADMIN":regionGeos[r].properties["ADMIN"], 
+                    "ADM0_A3":regionGeos[r].properties["ADM0_A3"], 
+                    "ISO_A2":regionGeos[r].properties["ISO_A2"],
+                    "permittedForTrendSearch":permittedRegionsISOA2.includes(regionGeos[r].properties["ISO_A2"])
+                }
+                regionDb.push(regionObj)
+            }
+            regionDb.sort(function(a,b){
+                let aStr = a.ADMIN.toUpperCase()
+                let bStr = b.ADMIN.toUpperCase()
+                if(aStr < bStr) return -1;
+                if(aStr > bStr) return 1;
+                return 0;
+            })
+            res.send({data:regionDb, message:"", ok:true})
+        }
+    })
 })
 
 

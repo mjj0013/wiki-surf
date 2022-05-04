@@ -13,7 +13,8 @@ import { SideBarWrapper } from './sideBarForm.js';
 import {sendRequestToBackend} from './frontEndHelpers.js';
 
 
-import {abridgedCategories, regionCodes, regionData, regionCodesReformatted} from '../server/geoHelpers.js';
+import {abridgedCategories, regionCodes, regionCodesReformatted} from '../server/geoHelpers.js';        //regionData
+import { resolve } from 'url';
 // https://www.statista.com/statistics/262966/number-of-internet-users-in-selected-countries/
 // https://worldpopulationreview.com/countries
 // also, https://www.cia.gov/the-world-factbook/field/internet-users/country-comparison/
@@ -95,10 +96,6 @@ function fetchVitalDB(fileName, createIfNotExist=false) {
             }
         }
     })
-
-
-    
-    
 }
 
 
@@ -107,7 +104,10 @@ function fetchVitalDB(fileName, createIfNotExist=false) {
 
 export var Home = () => {   
     var searchTerms = []
-
+   
+    
+    
+    
     // setInterval(()=>{
     //     regionData[3][1] += 1;
     //     console.log(document.getElementById("worldMap"))
@@ -115,9 +115,9 @@ export var Home = () => {
     
     // var a = new WikiSubject({depth:1, wikiTitle:"Depopulation of the Great Plains"})
 
-    // const [countryOptions, setCountryOptions] = useState({region:"US" });       //, displayMode:"continents",resolution:"countries"
+    // const [regionOptions, setRegionOptions] = useState({region:"US" });       //, displayMode:"continents",resolution:"countries"
     
-    const [data,setRegionData] = useState(regionData);
+    
     // useEffect(()=> {
     //     setInterval(()=>{
     //         data[3][1] += 25;
@@ -137,11 +137,6 @@ export var Home = () => {
             setCurrentTab("byCountrySearchTab");
         }
     }
-    
-    
-    
-
-    
 
     function displayMapValues(moduleName, data) {
         if(moduleName=="interestByRegion") {
@@ -217,10 +212,8 @@ export var Home = () => {
     }
 
     var closeDragElement = () =>{
-       
         document.onmouseup = null;
         document.onmousemove = null;
-       
     }
     function getTransformedPt(x,y, transformMatrix) {
         var focalPt = new DOMPoint();
@@ -232,10 +225,13 @@ export var Home = () => {
     
     var dragMouseDown = (e) =>{
         e = e || window.event;
-        
         var regionKeys = Object.keys(allRegionProperties);
         if(regionKeys.includes(e.target.id)) {
-            console.log(allRegionProperties[e.target.id]);
+            // console.log(allRegionProperties[e.target.id]);
+            var regionA3 = allRegionProperties[e.target.id]["ADM0_A3"];
+            
+            setSelectedRegion(regionA3)
+            
         }
         else console.log(e.target.id);
         lastZoom.x = e.offsetX;
@@ -255,14 +251,10 @@ export var Home = () => {
     
     
     var elementDrag = (e) => {    
-        
         e = e || window.event;
         lastZoom = {x:e.offsetX, y:e.offsetY}
         if(dragStart) {
             var pt = getTransformedPt(lastZoom.x, lastZoom.y, transformMatrix);
-
-            
-
             panSVG((pt.x-dragStart.x)/4, (pt.y-dragStart.y)/4)
         }
         return e.preventDefault() && false;
@@ -275,6 +267,7 @@ export var Home = () => {
         // document.getElementById('curveGroup').setAttributeNS(null, "transform", `matrix(${this.transformMatrix.join(' ')})`);
         // document.getElementById('ptGroup').setAttributeNS(null, "transform", `matrix(${this.transformMatrix.join(' ')})`);
     }
+     
     const mouseSelectRegion = [
         {
             eventName:"select",
@@ -286,36 +279,56 @@ export var Home = () => {
                     const dataTable = chartWrapper.getDataTable();
                     
                     var regionName = dataTable.getValue(selectedItem.row,0)
-                    setCountryOptions({region:regionCodes[regionName]})
-               
+                    setRegionOptions({region:regionCodes[regionName]})
                     // if(!document.getElementById("byCountrySearch").classList.contains("active")) document.getElementById("byCountrySearchTab").click();
                 }
             },
 
         },
     ]
-    function processClientRequest(body) {
+    function processClientRequest(action, path, body=null) {
         // create form where the user inputs the search criteria (geo, time, phrase) for the trends. put that search criteria in the request body
         // other possible modules:    relatedQueries, relatedTopics, interestOverTime, interestByRegion
-        
-        var headers = {"Content-Type":"application/json", "Accept":"application/json"}
-        var req = new Request('/server', {  method:"POST",  headers:headers,    body: JSON.stringify(body)   })
-    
-        sendRequestToBackend(req).then(result=>{
-            if(result.ok) {
-                setReadyResults(result);
-                // if(result.moduleName=="dailyTrends") displayResults(result.data.searches)
-                // else if(result.moduleName=="realTimeTrends") displayResults(result.data.searches)
-                // else if(result.moduleName=="interestByRegion") displayMapValues(result.data);
+        return new Promise((resolve, reject) => {
+            var headers = {"Content-Type":"application/json", "Accept":"application/json"}
+            var req;
+            if(action=="searchClicked") {
+                req = new Request(path, {  method:"POST",  headers:headers,    body: JSON.stringify(body)   });
+                sendRequestToBackend(req).then(result=>{
+                    if(result.ok) {
+                        setReadyResults(result);
+                        resolve();
+                        // if(result.moduleName=="dailyTrends") displayResults(result.data.searches)
+                        // else if(result.moduleName=="realTimeTrends") displayResults(result.data.searches)
+                        // else if(result.moduleName=="interestByRegion") displayMapValues(result.data);
+                    }
+                    else reject();
+                })
             }
-            
+            else if(action=="getRegionDb") {
+                req = new Request(path, {  method:"GET",  headers:headers   });
+                sendRequestToBackend(req).then( result=>{
+
+                    
+                    if(result.ok) {
+                        // result.data.sort(function(a,b) {return a.ADM0_A3 - b.ADM0_A3})
+                        
+                        resolve(result.data);
+                    }
+                    else reject();
+                })
+            }
         })
     }
+
     // fetchVitalDB("List_of_ISO_3166_country_codes",true)
     // fetchVitalDB("ISO_3166-2",true);
-   
+    var regionData;
+    
+    
+    const [data,setRegionData] = useState(null);
     const [sideBarVisible, setSideBarVisible] = useState(false);
-    const [countryOptions, setCountryOptions] = useState({});       //, displayMode:"continents",resolution:"countries"
+    const [regionOptions, setRegionOptions] = useState([]);       //, displayMode:"continents",resolution:"countries"
     const [currentTab, setCurrentTab] = useState("globalSearchTab"); 
     const [searchClicked, setSearchClicked] = useState(false);
     const [readyResults, setReadyResults] = useState(null);
@@ -353,19 +366,106 @@ export var Home = () => {
     const [mapCreated, setMapCreated] = useState(false);
 
 
-    const [regionView, setRegionView] = useState(false);
+    const [selectedRegion, setSelectedRegion] = useState("<global>");
     var continentHues = {"Asia":0, "South_America":90, "Africa":180, "Europe":120, "North_America":60, "Oceania":180, "Antarctica":300, "Seven_seas_open_ocean":240}
     
+    const [regionOptionsLoaded, setRegionOptionsLoaded] = useState(false)
+    var lastMapColorView = "default"
+    var lastSelectedRegion = "<global>"
 
+    var selectedRegionBox = {x:0,y:0}
+    var worldMapBox;
+    var startAutoZoom, prevTimeStampAutoZoom, doneAutoZoom=false;
     
+    function automatedZoom(step)  {
+        var svgW = W;
+        var svgH = H;
 
-    useEffect(()=> {
-        if(searchClicked) {
-            // if(inputData.module=="dailyTrends" || inputData.module=="realTimeTrends") { }
-            processClientRequest(inputData)
+
+        if(startAutoZoom===undefined) startAutoZoom = step;
+
+
+        var elapsedTime = step - startAutoZoom;
+        var limit = 1000;
+
+        console.log(selectedRegionBox)
+        document.getElementById("worldMap").viewBox
+
+        if(prevTimeStampAutoZoom !== step) {
+            const count= Math.min(.01*elapsedTime, limit)
+            
+            // var mag = (selectedRegionBox.height*selectedRegionBox.width)/(svgH*svgW);
+            // for(var i =0; i < 6; ++i) transformMatrix[i] *=((1-mag))
+            // transformMatrix[4] += (selectedRegionBox.x);
+            // transformMatrix[5] += (selectedRegionBox.y);
+
+            var pt = getTransformedPt(selectedRegionBox.x+selectedRegionBox.width/2, 
+                selectedRegionBox.y+selectedRegionBox.height/2, transformMatrix);
+            var pt2 = getTransformedPt(worldMapBox.x+worldMapBox.width/2, 
+                worldMapBox.y+worldMapBox.height/2, transformMatrix);
+            panSVG((worldMapBox.x-pt.x)/4, (worldMapBox.y-pt.y)/4)
+
+            // if(count==limit) doneAutoZoom=true;
+            document.getElementById('continents').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
+
+
         }
+        if(worldMapBox.x == selectedRegionBox.x  && worldMapBox.y == selectedRegionBox.y) {
+        // if(elapsedTime < 2000) {
+            console.log("done zooming")
+            prevTimeStampAutoZoom = step;
+            !doneAutoZoom && window.requestAnimationFrame(automatedZoom);
+        }
+        
+
+
 
         
+    }
+
+
+    useEffect(()=> {
+        if(lastSelectedRegion != selectedRegion) {
+            // console.log("selectedRegion", selectedRegion)
+            var worldMap = document.getElementById('worldMap')
+            var regionObj = document.getElementById(selectedRegion);
+
+           
+            
+            // worldMap.setAttribute("viewBox", `${box.x} ${box.y} ${box.width} ${box.height}`)
+            selectedRegionBox = regionObj.getBBox()
+            worldMapBox = worldMap.getBBox()
+            if(selectedRegion=="USA") {
+                // make alternative map that includes all states compactly
+            }
+            else {
+                    window.requestAnimationFrame(automatedZoom)
+             
+                    // for(var i =0; i < 6; ++i) transformMatrix[i] *=(zoomVar)
+                    // transformMatrix[4] += (1-zoomVar)*(regionCenter.x);
+                    // transformMatrix[5] += (1-zoomVar)*(regionCenter.y);
+            
+                
+                
+                
+
+            }
+
+            lastSelectedRegion = selectedRegion;
+        }
+        if(!regionOptionsLoaded) {
+            processClientRequest("getRegionDb","/server/getRegionDb").then(result=> {
+                console.log("result",result)
+                setRegionOptions(result)
+                setRegionOptionsLoaded(true)
+                
+            })
+        }
+        if(searchClicked) {
+            // if(inputData.module=="dailyTrends" || inputData.module=="realTimeTrends") { }
+            processClientRequest("searchClicked","/server",inputData)
+        }
+
         
         // var mercator = d3.geoProjection(function(x,y) {
         //     return [x, Math.log(Math.tan(Math.PI/4 + y/2))];
@@ -463,45 +563,47 @@ export var Home = () => {
             worldMap.addEventListener("wheel",captureZoomEvent,false);
             worldMap.addEventListener("DOMMouseScroll", captureZoomEvent,false);
             worldMap.addEventListener("mousedown", dragMouseDown, false);
-
             setMapCreated(true)
+            
         }
         else {
             var regionKeys = Object.keys(allRegionProperties);
-            
-            for(let k=0; k < regionKeys.length; ++k) {
-                var key = regionKeys[k];
-                var regionObj = allRegionProperties[key];
-                var contName = regionObj["CONTINENT"];
-                contName = contName.replace(/\(|\)/gi, '')
-                contName = contName.replace(/\s/gi, '_')
-
-                svg.select("#continents").select(`#${contName}`)
-                .select(`#${key}`)
-                .attr("fill", ()=> {
-                    if(mapColorView=="default") {
-                        return `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
-                    }
-                    if(mapColorView=="continent") {
-                        return `hsl( ${continentHues[contName]}, ${getRandomInt(40,55)}%, ${getRandomInt(30,45)}%)`    
-                    }
-                })
+            if(lastMapColorView != mapColorView) {
+                for(let k=0; k < regionKeys.length; ++k) {
+                    var key = regionKeys[k];
+                    var regionObj = allRegionProperties[key];
+                    var contName = regionObj["CONTINENT"];
+                    contName = contName.replace(/\(|\)/gi, '')
+                    contName = contName.replace(/\s/gi, '_')
+    
+                    svg.select("#continents").select(`#${contName}`)
+                    .select(`#${key}`)
+                    .attr("fill", ()=> {
+                        if(mapColorView=="default") {
+                            return `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
+                        }
+                        if(mapColorView=="continent") {
+                            return `hsl( ${continentHues[contName]}, ${getRandomInt(40,55)}%, ${getRandomInt(30,45)}%)`    
+                        }
+                    })
+                }
+                lastMapColorView = mapColorView;
             }
+            
+            
+            
         }
-       
-
-
-
-        console.log("regionView", regionView)
         
-    },[searchClicked, mapColorView, regionView]);
+       
+        
+    },[searchClicked, mapColorView, selectedRegion]);
 
     //for orthographic projcetion: https://bl.ocks.org/mbostock/3795040
     // https://www.naturalearthdata.com/downloads/10m-cultural-vectors/
     
     return (
 
-            <SideBarWrapper regionView={regionView} setRegionView={setRegionView} mapColorView={mapColorView} setMapColorView={setMapColorView} sideBarVisible={sideBarVisible} setSideBarVisible={setSideBarVisible} setInputData={setInputData} inputData={inputData} readyResults={readyResults} setReadyResults={setReadyResults} searchClicked={searchClicked} setSearchClicked={setSearchClicked} setCurrentTab={setCurrentTab} countryOptions={countryOptions} setCountryOptions={setCountryOptions} isVisible={sideBarVisible} setVisible={setSideBarVisible}>
+            <SideBarWrapper selectedRegion={selectedRegion} setSelectedRegion={setSelectedRegion} mapColorView={mapColorView} setMapColorView={setMapColorView} sideBarVisible={sideBarVisible} setSideBarVisible={setSideBarVisible} setInputData={setInputData} inputData={inputData} readyResults={readyResults} setReadyResults={setReadyResults} searchClicked={searchClicked} setSearchClicked={setSearchClicked} setCurrentTab={setCurrentTab} regionOptions={regionOptions} setRegionOptions={setRegionOptions} isVisible={sideBarVisible} setVisible={setSideBarVisible}>
                 <div id="globalSearch" >
                     <svg id="worldMap" className="map" width={W} height={H} >
                         <g id="continents"/>

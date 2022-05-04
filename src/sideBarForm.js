@@ -114,22 +114,19 @@ var dateSliderOptions = {
 }
 function categoryChanged() {}
 
-var regionOptions  = regionCodesReformatted.map((obj,idx)=>{ 
-    return {key:idx, text:obj.name, value:obj.code, selected:obj.name=="United States"?true:false}
-})
 
-export const SideBarWrapper = ({setCountryOptions,countryOptions, regionView,setRegionView,mapColorView, setMapColorView, sideBarVisible, setSideBarVisible,setInputData, inputData, setReadyResults, readyResults, setSearchClicked, searchClicked, setCurrentTab,  isVisible, setVisible,...props}) => {
+
+export const SideBarWrapper = ({setRegionOptions, regionOptions, selectedRegion, setSelectedRegion, mapColorView, setMapColorView, sideBarVisible, setSideBarVisible,setInputData, inputData, setReadyResults, readyResults, setSearchClicked, searchClicked, setCurrentTab,  isVisible, setVisible,...props}) => {
     
-    // const [countryOptions, setCountryOptions] = useState({region:"US" });       //, displayMode:"regions",resolution:"countries"
-    
+    // const [RegionOptions, setRegionOptions] = useState({region:"US" });       //, displayMode:"regions",resolution:"countries"
+
     const [data,setRegionData] = useState(regionData);
     const [moduleName, setModuleName] = useState("dailyTrends");
     const [timeSliderCreated, setTimeSliderCreated] = useState(false);
     const [showSlider, setHideSlider] = useState(false)
     const [sideBarTab,setSideBarTab] = useState("trendsBtn");
 
-
-    function regionChanged() {
+    function regionChanged(e,data) {
         var selected = document.getElementById("regionElement")
         if(selected.value=="ALL") {
             document.getElementById("backRegionBtn").classList.remove("showing");
@@ -137,11 +134,14 @@ export const SideBarWrapper = ({setCountryOptions,countryOptions, regionView,set
         else {
             document.getElementById("backRegionBtn").classList.add("showing");
         }
+        console.log('selected.value',data.value)
+        setSelectedRegion(data.value)
         
-        setRegionView(selected.value);
         // remember, some modules can access the city/county level of US region
-        if(selected.value=="US") setCountryOptions({...countryOptions,region:selected.value})           // resolution:"provinces", 
-        else setCountryOptions({...countryOptions,region:selected.value})         //resolution:"countries",
+
+
+        // if(selected.value=="US") setRegionOptions({...RegionOptions,region:selected.value})           // resolution:"provinces", 
+        // else setRegionOptions({...RegionOptions,region:selected.value})         //resolution:"countries",
     
     }
     function buildRequestBody() {
@@ -257,9 +257,13 @@ export const SideBarWrapper = ({setCountryOptions,countryOptions, regionView,set
         }
     }
     //regionCodesReformatted.map((obj,idx)=>{return (<Dropdown.Item key={idx} text={obj.name} value={obj.code} selected={obj.name=="United States"?true:false}></Dropdown.Item>)})
-    var regionOptions  = regionCodesReformatted.map((obj,idx)=>{ 
-        return {key:idx, text:obj.name, value:obj.code, selected:obj.name=="United States"?true:false}
+    
+    
+    var regionDropdownOptions  = regionOptions.map((obj,idx)=>{ 
+        return {key:idx, text:obj.ADMIN, value:obj.ADM0_A3}          //, selected:obj.ADMIN=="United States"?true:false
     })
+
+    
 
     var moduleOptions = [
         {value:"dailyTrends", key:"Daily Trends", text:"Daily Trends"},
@@ -405,7 +409,7 @@ export const SideBarWrapper = ({setCountryOptions,countryOptions, regionView,set
 
                                 <Grid.Row>
                                     <Grid.Column  id="regionSection" >
-                                        <Dropdown scrolling floating labeled button placeholder='Select Region' fluid id="regionElement" onChange={regionChanged} options={regionOptions} />  
+                                        <Dropdown scrolling floating labeled button placeholder='Select Region' fluid id="regionElement" onChange={(e,d)=> regionChanged(e,d)} options={regionDropdownOptions} />  
                                     </Grid.Column>    
                                     <Grid.Column id="categorySection">
                                             <Dropdown fluid floating labeled button text="Category" id="categoryElement" onChange={categoryChanged}>

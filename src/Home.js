@@ -202,12 +202,12 @@ export var Home = () => {
         let wheelNorm = delta;
         let zoomVar = Math.pow(zoomIntensity,wheelNorm);
         for(var i =0; i < 6; ++i) transformMatrix[i] *=(zoomVar)
-        
         transformMatrix[4] += (1-zoomVar)*(lastZoom.x);
         transformMatrix[5] += (1-zoomVar)*(lastZoom.y);
 
+        document.getElementById('usLocal').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
         document.getElementById('continents').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
-       
+        
         zoomHasHappened = 0;
     }
 
@@ -229,7 +229,6 @@ export var Home = () => {
         if(regionKeys.includes(e.target.id)) {
             // console.log(allRegionProperties[e.target.id]);
             var regionA3 = allRegionProperties[e.target.id]["ADM0_A3"];
-            
             setSelectedRegion(regionA3)
             
         }
@@ -238,12 +237,10 @@ export var Home = () => {
         lastZoom.y = e.offsetY;
         dragStart = getTransformedPt(lastZoom.x, lastZoom.y, transformMatrix);
 
-
         // these would be used for orthographic projection
         // projection.rotate([lambda(dragStart.x), theta(dragStart.y)]);
         // svg.selectAll("path").attr("d", path);
         
-
         document.onmouseup = closeDragElement;
         document.onmousemove = elementDrag;
         return e.preventDefault() && false;
@@ -263,29 +260,12 @@ export var Home = () => {
     var panSVG = (dx,dy) =>{
         transformMatrix[4] += dx;
         transformMatrix[5] += dy;
+        document.getElementById('usLocal').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
         document.getElementById('continents').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
         // document.getElementById('curveGroup').setAttributeNS(null, "transform", `matrix(${this.transformMatrix.join(' ')})`);
         // document.getElementById('ptGroup').setAttributeNS(null, "transform", `matrix(${this.transformMatrix.join(' ')})`);
     }
      
-    const mouseSelectRegion = [
-        {
-            eventName:"select",
-            callback: ({chartWrapper}) => {
-                const chart = chartWrapper.getChart();
-                const selection = chart.getSelection();
-                if(selection.length==1) {
-                    const [selectedItem] = selection;
-                    const dataTable = chartWrapper.getDataTable();
-                    
-                    var regionName = dataTable.getValue(selectedItem.row,0)
-                    setRegionOptions({region:regionCodes[regionName]})
-                    // if(!document.getElementById("byCountrySearch").classList.contains("active")) document.getElementById("byCountrySearchTab").click();
-                }
-            },
-
-        },
-    ]
     function processClientRequest(action, path, body=null) {
         // create form where the user inputs the search criteria (geo, time, phrase) for the trends. put that search criteria in the request body
         // other possible modules:    relatedQueries, relatedTopics, interestOverTime, interestByRegion
@@ -320,11 +300,7 @@ export var Home = () => {
             }
         })
     }
-
-    // fetchVitalDB("List_of_ISO_3166_country_codes",true)
-    // fetchVitalDB("ISO_3166-2",true);
     var regionData;
-    
     
     const [data,setRegionData] = useState(null);
     const [sideBarVisible, setSideBarVisible] = useState(false);
@@ -369,6 +345,14 @@ export var Home = () => {
     const [selectedRegion, setSelectedRegion] = useState("<global>");
     var continentHues = {"Asia":0, "South_America":90, "Africa":180, "Europe":120, "North_America":60, "Oceania":180, "Antarctica":300, "Seven_seas_open_ocean":240}
     
+    
+    var seStates = ["AL","GA","MS","TN","SC","NC","FL","AR","LA","KY"]
+    var neStates = ["VA","WV",'PA','NY','OH','ME','DC','MD','DE','NJ','CT','RI','MA','NH','VT']
+    var mwStates = ['NE','MI','WI','IA','MO','IL','KS','ND','SE','IN','SD','MN']
+    var swStates=['TX','NM','OK','CA','NV','CO','UT','AZ']
+    var nwStates = ['WA','OR','ID','MT','AK','HI', 'WY']
+
+
     const [regionOptionsLoaded, setRegionOptionsLoaded] = useState(false)
     var lastMapColorView = "default"
     var lastSelectedRegion = "<global>"
@@ -380,20 +364,14 @@ export var Home = () => {
     function automatedZoom(step)  {
         var svgW = W;
         var svgH = H;
-
-
         if(startAutoZoom===undefined) startAutoZoom = step;
-
-
         var elapsedTime = step - startAutoZoom;
         var limit = 1000;
-
         console.log(selectedRegionBox)
         document.getElementById("worldMap").viewBox
 
         if(prevTimeStampAutoZoom !== step) {
             const count= Math.min(.01*elapsedTime, limit)
-            
             // var mag = (selectedRegionBox.height*selectedRegionBox.width)/(svgH*svgW);
             // for(var i =0; i < 6; ++i) transformMatrix[i] *=((1-mag))
             // transformMatrix[4] += (selectedRegionBox.x);
@@ -407,7 +385,7 @@ export var Home = () => {
 
             // if(count==limit) doneAutoZoom=true;
             document.getElementById('continents').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
-
+            document.getElementById('usLocal').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
 
         }
         if(worldMapBox.x == selectedRegionBox.x  && worldMapBox.y == selectedRegionBox.y) {
@@ -417,10 +395,6 @@ export var Home = () => {
             !doneAutoZoom && window.requestAnimationFrame(automatedZoom);
         }
         
-
-
-
-        
     }
 
 
@@ -429,8 +403,6 @@ export var Home = () => {
             // console.log("selectedRegion", selectedRegion)
             var worldMap = document.getElementById('worldMap')
             var regionObj = document.getElementById(selectedRegion);
-
-           
             
             // worldMap.setAttribute("viewBox", `${box.x} ${box.y} ${box.width} ${box.height}`)
             selectedRegionBox = regionObj.getBBox()
@@ -439,16 +411,10 @@ export var Home = () => {
                 // make alternative map that includes all states compactly
             }
             else {
-                    window.requestAnimationFrame(automatedZoom)
-             
+                    // window.requestAnimationFrame(automatedZoom)
                     // for(var i =0; i < 6; ++i) transformMatrix[i] *=(zoomVar)
                     // transformMatrix[4] += (1-zoomVar)*(regionCenter.x);
                     // transformMatrix[5] += (1-zoomVar)*(regionCenter.y);
-            
-                
-                
-                
-
             }
 
             lastSelectedRegion = selectedRegion;
@@ -478,10 +444,82 @@ export var Home = () => {
             }
             else return selection[0][0]; 
         }
+
+
+        var usRegionHues = {"southwest":0, "southeast":72, "northwest":144, "midwest":216, "northeast":288}
         svg = d3.select("#worldMap")
         if(!mapCreated) {
             svgConts = d3.select("#continents")
-            d3.json("./world.json", function(error, data) {
+            d3.json("./world_w_us_counties.json", function(error, data) {
+                
+
+                // US county level
+                for(let p=0; p < data.objects.admin_counties.geometries.length; ++p) {
+                    var geometries = data.objects.admin_counties.geometries[p];
+                    console.log('geometries', geometries)
+                    //mercator , orthographic
+                    var stateName = geometries.properties["REGION"];
+                    stateName = stateName.replace(/\(|\)/gi, '')
+                    stateName = stateName.replace(/\s/gi, '_')
+
+
+                    //  for counties: use WIKIDATAID as identifier instead 
+                    var countyName = geometries.properties["NAME_ALT"];
+                    countyName = countyName.replace(/\(|\)/gi, '')
+                    countyName = countyName.replace(/\s/gi, '_')
+                    var usGroup;
+                    if(seStates.includes(stateName)) usGroup='southeast'
+                    else if(neStates.includes(stateName)) usGroup='northeast'
+                    else if(swStates.includes(stateName)) usGroup='southwest'
+                    else if(mwStates.includes(stateName)) usGroup='midwest'
+                    else if(nwStates.includes(stateName)) usGroup='northwest'
+
+
+                    // for shifting Alaska down to include all of US in US map
+                    if(geometries.properties["REGION"] == "AK") {
+                        
+                        // for(let a =0; a < geometries.arcs.length; ++a) {
+                        //     if(typeof geometries.arcs[a] == 'object') {
+                        //         geometries.arcs[a] = geometries.arcs[a].map((x)=> {
+                        //             return x.map((i=> {
+                        //                 return i/100
+                        //             }))
+                        //         })
+                        //     }
+                        // }      
+                    }
+
+                    var group = d3.selectAll(`#${stateName}`)
+                    var regionObj = idExists(`#${stateName}`,`#${geometries.properties["WIKIDATAID"]}`)
+                    if(regionObj) {
+                        regionObj.attr("fill", ()=> {
+                            if(mapColorView=="default") {
+                                return `hsl( ${usRegionHues[usGroup]}, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
+                            }
+                            if(mapColorView=="continent") {
+                                return `hsl( ${usRegionHues[usGroup]}, ${getRandomInt(40,55)}%, ${getRandomInt(30,45)}%)`
+                            }
+                        })
+                        continue;
+                    }
+                    group.append("path")
+                        .datum(topojson.feature(data, geometries))
+                        .attr("id", geometries.properties["WIKIDATAID"])
+                        .attr("d", d3.geo.path().projection(d3.geo.mercator()))
+                        .attr("fill", ()=> {
+                            if(mapColorView=="default") {
+                                return `hsl( ${usRegionHues[usGroup]}, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
+                            }
+                            if(mapColorView=="continent") {
+                                return `hsl( ${usRegionHues[usGroup]}, ${getRandomInt(40,55)}%, ${getRandomInt(30,45)}%)`    
+                            }
+                        })
+                    allRegionProperties[geometries.properties["WIKIDATA"]] = geometries.properties;
+                    
+                }
+
+                // *********************************************************************************
+                // international level
                 for(let p=0; p < data.objects.admin.geometries.length; ++p) {
                     var geometries = data.objects.admin.geometries[p];
                     
@@ -490,9 +528,7 @@ export var Home = () => {
                     contName = contName.replace(/\(|\)/gi, '')
                     contName = contName.replace(/\s/gi, '_')
     
-                    
                     if(!continents.includes(contName)) {                // this section is for initializing continents and adding the region belonging to the newly created continent
-                        
                         svgConts.append("g")
                             .attr("id",contName)
                             .append("path")
@@ -513,7 +549,6 @@ export var Home = () => {
                     else {                                          // this section is for adding region to already existing continent
                         var group = d3.selectAll(`#${contName}`)
                         var regionObj = idExists("#continents",`#${geometries.properties["ADM0_A3"]}`)
-                    
                         if(regionObj) {
                             regionObj.attr("fill", ()=> {
                                 if(mapColorView=="default") {
@@ -538,24 +573,9 @@ export var Home = () => {
                                 }
                             })
                         allRegionProperties[geometries.properties["ADM0_A3"]] = geometries.properties;
-                        
                     }
-    
                 }
                 console.log("allRegionProperties",allRegionProperties)
-                
-                // var paths=svg.selectAll("path")
-                // for(let p=0; p < paths.data().length; ++p) {
-                //     var P = paths.data()[p];  
-                //     svg.append("text")
-                //         .text(data.objects.admin.geometries[p].properties["ADMIN"])
-                //         .datum(d3.geo.path().projection(d3.geo.mercator()))
-                //         .attr("x", (d)=> d3.geo.centroid(P)[0])
-                //         .attr("y", (d)=> d3.geo.centroid(P)[1])
-                // }
-                
-                // var svgBlob = new Blob(['<?xml version="1.0" standalone"no"?\r\n', svg.html()], 
-                //         {type:"image/svg+xml;charset=utf-8"})
                 
                 
             })
@@ -600,13 +620,157 @@ export var Home = () => {
 
     //for orthographic projcetion: https://bl.ocks.org/mbostock/3795040
     // https://www.naturalearthdata.com/downloads/10m-cultural-vectors/
+    //SE = 10
+    //NE = 15
+    //MW = 9
+    //SW = 8
+    //NW = 6
+
     
     return (
 
             <SideBarWrapper selectedRegion={selectedRegion} setSelectedRegion={setSelectedRegion} mapColorView={mapColorView} setMapColorView={setMapColorView} sideBarVisible={sideBarVisible} setSideBarVisible={setSideBarVisible} setInputData={setInputData} inputData={inputData} readyResults={readyResults} setReadyResults={setReadyResults} searchClicked={searchClicked} setSearchClicked={setSearchClicked} setCurrentTab={setCurrentTab} regionOptions={regionOptions} setRegionOptions={setRegionOptions} isVisible={sideBarVisible} setVisible={setSideBarVisible}>
                 <div id="globalSearch" >
+                    <svg id="usCountyMap" className="map local" width={W} height={H} >
+                        <g id="southeast">              
+                            <g id="AL"/>
+                            <g id="GA"/>
+                            <g id="MS"/>
+                            <g id="TN"/>
+                            <g id="SC"/>
+                            <g id="FL"/>
+                            <g id="AR"/>
+                            <g id="LA"/>
+                            <g id="KY"/>
+                            <g id="NC"/>
+                        </g>
+                        <g id="northeast">
+                            <g id="VA"/>
+                            <g id="WV"/>
+                            <g id="PA"/>
+                            <g id="NY"/>
+                            <g id="OH"/>
+                            <g id="ME"/>
+                            <g id="DC"/>
+                            <g id="MD"/>
+                            <g id="DE"/>
+                            <g id="NJ"/>
+                            <g id="CT"/>
+                            <g id="RI"/>
+                            <g id="MA"/>
+                            <g id="NH"/>
+                            <g id="VT"/>
+                        </g>
+                        
+                        <g id="midwest">
+                            <g id="MN"/>
+                            <g id="NE"/>
+                            <g id="MI"/>
+                            <g id="WI"/>
+                            <g id="IA"/>
+                            <g id="MO"/>
+                            <g id="IL"/>
+                            <g id="IL"/>
+                            <g id="KS"/>
+                            <g id='SD'/>
+                            <g id="ND"/>
+                            <g id="SE"/>
+                            <g id='IN'/>
+                        </g>
+                        <g id="southwest">
+                            
+                            <g id="TX"/>
+                            <g id="NM"/>
+                            <g id="OK"/>
+                            <g id="CA"/>
+                            <g id="NV"/>
+                            <g id="CO"/>
+                            <g id="UT"/>
+                            <g id="AZ"/>
+                        </g>
+                        
+                        <g id="northwest">
+                            <g id="WY"/>
+                            <g id="WA"/>
+                            <g id="OR"/>
+                            <g id="ID"/>
+                            <g id="MT"/>
+                            <g id="AK"/>
+                            <g id="HI"/>
+                            </g>
+                    </svg>
                     <svg id="worldMap" className="map" width={W} height={H} >
                         <g id="continents"/>
+                        <g id="usLocal">
+                        
+                            <g id="southeast">              
+                                <g id="AL"/>
+                                <g id="GA"/>
+                                <g id="MS"/>
+                                <g id="TN"/>
+                                <g id="SC"/>
+                                <g id="FL"/>
+                                <g id="AR"/>
+                                <g id="LA"/>
+                                <g id="KY"/>
+                                <g id="NC"/>
+                            </g>
+                            <g id="northeast">
+                                <g id="VA"/>
+                                <g id="WV"/>
+                                <g id="PA"/>
+                                <g id="NY"/>
+                                <g id="OH"/>
+                                <g id="ME"/>
+                                <g id="DC"/>
+                                <g id="MD"/>
+                                <g id="DE"/>
+                                <g id="NJ"/>
+                                <g id="CT"/>
+                                <g id="RI"/>
+                                <g id="MA"/>
+                                <g id="NH"/>
+                                <g id="VT"/>
+                            </g>
+                            
+                            <g id="midwest">
+                                <g id="MN"/>
+                                <g id="NE"/>
+                                <g id="MI"/>
+                                <g id="WI"/>
+                                <g id="IA"/>
+                                <g id="MO"/>
+                                <g id="IL"/>
+                                <g id="IL"/>
+                                <g id="KS"/>
+                                <g id='SD'/>
+                                <g id="ND"/>
+                                <g id="SE"/>
+                                <g id='IN'/>
+                            </g>
+                            <g id="southwest">
+                                
+                                <g id="TX"/>
+                                <g id="NM"/>
+                                <g id="OK"/>
+                                <g id="CA"/>
+                                <g id="NV"/>
+                                <g id="CO"/>
+                                <g id="UT"/>
+                                <g id="AZ"/>
+                            </g>
+                        
+                            <g id="northwest">
+                                <g id="WY"/>
+                                <g id="WA"/>
+                                <g id="OR"/>
+                                <g id="ID"/>
+                                <g id="MT"/>
+                                <g id="AK"/>
+                                <g id="HI"/>
+                            </g>
+
+                        </g>
                     </svg>
                 </div>
 

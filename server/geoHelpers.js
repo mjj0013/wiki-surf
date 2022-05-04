@@ -182,6 +182,17 @@ const angloSphere = [
     "Ireland",
     "Australia"
 ]
+
+const hispanosphere =[
+    "Mexico",
+    "Columbia",
+    "Spain",
+    "Argentina",
+    //.... more
+]
+    
+
+
 var regionsNotWorking = [
     "UAE",
     "Phillippines",

@@ -82,6 +82,150 @@ var dateWithinRange = (dateObj) => {        //tests if specified date is more th
     else return 1
 }
 
+
+/*
+ALABAMA
+HSV, Decatur, Florence  :   US-AL-691
+Birmingham              :   US-AL-630
+Dothan                  :   US-AL-606
+Montgomery/Selma        :   US-AL-698
+Mobile,AL (Pensacola)   :   US-AL-686
+
+GEORGIA
+atlanta         us-ga-524
+albany          us-ga-525
+augusta         us-ga-520
+atlanta         us-ga-524
+chattanooga TN  us-ga-575
+columbus        us-ga-522
+jacksonville FL us-ga-561
+dothan AL        us-ga-606
+macon ga         us-ga-503
+savannah ga      us-ga-507
+tallahassee fl / thomasville GA us-ga-530
+
+
+ARIZONA
+phoenix AZ      us-az-753
+tucson          us-az-789
+yuma az, el centro CA   us-az-771
+
+
+ARKANSAS
+693
+670
+734
+640
+628
+612
+619
+
+
+CALIFORNIA
+800, 868,802, 866, 803, 813, 828, 804, 811, 862, 825, 807, 855, 771
+
+COLORADO
+752, 751, 773
+
+CONNECTICUT
+533
+
+DELAWARE
+504, 576
+
+FLORIDA
+571, 592, 561, 528, 534, 656, 530, 539, 548
+
+HAWAII
+744
+
+IDAHO
+757, 758, 881, 760
+
+ILLINOIS
+648, 602, 682, 649, 632, 675, 717, 610, 609, 581
+
+INDIANA
+515, 649, 509, 527, 582, 529, 588, 581
+
+
+IOWA
+637, 682 , 679, 652, 631, 611, 624
+
+KANSAS
+603, 616, 638, 605, 678
+
+KENTUCKY
+736, 564, 515, 649, 557, 541, 529, 659, 632, 531
+
+LOUISIANA
+644, 716, 642, 643, 628, 622, 612
+
+MAINE
+537, 500, 552
+
+MARYLAND
+512, 576, 511
+
+
+MASSACH
+506, 521, 543
+
+MICHIGAN
+583, 505, 513, 563, 551, 553, 588, 547, 540
+
+
+MINNESOTA
+676, 724, 702, 737, 
+613, 611
+
+
+MISSISSIPPI
+716, 746, 673, 647, 710, 718, 640, 711
+
+
+MISSOURI
+604, 603, 616, 631, 717, 619, 638, 609
+
+
+MONTANA
+756, 754, 798, 755, 766, 687, 762
+
+NEBRASKA
+759, 751, 722, 740, 652, 624,  725, 
+
+
+NEVADA
+839, 811, 770
+
+NEW HAMPSHIRE
+506, 523, 500,
+
+NEW JERSEY
+501, 504, 
+
+NEW MEXICO
+790, 634, 765
+
+NEW YORK
+532, 502, 514, 523, 565, 501, 538, 555, 526, 549
+
+NORTH CAROLINA
+517, 570, 518, 544, 560, 550
+
+NORTH DAKOTA
+724, 687
+
+OHIO
+564, 515, 510, 535, 542, 509, 558, 597, 547, 554, 596
+
+OKLAHOMA
+634, 670, 650, 657, 671, 627
+
+OREGEON
+821, 757, 801, 813, 820, 810
+*/
+
 //US-AL-691
 var relatedQueriesModule = (req, res) => {
     var query = req.body;
@@ -89,6 +233,8 @@ var relatedQueriesModule = (req, res) => {
     var endTime = query.endTime? new Date(query.endTime) : new Date();
     var geo = query.region? query.region : regionCodes["United States"];
     geo = 'US-AL-691';
+
+    
     // geo = 'US-AL-630';
     var keyword = query.keyword;
     googleTrends.relatedQueries({keyword: keyword, startTime: startTime, endTime: endTime, geo: geo})

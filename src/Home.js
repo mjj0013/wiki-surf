@@ -186,11 +186,13 @@ export var Home = () => {
         }
     }
     var lastZoom = {x:0,y:0}
-    var transformMatrix = [1, 0, 0, 1, 0, 0];
+    // var transformMatrix = [1, 0, 0, 1, 0, 0]
+    var [transformMatrix, setTransformMatrix] = useState([1, 0, 0, 1, 0, 0]);
     var zoomIntensity = 0.2;
     var dragStart = {x:0, y:0}
     var zoomHasHappened = 0;
     var captureZoomEvent = (e) => {
+        
         lastZoom.x = e.offsetX;
         lastZoom.y = e.offsetY;
         let delta = e.wheelDelta/1000;
@@ -201,12 +203,20 @@ export var Home = () => {
     var updateZoom = (delta) => {
         let wheelNorm = delta;
         let zoomVar = Math.pow(zoomIntensity,wheelNorm);
-        for(var i =0; i < 6; ++i) transformMatrix[i] *=(zoomVar)
+    
+        for(var i =0; i < 6; ++i) {transformMatrix[i] *= zoomVar }
         transformMatrix[4] += (1-zoomVar)*(lastZoom.x);
         transformMatrix[5] += (1-zoomVar)*(lastZoom.y);
-
-        document.getElementById('usLocal').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
-        document.getElementById('continents').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
+        
+        
+        
+        if(selectedRegion == "USA") {
+            document.getElementById('usLocal').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
+        }
+        else {
+            document.getElementById('continents').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
+        }
+        
         
         zoomHasHappened = 0;
     }
@@ -224,15 +234,20 @@ export var Home = () => {
     }
     
     var dragMouseDown = (e) =>{
+        
         e = e || window.event;
         var regionKeys = Object.keys(allRegionProperties);
         if(regionKeys.includes(e.target.id)) {
             // console.log(allRegionProperties[e.target.id]);
             var regionA3 = allRegionProperties[e.target.id]["ADM0_A3"];
+        
             setSelectedRegion(regionA3)
             
         }
-        else console.log(e.target.id);
+        else {
+            
+            console.log(allCountyProperties[e.target.id]);
+        }
         lastZoom.x = e.offsetX;
         lastZoom.y = e.offsetY;
         dragStart = getTransformedPt(lastZoom.x, lastZoom.y, transformMatrix);
@@ -260,10 +275,20 @@ export var Home = () => {
     var panSVG = (dx,dy) =>{
         transformMatrix[4] += dx;
         transformMatrix[5] += dy;
-        document.getElementById('usLocal').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
-        document.getElementById('continents').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
+        // document.getElementById('usLocal').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
+        
+        // document.getElementById('continents').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
         // document.getElementById('curveGroup').setAttributeNS(null, "transform", `matrix(${this.transformMatrix.join(' ')})`);
         // document.getElementById('ptGroup').setAttributeNS(null, "transform", `matrix(${this.transformMatrix.join(' ')})`);
+
+
+        if(selectedRegion == "USA") {
+            document.getElementById('usLocal').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
+        }
+        else {
+            document.getElementById('continents').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
+        }
+
     }
      
     function processClientRequest(action, path, body=null) {
@@ -288,19 +313,12 @@ export var Home = () => {
             else if(action=="getRegionDb") {
                 req = new Request(path, {  method:"GET",  headers:headers   });
                 sendRequestToBackend(req).then( result=>{
-
-                    
-                    if(result.ok) {
-                        // result.data.sort(function(a,b) {return a.ADM0_A3 - b.ADM0_A3})
-                        
-                        resolve(result.data);
-                    }
+                    if(result.ok) resolve(result.data);
                     else reject();
                 })
             }
         })
     }
-    var regionData;
     
     const [data,setRegionData] = useState(null);
     const [sideBarVisible, setSideBarVisible] = useState(false);
@@ -336,7 +354,8 @@ export var Home = () => {
     var svg;
     var svgConts;
 
-    const [allRegionProperties,setAllRegionProperties]  = useState({});
+    var [allRegionProperties,setAllRegionProperties]  = useState({});
+    var [allCountyProperties,setAllCountyProperties]  = useState({});
     var continents = []
 
     const [mapCreated, setMapCreated] = useState(false);
@@ -346,58 +365,21 @@ export var Home = () => {
     var continentHues = {"Asia":0, "South_America":90, "Africa":180, "Europe":120, "North_America":60, "Oceania":180, "Antarctica":300, "Seven_seas_open_ocean":240}
     
     
-    var seStates = ["AL","GA","MS","TN","SC","NC","FL","AR","LA","KY"]
+    var seStates = ["AL","GA","MS","TN","SC","NC","FL","AR","LA","KY", "PR"]
     var neStates = ["VA","WV",'PA','NY','OH','ME','DC','MD','DE','NJ','CT','RI','MA','NH','VT']
     var mwStates = ['NE','MI','WI','IA','MO','IL','KS','ND','SE','IN','SD','MN']
     var swStates=['TX','NM','OK','CA','NV','CO','UT','AZ']
     var nwStates = ['WA','OR','ID','MT','AK','HI', 'WY']
-
+    var usRegionHues = {"midwest":0, "southeast":72, "northwest":144, "southwest":216, "northeast":288}
 
     const [regionOptionsLoaded, setRegionOptionsLoaded] = useState(false)
     var lastMapColorView = "default"
     var lastSelectedRegion = "<global>"
 
-    var selectedRegionBox = {x:0,y:0}
-    var worldMapBox;
-    var startAutoZoom, prevTimeStampAutoZoom, doneAutoZoom=false;
-    
-    function automatedZoom(step)  {
-        var svgW = W;
-        var svgH = H;
-        if(startAutoZoom===undefined) startAutoZoom = step;
-        var elapsedTime = step - startAutoZoom;
-        var limit = 1000;
-        console.log(selectedRegionBox)
-        document.getElementById("worldMap").viewBox
-
-        if(prevTimeStampAutoZoom !== step) {
-            const count= Math.min(.01*elapsedTime, limit)
-            // var mag = (selectedRegionBox.height*selectedRegionBox.width)/(svgH*svgW);
-            // for(var i =0; i < 6; ++i) transformMatrix[i] *=((1-mag))
-            // transformMatrix[4] += (selectedRegionBox.x);
-            // transformMatrix[5] += (selectedRegionBox.y);
-
-            var pt = getTransformedPt(selectedRegionBox.x+selectedRegionBox.width/2, 
-                selectedRegionBox.y+selectedRegionBox.height/2, transformMatrix);
-            var pt2 = getTransformedPt(worldMapBox.x+worldMapBox.width/2, 
-                worldMapBox.y+worldMapBox.height/2, transformMatrix);
-            panSVG((worldMapBox.x-pt.x)/4, (worldMapBox.y-pt.y)/4)
-
-            // if(count==limit) doneAutoZoom=true;
-            document.getElementById('continents').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
-            document.getElementById('usLocal').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
-
-        }
-        if(worldMapBox.x == selectedRegionBox.x  && worldMapBox.y == selectedRegionBox.y) {
-        // if(elapsedTime < 2000) {
-            console.log("done zooming")
-            prevTimeStampAutoZoom = step;
-            !doneAutoZoom && window.requestAnimationFrame(automatedZoom);
-        }
-        
-    }
-
-
+    // var selectedRegionBox = {x:0,y:0}
+    // selectedRegionBox = regionObj.getBBox()
+            
+   
     useEffect(()=> {
         if(lastSelectedRegion != selectedRegion) {
             // console.log("selectedRegion", selectedRegion)
@@ -405,17 +387,44 @@ export var Home = () => {
             var regionObj = document.getElementById(selectedRegion);
             
             // worldMap.setAttribute("viewBox", `${box.x} ${box.y} ${box.width} ${box.height}`)
-            selectedRegionBox = regionObj.getBBox()
-            worldMapBox = worldMap.getBBox()
+           
             if(selectedRegion=="USA") {
+
+                var usCountyMap = document.getElementById("usCountyMap")
                 // make alternative map that includes all states compactly
+                
+                document.getElementById("continents").classList.toggle("withEase")
+                document.getElementById("continents").classList.toggle("usLocal")
+                
+                usCountyMap.classList.toggle("showing")
+                document.getElementById("worldMap").classList.toggle("hidden")
+                // document.removeEventListener("wheel",worldMap)
+                
+
+                // usCountyMap.setAttributeNS(null,"transform", "scale(4,4)")
+
+                // document.removeEventListener("mousedown", worldMap);
+                var stateHI = document.getElementById("HI");
+                stateHI.setAttributeNS(null, "transform","translate(125 0)")
+
+                var statePR = document.getElementById("PR");
+                statePR.setAttributeNS(null, "transform","translate(-50 0)")
+
+                setTransformMatrix([5.751490340144962, 0, 0 ,5.751490340144962 ,-656.582896430975,-514.5546459430193])
+                lastZoom.x = -656.582896430975 + W/2
+                lastZoom.y = -514.5546459430193 + H/2;
+                var stateAK = document.getElementById("AK");
+                stateAK.setAttributeNS(null, "transform",  "translate(125 175) scale(.3 .3)")
+                // matrix(5.751490340144962 0 0 5.751490340144962 -656.582896430975 -514.5546459430193)
+                document.getElementById("usLocal").setAttributeNS(null, "transform","matrix(5.751490340144962 0 0 5.751490340144962 -656.582896430975 -514.5546459430193)")
+                
+                
+                usCountyMap.addEventListener("wheel",(e)=>captureZoomEvent(e),false);
+                usCountyMap.addEventListener("DOMMouseScroll", (e)=> captureZoomEvent(e),false);
+                usCountyMap.addEventListener("mousedown", (e)=>dragMouseDown(e), false);
+                
             }
-            else {
-                    // window.requestAnimationFrame(automatedZoom)
-                    // for(var i =0; i < 6; ++i) transformMatrix[i] *=(zoomVar)
-                    // transformMatrix[4] += (1-zoomVar)*(regionCenter.x);
-                    // transformMatrix[5] += (1-zoomVar)*(regionCenter.y);
-            }
+
 
             lastSelectedRegion = selectedRegion;
         }
@@ -446,7 +455,7 @@ export var Home = () => {
         }
 
 
-        var usRegionHues = {"southwest":0, "southeast":72, "northwest":144, "midwest":216, "northeast":288}
+        
         svg = d3.select("#worldMap")
         if(!mapCreated) {
             svgConts = d3.select("#continents")
@@ -477,16 +486,7 @@ export var Home = () => {
 
                     // for shifting Alaska down to include all of US in US map
                     if(geometries.properties["REGION"] == "AK") {
-                        
-                        // for(let a =0; a < geometries.arcs.length; ++a) {
-                        //     if(typeof geometries.arcs[a] == 'object') {
-                        //         geometries.arcs[a] = geometries.arcs[a].map((x)=> {
-                        //             return x.map((i=> {
-                        //                 return i/100
-                        //             }))
-                        //         })
-                        //     }
-                        // }      
+                        console.log('ak:', geometries.properties["WIKIDATAID"])
                     }
 
                     var group = d3.selectAll(`#${stateName}`)
@@ -514,7 +514,7 @@ export var Home = () => {
                                 return `hsl( ${usRegionHues[usGroup]}, ${getRandomInt(40,55)}%, ${getRandomInt(30,45)}%)`    
                             }
                         })
-                    allRegionProperties[geometries.properties["WIKIDATA"]] = geometries.properties;
+                    allCountyProperties[geometries.properties["WIKIDATAID"]] = geometries.properties;
                     
                 }
 
@@ -626,12 +626,24 @@ export var Home = () => {
     //SW = 8
     //NW = 6
 
-    
+    // window.addEventListener("keydown", (e)=> {
+    //     e.preventDefault()
+    //     if(e.key=='b') {
+    //         if(document.getElementById("usCountyMap").style.display =='none') {
+    //             document.getElementById("usCountyMap").style.display = 'block'
+    //         }
+    //         else {
+    //             document.getElementById("usCountyMap").style.display = 'none'
+    //         }
+    //     }
+    // }, false)
     return (
-
+        
             <SideBarWrapper selectedRegion={selectedRegion} setSelectedRegion={setSelectedRegion} mapColorView={mapColorView} setMapColorView={setMapColorView} sideBarVisible={sideBarVisible} setSideBarVisible={setSideBarVisible} setInputData={setInputData} inputData={inputData} readyResults={readyResults} setReadyResults={setReadyResults} searchClicked={searchClicked} setSearchClicked={setSearchClicked} setCurrentTab={setCurrentTab} regionOptions={regionOptions} setRegionOptions={setRegionOptions} isVisible={sideBarVisible} setVisible={setSideBarVisible}>
                 <div id="globalSearch" >
-                    <svg id="usCountyMap" className="map local" width={W} height={H} >
+                    <svg id="usCountyMap" className="map" width={W} height={H} >
+                        <g id="usLocal">
+
                         <g id="southeast">              
                             <g id="AL"/>
                             <g id="GA"/>
@@ -643,6 +655,7 @@ export var Home = () => {
                             <g id="LA"/>
                             <g id="KY"/>
                             <g id="NC"/>
+                            <g id="PR"/>
                         </g>
                         <g id="northeast">
                             <g id="VA"/>
@@ -697,11 +710,12 @@ export var Home = () => {
                             <g id="MT"/>
                             <g id="AK"/>
                             <g id="HI"/>
-                            </g>
+                        </g>
+                        </g>
                     </svg>
                     <svg id="worldMap" className="map" width={W} height={H} >
                         <g id="continents"/>
-                        <g id="usLocal">
+                        {/* <g id="usLocal">
                         
                             <g id="southeast">              
                                 <g id="AL"/>
@@ -714,6 +728,7 @@ export var Home = () => {
                                 <g id="LA"/>
                                 <g id="KY"/>
                                 <g id="NC"/>
+                                <g id="PR"/>
                             </g>
                             <g id="northeast">
                                 <g id="VA"/>
@@ -770,7 +785,7 @@ export var Home = () => {
                                 <g id="HI"/>
                             </g>
 
-                        </g>
+                        </g> */}
                     </svg>
                 </div>
 

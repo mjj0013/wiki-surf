@@ -59,18 +59,61 @@ code {
 }
 
 .map {
+  /* top:0%;
+  left:0%; */
   width:100%;
   height:100%; 
   position:relative;
 	display:block;
-}
-.map.local {
-  width:100%;
-  height:100%; 
-  position:relative;
-	display:none;
   
 }
+
+
+#continents.withEase {
+  transition:transform .25s ease, opacity 1s ease, z-index 1s;
+}
+#continents.usLocal {
+  
+  transform: matrix(5.6233461104160645, 0, 0, 5.6233461104160645, -648.7011198398013, -474.87611981788);
+
+}
+
+
+#worldMap {
+  z-index:10;
+  opacity:100%;
+  pointer-events:all;
+}
+#worldMap.hidden {
+  opacity:0%;
+  z-index:9;
+  pointer-events:none;
+}
+
+#usCountyMap {
+  width:100%;
+  height:100%; 
+  position:absolute;
+  
+  opacity:0%;
+  z-index:9;
+  display:block;
+  pointer-events:none;
+}
+
+#usCountyMap.showing {
+  pointer-events:initial;
+  opacity:100%;
+  z-index:10;
+  /* transform: matrix(5.41899193367184, 0, 0, 5.41899193367184, -558.2234489304034, -523.9899405924403); */
+  /* transform: matrix(5.6233461104160645, 0, 0, 5.6233461104160645, -648.7011198398013, -474.87611981788); */
+
+}
+
+/* .map.local.showing {
+  opacity: 100%;
+} */
+
 #analyzeButton {
   display:none;
 }

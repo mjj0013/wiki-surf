@@ -353,11 +353,12 @@ export const SideBarWrapper = ({setRegionOptions, regionOptions, selectedRegion,
     
 
     useEffect(()=>{
+        
         if(moduleName == "dailyTrends" || moduleName == "realTimeTrends") {
             document.getElementById("dateSlider").classList.add('hidden')
         }
         else document.getElementById("dateSlider").classList.remove('hidden')
-    }, [sideBarTab,showSlider]);
+    }, [sideBarTab,showSlider, selectedRegion]);
 
 
 

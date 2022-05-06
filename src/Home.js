@@ -239,14 +239,19 @@ export var Home = () => {
         var regionKeys = Object.keys(allRegionProperties);
         if(regionKeys.includes(e.target.id)) {
             // console.log(allRegionProperties[e.target.id]);
+            
             var regionA3 = allRegionProperties[e.target.id]["ADM0_A3"];
         
             setSelectedRegion(regionA3)
             
         }
         else {
-            
-            console.log(allCountyProperties[e.target.id]);
+            if(startListingCounties) {
+                currentSelectedCounties.push(e.target.id)
+
+                e.target.setAttributeNS(null, "fill", 'rgb(0,0,0)');
+            }
+          
         }
         lastZoom.x = e.offsetX;
         lastZoom.y = e.offsetY;
@@ -626,17 +631,43 @@ export var Home = () => {
     //SW = 8
     //NW = 6
 
-    // window.addEventListener("keydown", (e)=> {
-    //     e.preventDefault()
-    //     if(e.key=='b') {
-    //         if(document.getElementById("usCountyMap").style.display =='none') {
-    //             document.getElementById("usCountyMap").style.display = 'block'
-    //         }
-    //         else {
-    //             document.getElementById("usCountyMap").style.display = 'none'
-    //         }
-    //     }
-    // }, false)
+    var currentSelectedCounties = [];
+    var startListingCounties = false
+    var enteringCode = false
+    var metroCode=''
+    document.addEventListener("keydown", (e)=> {
+
+
+        
+
+        
+
+        if(e.key=='b') {
+            startListingCounties = true;
+        }
+        // if(e.key=='c') {
+        //     enteringCode = true;
+
+        // }
+        // if(enteringCode) {
+        //     var num = e.key.charCodeAt(0)
+        //     if(num >= 48 && num <=57) {
+        //         metroCode+=e.key
+        //     }
+        //     console.log('metroCode',metroCode)
+        //     // if(e.key.charCodeAt(0))
+        // }
+
+       
+        if(e.key=='e') {
+            console.log(currentSelectedCounties)
+            startListingCounties = false;
+            currentSelectedCounties = []
+        }
+        // e.preventDefault()
+    }, false)
+
+
     return (
         
             <SideBarWrapper selectedRegion={selectedRegion} setSelectedRegion={setSelectedRegion} mapColorView={mapColorView} setMapColorView={setMapColorView} sideBarVisible={sideBarVisible} setSideBarVisible={setSideBarVisible} setInputData={setInputData} inputData={inputData} readyResults={readyResults} setReadyResults={setReadyResults} searchClicked={searchClicked} setSearchClicked={setSearchClicked} setCurrentTab={setCurrentTab} regionOptions={regionOptions} setRegionOptions={setRegionOptions} isVisible={sideBarVisible} setVisible={setSideBarVisible}>

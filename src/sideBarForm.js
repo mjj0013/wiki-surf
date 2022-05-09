@@ -10,7 +10,11 @@ import noUiSlider from 'nouislider';
 
 var searchTerms = [];
 var searchTermColors = []
-
+var prependArray = (val, arr) => {
+    var newArr = arr.slice();
+    newArr.unshift(val);
+    return newArr;
+}
 function countryAnalysisClicked() {
     var selectElement =  document.getElementById("regionElement");
     var mainTitle = selectElement.options[selectElement.selectedIndex].text
@@ -116,7 +120,7 @@ function categoryChanged() {}
 
 
 
-export const SideBarWrapper = ({setRegionOptions, regionOptions, selectedRegion, setSelectedRegion, mapColorView, setMapColorView, sideBarVisible, setSideBarVisible,setInputData, inputData, setReadyResults, readyResults, setSearchClicked, searchClicked, setCurrentTab,  isVisible, setVisible,...props}) => {
+export const SideBarWrapper = ({regionHistoryIdx , setRegionHistoryIdx, setRegionOptions, regionOptions, selectedRegion, setSelectedRegion, mapColorView, setMapColorView, sideBarVisible, setSideBarVisible,setInputData, inputData, setReadyResults, readyResults, setSearchClicked, searchClicked, setCurrentTab,  isVisible, setVisible,...props}) => {
     
     // const [RegionOptions, setRegionOptions] = useState({region:"US" });       //, displayMode:"regions",resolution:"countries"
 
@@ -128,17 +132,12 @@ export const SideBarWrapper = ({setRegionOptions, regionOptions, selectedRegion,
 
     function regionChanged(e,data) {
         var selected = document.getElementById("regionElement")
-        if(selected.value=="ALL") {
-            document.getElementById("backRegionBtn").classList.remove("showing");
-        }
-        else {
-            document.getElementById("backRegionBtn").classList.add("showing");
-        }
+        
         console.log('selected.value',data.value)
         setSelectedRegion(data.value)
+        setRegionHistoryIdx(regionHistoryIdx+1);
         
         // remember, some modules can access the city/county level of US region
-
 
         // if(selected.value=="US") setRegionOptions({...RegionOptions,region:selected.value})           // resolution:"provinces", 
         // else setRegionOptions({...RegionOptions,region:selected.value})         //resolution:"countries",
@@ -260,9 +259,10 @@ export const SideBarWrapper = ({setRegionOptions, regionOptions, selectedRegion,
     
     
     var regionDropdownOptions  = regionOptions.map((obj,idx)=>{ 
-        return {key:idx, text:obj.ADMIN, value:obj.ADM0_A3}          //, selected:obj.ADMIN=="United States"?true:false
+        return {key:idx+1, text:obj.ADMIN, value:obj.ADM0_A3}          //, selected:obj.ADMIN=="United States"?true:false
     })
-
+    
+    regionDropdownOptions = prependArray({key:0, text:"All", value:"<global>"}, regionDropdownOptions)
     
 
     var moduleOptions = [
@@ -385,8 +385,7 @@ export const SideBarWrapper = ({setRegionOptions, regionOptions, selectedRegion,
             </Card.Content>
         </Card>
         
-        { <Button id="backRegionBtn" attached icon="arrow left" /> }
-        { <Button id="fwdRegionBtn" attached icon="arrow right" /> }
+        
         <Sidebar id="inputSideBar" as={Menu} animation='overlay' icon='labeled' vertical visible={isVisible}  direction="right" >
             
             <Menu.Header>Input Form</Menu.Header>

@@ -263,6 +263,7 @@ code {
 #trendsTab.showing {
   display:block;
 }
+
 #settingsTab {
   display:none;
 }
@@ -284,7 +285,6 @@ code {
 
   /* flex-wrap:wrap; */
 
-  
  
 }
 
@@ -346,35 +346,38 @@ code {
   opacity:90%;
 }
 
-#fwdRegionBtn {
+.regionNavBtnGroup {
+  display:inline-grid;
+  width:100px;
+  grid-template-columns: auto auto auto;
+
   position:absolute;
-  display:none;
-  opacity: 0;
   top:0%;
   left:0%;
+  transition: opacity 1s ease;
+  z-index:999;
+  opacity:1;
+}
+
+.regionNavBtn {
+  /* position:absolute;
+  display:block; */
+  opacity: inherit;
+  padding:10px;
   z-index:999;
   transition: opacity 1s ease, display .5s ease;
 }
+.regionNavBtnGroup.showing {
+  opacity: 1;
+  
 
-#backRegionBtn {
-  position:absolute;
-  display:none;
-  opacity: 0;
-  top:0%;
-  left:0%;
-  z-index:999;
-  transition: opacity 1s ease, display .5s ease;
 }
 
-#backRegionBtn.showing {
-  opacity: 1.0;
-  display:block;
+.regionNavBtn > * {
+  pointer-events: none;
+  vertical-align: middle;
 }
 
-#fwdRegionBtn.showing {
-  opacity: 1.0;
-  display:block;
-}
 /* .regionElement {
   
   box-shadow:0 0 0 2m #000000;

@@ -369,9 +369,9 @@ export var Home = () => {
     var continentHues = {"Asia":0, "South_America":90, "Africa":180, "Europe":120, "North_America":60, "Oceania":180, "Antarctica":300, "Seven_seas_open_ocean":240}
     
     
-    var seStates = ["AL","GA","MS","TN","SC","NC","FL","AR","LA","KY", "PR"]
-    var neStates = ["VA","WV",'PA','NY','OH','ME','DC','MD','DE','NJ','CT','RI','MA','NH','VT']
-    var mwStates = ['NE','MI','WI','IA','MO','IL','KS','ND','SE','IN','SD','MN']
+    var seStates = ["AL","GA","MS","TN","SC","NC","FL","AR","LA","KY"]     // "PR"
+    var neStates = ["VA","WV",'PA','NY','OH','ME','MD','DE','NJ','CT','RI','MA','NH','VT']      // 'DC',
+    var mwStates = ['NE','MI','WI','IA','MO','IL','KS','ND','IN','SD','MN']     //,'SE'
     var swStates=['TX','NM','OK','CA','NV','CO','UT','AZ']
     var nwStates = ['WA','OR','ID','MT','AK','HI', 'WY']
     var usRegionHues = {"midwest":0, "southeast":72, "northwest":144, "southwest":216, "northeast":288}
@@ -503,7 +503,69 @@ export var Home = () => {
         
         svg = d3.select("#worldMap")
         if(!mapCreated) {
+            // for(let s =0; s < seStates.length; ++s) {
+            //     var state = document.getElementById(seStates[s])
+            //     var stateMetros = metrosByState[seStates[s]];
+            //     if(!stateMetros) continue;
+            //     console.log('stateMetros',stateMetros)
+            //     for(let m=0; m < stateMetros.length; ++m) {
+            //         var metro = metrosByState[seStates[s]][m]
+            //         console.log('metro',metro)
+                    
+  
+            //         var metroElement = document.createElement("g")
+            //         metroElement.setAttribute("id",metro.metroId);
+            //         for(let c=0; c < metro.counties.length; ++c) {
+            //             var countyElement = document.createElement("path")
+            //             countyElement.setAttribute("id", metro.counties[c])
+            //             metroElement.appendChild(countyElement)
+            //         }
+            //         state.appendChild(metroElement);
+            //     }
+            // }
+            // for(let s =0; s < neStates.length; ++s) {
+            //     var state = document.getElementById(neStates[s])
+            //     var stateMetros = metrosByState[neStates[s]];
+            //     if(!stateMetros) continue;
+            //     for(let m=0; m < stateMetros.length; ++m) {
+            //         var metro = metrosByState[neStates[s]][m]
+                 
+            //         var metroId = metro.metroId;
+            //         var metroElement = document.createElement("g")
+            //         metroElement.setAttribute("id",metroId);
+            //         for(let c=0; c < metro.counties.length; ++c) {
+            //             var countyElement = document.createElement("path")
+            //             countyElement.setAttribute("id", metro.counties[c])
+            //             metroElement.appendChild(countyElement)
+            //         }
+            //         state.appendChild(metroElement);
+            //     }
+            // }
+            // for(let s =0; s < swStates.length; ++s) {
+            //     var state = document.getElementById(swStates[s])
+            //     var stateMetros = metrosByState[swStates[s]];
+            //     if(!stateMetros) continue;
+            //     for(let m=0; m < stateMetros.length; ++m) {
+            //         var metro = metrosByState[swStates[s]][m]
+            //         if(!metro)continue;
+            //         var metroId = metro.metroId;
+            //         var metroElement = document.createElement("g")
+            //         metroElement.setAttribute("id",metroId);
+            //         for(let c=0; c < metro.counties.length; ++c) {
+            //             var countyElement = document.createElement("path")
+            //             countyElement.setAttribute("id", metro.counties[c])
+            //             metroElement.appendChild(countyElement)
+            //         }
+            //         state.appendChild(metroElement);
+            //     }
+            // }
+
+
+    
+
+
             svgConts = d3.select("#continents")
+            console.log('metroData',metroData)
             d3.json("./world_w_us_counties.json", function(error, data) {
                 
                 // US county level
@@ -526,65 +588,74 @@ export var Home = () => {
                     else if(swStates.includes(stateName)) usGroup='southwest'
                     else if(mwStates.includes(stateName)) usGroup='midwest'
                     else if(nwStates.includes(stateName)) usGroup='northwest'
-
-
-                 
-                   
-                    var group = d3.selectAll(`#${stateName}`)
-                    var regionObj = idExists(`#${stateName}`,`#${geometries.properties["WIKIDATAID"]}`)
-                    if(regionObj) {
-                        regionObj.attr("fill", ()=> {
-                            if(mapColorView=="default") {
-                                return `hsl( ${usRegionHues[usGroup]}, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
-                            }
-                            if(mapColorView=="continent") {
-                                return `hsl( ${usRegionHues[usGroup]}, ${getRandomInt(40,55)}%, ${getRandomInt(30,45)}%)`
-                            }
-                        })
-                        continue;
-                    }
-
-
-                    // this needs to be re-done
-                    if(metrosByState[stateName]) {
-                      
-                        var stateMetros = metrosByState[stateName]
-                        var metroFound = null;
-                        for(let m=0; m < stateMetros.length; ++m) {
-                            if(stateMetros[m].counties.includes(geometries.properties["WIKIDATAID"])) {
-                                metroFound = stateMetros[m].metroId
-                                break;
-                            }
-                        }
-                        if(metroFound) {
-                            group = d3.selectAll(`#${metroFound}`)
-                            .datum(topojson.feature(data, geometries))
-                            .attr("id", geometries.properties["WIKIDATAID"])
-                            .attr("d", d3.geo.path().projection(d3.geo.mercator()))
-                            .attr("fill", ()=> {
-                                
-                                return metroData[metroFound].color
-                            })
-                        }
-                        else {
-                            console.log("not found", stateName)
-                        }
-                        
-                    }
-                    else {
-                        group.append("path")
+                    var metroName = document.getElementById(`${geometries.properties["WIKIDATAID"]}`)
+                    console.log("metroName",metroName)
+                    metroName = metroName? metroName.parentElement.id : null;
+                    d3.select(`#${geometries.properties["WIKIDATAID"]}`)
                         .datum(topojson.feature(data, geometries))
-                        .attr("id", geometries.properties["WIKIDATAID"])
+                      
                         .attr("d", d3.geo.path().projection(d3.geo.mercator()))
                         .attr("fill", ()=> {
-                            if(mapColorView=="default") {
-                                return `hsl( ${usRegionHues[usGroup]}, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
-                            }
-                            if(mapColorView=="continent") {
-                                return `hsl( ${usRegionHues[usGroup]}, ${getRandomInt(40,55)}%, ${getRandomInt(30,45)}%)`    
-                            }
+                            if(metroName) return metroData[metroName].color
+                            else return 'green'
+                            
                         })
-                    }
+                   
+                    var group = d3.selectAll(`#${stateName}`)
+                           
+                    // var regionObj = idExists(`#${stateName}`,`#${geometries.properties["WIKIDATAID"]}`)
+                    // if(regionObj) {
+                    //     regionObj.attr("fill", ()=> {
+                    //         if(mapColorView=="default") {
+                    //             return `hsl( ${usRegionHues[usGroup]}, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
+                    //         }
+                    //         if(mapColorView=="continent") {
+                    //             return `hsl( ${usRegionHues[usGroup]}, ${getRandomInt(40,55)}%, ${getRandomInt(30,45)}%)`
+                    //         }
+                    //     })
+                    //     continue;
+                    // }
+                   
+                    // this needs to be re-done
+                    // if(metrosByState[stateName]) {
+                      
+                    //     var stateMetros = metrosByState[stateName]
+                    //     var metroFound = null;
+                    //     for(let m=0; m < stateMetros.length; ++m) {
+                    //         if(stateMetros[m].counties.includes(geometries.properties["WIKIDATAID"])) {
+                    //             metroFound = stateMetros[m].metroId
+                    //             break;
+                    //         }
+                    //     }
+                    //     if(metroFound) {
+                    //         group = d3.selectAll(`#${metroFound}`)
+                    //         .datum(topojson.feature(data, geometries))
+                    //         .attr("id", geometries.properties["WIKIDATAID"])
+                    //         .attr("d", d3.geo.path().projection(d3.geo.mercator()))
+                    //         .attr("fill", ()=> {
+                                
+                    //             return metroData[metroFound].color
+                    //         })
+                    //     }
+                    //     else {
+                    //         console.log("not found", stateName)
+                    //     }
+                        
+                    // }
+                    // else {
+                        // group.append("path")
+                        // .datum(topojson.feature(data, geometries))
+                        // .attr("id", geometries.properties["WIKIDATAID"])
+                        // .attr("d", d3.geo.path().projection(d3.geo.mercator()))
+                        // .attr("fill", ()=> {
+                        //     if(mapColorView=="default") {
+                        //         return `hsl( ${usRegionHues[usGroup]}, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
+                        //     }
+                        //     if(mapColorView=="continent") {
+                        //         return `hsl( ${usRegionHues[usGroup]}, ${getRandomInt(40,55)}%, ${getRandomInt(30,45)}%)`    
+                        //     }
+                        // })
+                    // }
                     
                     allCountyProperties[geometries.properties["WIKIDATAID"]] = geometries.properties;
                     
@@ -685,6 +756,9 @@ export var Home = () => {
             
             
         }
+
+
+        
         
        
         
@@ -732,10 +806,13 @@ export var Home = () => {
             currentSelectedCounties = []
         }
         // e.preventDefault()
+
+
+
     }, false)
-    var metroKeys = Object.keys(usMetroMap);
+    var metroKeys = Object.keys(metroData);
     for(let m=0; m < metroKeys.length; ++m) {
-        usMetroMap[metroKeys[m]]["color"] = `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
+        metroData[metroKeys[m]]["color"] = `hsl( ${getRandomInt(0,359)}, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
     }
 
     return (
@@ -751,53 +828,73 @@ export var Home = () => {
                     <svg id="usCountyMap" className="map" width={W} height={H} >
                         <g id="usLocal">
 
-                        <g id="southeast">              
-                            <g id="AL">
-                                {metrosByState["AL"] && metrosByState["AL"].map((x, idx)=> { return ( <g id={x.metroId} key={idx} /> )  })}
-                            </g>
-
-                            <g id="GA">
-                                {metrosByState["GA"] && metrosByState["GA"].map((x, idx)=> { return ( <g id={x.metroId} key={idx} /> )  })}
-                            </g>
-                            <g id="MS">
-                                {metrosByState["MS"] && metrosByState["MS"].map((x, idx)=> { return ( <g id={x.metroId} key={idx} /> )  })}
-                            </g>
-                            <g id="TN">
-                                {metrosByState["TN"] && metrosByState["TN"].map((x, idx)=> { return ( <g id={x.metroId} key={idx} /> )  })}
-                            </g>
-                            <g id="SC">
-                                {metrosByState["SC"] && metrosByState["SC"].map((x, idx)=>{ return ( <g id={x.metroId} key={idx} /> )  })}
-                            </g>
-                            <g id="FL">
-                                {metrosByState["FL"] && metrosByState["FL"].map((x, idx)=> { return ( <g id={x.metroId} key={idx} /> )  })}
-                            </g>
-                            <g id="AR">
-                                {metrosByState["AR"] && metrosByState["AR"].map((x, idx)=> { return ( <g id={x.metroId} key={idx} /> )  })}
-                            </g>
-                            <g id="LA">
-                                {metrosByState["LA"] && metrosByState["LA"].map((x, idx)=> { return ( <g id={x.metroId} key={idx} /> )  })}
-                            </g>
-                            <g id="KY">
-                                {metrosByState["KY"] && metrosByState["KY"].map((x, idx)=>{ return ( <g id={x.metroId} key={idx} /> )  })}
-                            </g>
-                            <g id="NC">
-                                {metrosByState["NC"] && metrosByState["NC"].map((x, idx)=> { return ( <g id={x.metroId} key={idx} /> )  })}
-                            </g>
-
+                        <g id="southeast">        
+                            {
+                            seStates.map((s,idx0)=> {
+                                console.log(s)
+                                return (
+                                    <g id={s} key={idx0}>
+                                        {
+                                            metrosByState[s].map((x, idx1)=> { 
+                                            return ( 
+                                                <g id={x.metroId} key={idx1}>  
+                                                {
+                                                        metrosByState[s][idx1].counties.map((y,idx2)=> {
+                                                            return (<path id={y} key={idx2} />)
+                                                        })
+                                                }
+                                                </g> )
+                                            })
+                                        }
+                                    </g>
+                                )
+                            })}      
                             <g id="PR"/>
 
                         </g>
                         <g id="northeast">
-                            <g id="VA">
+                        {
+                            neStates.map((s,idx0)=> {
+                                console.log(s)
+                                return (
+                                    <g id={s} key={idx0}>
+                                        {
+                                            metrosByState[s].map((x, idx1)=> { 
+                                            return ( 
+                                                <g id={x.metroId} key={idx1}>  
+                                                {
+                                                        metrosByState[s][idx1].counties.map((y,idx2)=> {
+                                                            return (<path id={y} key={idx2} />)
+                                                        })
+                                                }
+                                                </g> )
+                                            })
+                                        }
+                                    </g>
+                                )
+                            })}      
+
+
+
+
+                            {/* <g id="VA">
                                 {metrosByState["VA"] && metrosByState["VA"].map((x, idx)=> { return ( <g id={x.metroId} key={idx} /> )  })}
                             </g>
                             <g id="WV">
                                 {metrosByState["WV"] && metrosByState["WV"].map((x, idx)=> { return ( <g id={x.metroId} key={idx} /> )  })}
                             </g>
-                            <g id="PA"/>
-                            <g id="NY"/>
-                            <g id="OH"/>
-                            <g id="ME"/>
+                            <g id="PA"> 
+                                {metrosByState["PA"] && metrosByState["PA"].map((x, idx)=> { return ( <g id={x.metroId} key={idx} /> )  })}
+                            </g>
+                            <g id="NY">
+                                {metrosByState["NY"] && metrosByState["NY"].map((x, idx)=> { return ( <g id={x.metroId} key={idx} /> )  })}
+                            </g>
+                            <g id="OH">
+                                {metrosByState["OH"] && metrosByState["OH"].map((x, idx)=> { return ( <g id={x.metroId} key={idx} /> )  })}
+                            </g>
+                            <g id="ME">
+                                {metrosByState["ME"] && metrosByState["ME"].map((x, idx)=> { return ( <g id={x.metroId} key={idx} /> )  })}
+                            </g>
                             <g id="DC"/>
                             <g id="MD"/>
                             <g id="DE"/>
@@ -806,43 +903,76 @@ export var Home = () => {
                             <g id="RI"/>
                             <g id="MA"/>
                             <g id="NH"/>
-                            <g id="VT"/>
+                            <g id="VT"/> */}
                         </g>
                         
                         <g id="midwest">
-                            <g id="MN"/>
-                            <g id="NE"/>
-                            <g id="MI"/>
-                            <g id="WI"/>
-                            <g id="IA"/>
-                            <g id="MO"/>
-                            <g id="IL"/>
-                            <g id="KS"/>
-                            <g id='SD'/>
-                            <g id="ND"/>
-                            <g id="SE"/>
-                            <g id='IN'/>
+                        {
+                            mwStates.map((s,idx0)=> {
+                                console.log(s)
+                                return (
+                                    <g id={s} key={idx0}>
+                                        {
+                                            metrosByState[s].map((x, idx1)=> { 
+                                            return ( 
+                                                <g id={x.metroId} key={idx1}>  
+                                                {
+                                                        metrosByState[s][idx1].counties.map((y,idx2)=> {
+                                                            return (<path id={y} key={idx2} />)
+                                                        })
+                                                }
+                                                </g> )
+                                            })
+                                        }
+                                    </g>
+                                )
+                            })}      
                         </g>
                         <g id="southwest">
                             
-                            <g id="TX"/>
-                            <g id="NM"/>
-                            <g id="OK"/>
-                            <g id="CA"/>
-                            <g id="NV"/>
-                            <g id="CO"/>
-                            <g id="UT"/>
-                            <g id="AZ"/>
+                        {
+                            swStates.map((s,idx0)=> {
+                                console.log(s)
+                                return (
+                                    <g id={s} key={idx0}>
+                                        {
+                                            metrosByState[s].map((x, idx1)=> { 
+                                            return ( 
+                                                <g id={x.metroId} key={idx1}>  
+                                                {
+                                                        metrosByState[s][idx1].counties.map((y,idx2)=> {
+                                                            return (<path id={y} key={idx2} />)
+                                                        })
+                                                }
+                                                </g> )
+                                            })
+                                        }
+                                    </g>
+                                )
+                            })} 
                         </g>
                         
                         <g id="northwest">
-                            <g id="WY"/>
-                            <g id="WA"/>
-                            <g id="OR"/>
-                            <g id="ID"/>
-                            <g id="MT"/>
-                            <g id="AK"/>
-                            <g id="HI"/>
+                        {
+                            nwStates.map((s,idx0)=> {
+                                console.log(s)
+                                return (
+                                    <g id={s} key={idx0}>
+                                        {
+                                            metrosByState[s].map((x, idx1)=> { 
+                                            return ( 
+                                                <g id={x.metroId} key={idx1}>  
+                                                {
+                                                        metrosByState[s][idx1].counties.map((y,idx2)=> {
+                                                            return (<path id={y} key={idx2} />)
+                                                        })
+                                                }
+                                                </g> )
+                                            })
+                                        }
+                                    </g>
+                                )
+                            })} 
                         </g>
                         </g>
                     </svg>

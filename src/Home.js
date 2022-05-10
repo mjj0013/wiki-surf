@@ -543,6 +543,9 @@ export var Home = () => {
                         })
                         continue;
                     }
+
+
+                    // this needs to be re-done
                     if(metrosByState[stateName]) {
                       
                         var stateMetros = metrosByState[stateName]

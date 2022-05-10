@@ -11,10 +11,11 @@ import {Button} from 'semantic-ui-react';
 import {WikiSubject, wikiTitleSearch, countryBaseData} from './wikiSubject.js';
 import { SideBarWrapper } from './sideBarForm.js';
 import {sendRequestToBackend} from './frontEndHelpers.js';
+import usMetroMap, {metrosByState, metroData} from './usMetroMap.js'
 
 
 import {abridgedCategories, regionCodes, regionCodesReformatted} from '../server/geoHelpers.js';        //regionData
-import { resolve } from 'url';
+// import { resolve } from 'url';
 // https://www.statista.com/statistics/262966/number-of-internet-users-in-selected-countries/
 // https://worldpopulationreview.com/countries
 // also, https://www.cia.gov/the-world-factbook/field/internet-users/country-comparison/
@@ -407,31 +408,21 @@ export var Home = () => {
             }
         }
         if(btnName=="backRegionBtn") {
-            
-
             if(regionHistoryIdx-1 >= 0) {
                 var nextRegion = regionSelectHistory[regionHistoryIdx-1]
                 selectedRegion = nextRegion;
-                
                 setRegionHistoryIdx( --regionHistoryIdx)
-                // if(nextRegion!="<global>") {}
             }
         }
 
         if(btnName=="toGlobalBtn") {
             if(regionSelectHistory[regionSelectHistory.length-1] !="<global>") {
                 regionSelectHistory.push("<global>")
-               
                 setRegionHistoryIdx( --regionHistoryIdx)
-                // selectedRegion = nextRegion;
-                // setSelectedRegion(nextRegion);
-                
-
             }
             
         }
         console.log("current Region: "+regionSelectHistory[regionHistoryIdx])
-        
         regionNavStarted = true;
         
     }
@@ -457,14 +448,12 @@ export var Home = () => {
                 var usCountyMap = document.getElementById("usCountyMap")
                 usCountyMap.classList.remove("showing")
                 document.getElementById("worldMap").classList.remove("hidden")
-
                 document.getElementById("continents").classList.remove("withEase")
                 document.getElementById("continents").classList.remove("usLocal")
             }
 
             
             if(selectedRegion=="USA") {
-
                 var usCountyMap = document.getElementById("usCountyMap")
                 // make alternative map that includes all states compactly
                 
@@ -473,7 +462,6 @@ export var Home = () => {
                 
                 usCountyMap.classList.toggle("showing")
                 document.getElementById("worldMap").classList.toggle("hidden")
-                // document.removeEventListener("wheel",worldMap)
 
                 // adjust Hawaii, Alaska, Puerto Rico
                 var stateHI = document.getElementById("HI");
@@ -482,7 +470,6 @@ export var Home = () => {
                 statePR.setAttributeNS(null, "transform","translate(-50 0)")
                 var stateAK = document.getElementById("AK");
                 stateAK.setAttributeNS(null, "transform",  "translate(125 175) scale(.3 .3)")
-
 
                 transformMatrix = [5.751490340144962, 0, 0 ,5.751490340144962 ,-656.582896430975,-514.5546459430193]
 
@@ -493,16 +480,12 @@ export var Home = () => {
                 usCountyMap.addEventListener("mousedown", (e)=>dragMouseDown(e), false);
                 
             }
-
-
             lastSelectedRegion = selectedRegion;
         }
         if(!regionOptionsLoaded) {
             processClientRequest("getRegionDb","/server/getRegionDb").then(result=> {
-                console.log("result",result)
                 setRegionOptions(result)
                 setRegionOptionsLoaded(true)
-                
             })
         }
         if(searchClicked) {
@@ -510,10 +493,8 @@ export var Home = () => {
             processClientRequest("searchClicked","/server",inputData)
         }
 
-        
         var idExists = (parent, queryStr) => {
             var selection = d3.select(parent).select(queryStr);
-            
             if(selection.size==1 && selection[0]==null) return;         //then its empty
             else return selection[0][0]; 
         }
@@ -525,7 +506,6 @@ export var Home = () => {
             svgConts = d3.select("#continents")
             d3.json("./world_w_us_counties.json", function(error, data) {
                 
-
                 // US county level
                 for(let p=0; p < data.objects.admin_counties.geometries.length; ++p) {
                     var geometries = data.objects.admin_counties.geometries[p];
@@ -548,11 +528,8 @@ export var Home = () => {
                     else if(nwStates.includes(stateName)) usGroup='northwest'
 
 
-                    // for shifting Alaska down to include all of US in US map
-                    if(geometries.properties["REGION"] == "AK") {
-                        console.log('ak:', geometries.properties["WIKIDATAID"])
-                    }
-
+                 
+                   
                     var group = d3.selectAll(`#${stateName}`)
                     var regionObj = idExists(`#${stateName}`,`#${geometries.properties["WIKIDATAID"]}`)
                     if(regionObj) {
@@ -566,7 +543,33 @@ export var Home = () => {
                         })
                         continue;
                     }
-                    group.append("path")
+                    if(metrosByState[stateName]) {
+                      
+                        var stateMetros = metrosByState[stateName]
+                        var metroFound = null;
+                        for(let m=0; m < stateMetros.length; ++m) {
+                            if(stateMetros[m].counties.includes(geometries.properties["WIKIDATAID"])) {
+                                metroFound = stateMetros[m].metroId
+                                break;
+                            }
+                        }
+                        if(metroFound) {
+                            group = d3.selectAll(`#${metroFound}`)
+                            .datum(topojson.feature(data, geometries))
+                            .attr("id", geometries.properties["WIKIDATAID"])
+                            .attr("d", d3.geo.path().projection(d3.geo.mercator()))
+                            .attr("fill", ()=> {
+                                
+                                return metroData[metroFound].color
+                            })
+                        }
+                        else {
+                            console.log("not found", stateName)
+                        }
+                        
+                    }
+                    else {
+                        group.append("path")
                         .datum(topojson.feature(data, geometries))
                         .attr("id", geometries.properties["WIKIDATAID"])
                         .attr("d", d3.geo.path().projection(d3.geo.mercator()))
@@ -578,6 +581,8 @@ export var Home = () => {
                                 return `hsl( ${usRegionHues[usGroup]}, ${getRandomInt(40,55)}%, ${getRandomInt(30,45)}%)`    
                             }
                         })
+                    }
+                    
                     allCountyProperties[geometries.properties["WIKIDATAID"]] = geometries.properties;
                     
                 }
@@ -725,7 +730,10 @@ export var Home = () => {
         }
         // e.preventDefault()
     }, false)
-
+    var metroKeys = Object.keys(usMetroMap);
+    for(let m=0; m < metroKeys.length; ++m) {
+        usMetroMap[metroKeys[m]]["color"] = `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
+    }
 
     return (
         
@@ -741,21 +749,48 @@ export var Home = () => {
                         <g id="usLocal">
 
                         <g id="southeast">              
-                            <g id="AL"/>
-                            <g id="GA"/>
-                            <g id="MS"/>
-                            <g id="TN"/>
-                            <g id="SC"/>
-                            <g id="FL"/>
-                            <g id="AR"/>
-                            <g id="LA"/>
-                            <g id="KY"/>
-                            <g id="NC"/>
+                            <g id="AL">
+                                {metrosByState["AL"] && metrosByState["AL"].map((x, idx)=> { return ( <g id={x.metroId} key={idx} /> )  })}
+                            </g>
+
+                            <g id="GA">
+                                {metrosByState["GA"] && metrosByState["GA"].map((x, idx)=> { return ( <g id={x.metroId} key={idx} /> )  })}
+                            </g>
+                            <g id="MS">
+                                {metrosByState["MS"] && metrosByState["MS"].map((x, idx)=> { return ( <g id={x.metroId} key={idx} /> )  })}
+                            </g>
+                            <g id="TN">
+                                {metrosByState["TN"] && metrosByState["TN"].map((x, idx)=> { return ( <g id={x.metroId} key={idx} /> )  })}
+                            </g>
+                            <g id="SC">
+                                {metrosByState["SC"] && metrosByState["SC"].map((x, idx)=>{ return ( <g id={x.metroId} key={idx} /> )  })}
+                            </g>
+                            <g id="FL">
+                                {metrosByState["FL"] && metrosByState["FL"].map((x, idx)=> { return ( <g id={x.metroId} key={idx} /> )  })}
+                            </g>
+                            <g id="AR">
+                                {metrosByState["AR"] && metrosByState["AR"].map((x, idx)=> { return ( <g id={x.metroId} key={idx} /> )  })}
+                            </g>
+                            <g id="LA">
+                                {metrosByState["LA"] && metrosByState["LA"].map((x, idx)=> { return ( <g id={x.metroId} key={idx} /> )  })}
+                            </g>
+                            <g id="KY">
+                                {metrosByState["KY"] && metrosByState["KY"].map((x, idx)=>{ return ( <g id={x.metroId} key={idx} /> )  })}
+                            </g>
+                            <g id="NC">
+                                {metrosByState["NC"] && metrosByState["NC"].map((x, idx)=> { return ( <g id={x.metroId} key={idx} /> )  })}
+                            </g>
+
                             <g id="PR"/>
+
                         </g>
                         <g id="northeast">
-                            <g id="VA"/>
-                            <g id="WV"/>
+                            <g id="VA">
+                                {metrosByState["VA"] && metrosByState["VA"].map((x, idx)=> { return ( <g id={x.metroId} key={idx} /> )  })}
+                            </g>
+                            <g id="WV">
+                                {metrosByState["WV"] && metrosByState["WV"].map((x, idx)=> { return ( <g id={x.metroId} key={idx} /> )  })}
+                            </g>
                             <g id="PA"/>
                             <g id="NY"/>
                             <g id="OH"/>
@@ -778,7 +813,6 @@ export var Home = () => {
                             <g id="WI"/>
                             <g id="IA"/>
                             <g id="MO"/>
-                            <g id="IL"/>
                             <g id="IL"/>
                             <g id="KS"/>
                             <g id='SD'/>
@@ -811,77 +845,6 @@ export var Home = () => {
                     </svg>
                     <svg id="worldMap" className="map" width={W} height={H} >
                         <g id="continents"/>
-                        {/* <g id="usLocal">
-                        
-                            <g id="southeast">              
-                                <g id="AL"/>
-                                <g id="GA"/>
-                                <g id="MS"/>
-                                <g id="TN"/>
-                                <g id="SC"/>
-                                <g id="FL"/>
-                                <g id="AR"/>
-                                <g id="LA"/>
-                                <g id="KY"/>
-                                <g id="NC"/>
-                                <g id="PR"/>
-                            </g>
-                            <g id="northeast">
-                                <g id="VA"/>
-                                <g id="WV"/>
-                                <g id="PA"/>
-                                <g id="NY"/>
-                                <g id="OH"/>
-                                <g id="ME"/>
-                                <g id="DC"/>
-                                <g id="MD"/>
-                                <g id="DE"/>
-                                <g id="NJ"/>
-                                <g id="CT"/>
-                                <g id="RI"/>
-                                <g id="MA"/>
-                                <g id="NH"/>
-                                <g id="VT"/>
-                            </g>
-                            
-                            <g id="midwest">
-                                <g id="MN"/>
-                                <g id="NE"/>
-                                <g id="MI"/>
-                                <g id="WI"/>
-                                <g id="IA"/>
-                                <g id="MO"/>
-                                <g id="IL"/>
-                                <g id="IL"/>
-                                <g id="KS"/>
-                                <g id='SD'/>
-                                <g id="ND"/>
-                                <g id="SE"/>
-                                <g id='IN'/>
-                            </g>
-                            <g id="southwest">
-                                
-                                <g id="TX"/>
-                                <g id="NM"/>
-                                <g id="OK"/>
-                                <g id="CA"/>
-                                <g id="NV"/>
-                                <g id="CO"/>
-                                <g id="UT"/>
-                                <g id="AZ"/>
-                            </g>
-                        
-                            <g id="northwest">
-                                <g id="WY"/>
-                                <g id="WA"/>
-                                <g id="OR"/>
-                                <g id="ID"/>
-                                <g id="MT"/>
-                                <g id="AK"/>
-                                <g id="HI"/>
-                            </g>
-
-                        </g> */}
                     </svg>
                 </div>
 

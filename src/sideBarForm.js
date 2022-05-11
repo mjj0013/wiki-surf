@@ -8,6 +8,12 @@ import {sendRequestToBackend} from './frontEndHelpers.js';
 import {abridgedCategories, regionCodes, regionData, regionCodesReformatted} from '../server/geoHelpers.js';
 import noUiSlider from 'nouislider';
 
+import {A3toA2, A2toA3} from './globalDb.js'
+
+import usMetroMap, {metrosByState, metroData} from './usMetroMap.js'
+console.log(A3toA2)
+
+
 var searchTerms = [];
 var searchTermColors = []
 var prependArray = (val, arr) => {
@@ -134,7 +140,9 @@ export const SideBarWrapper = ({regionHistoryIdx , setRegionHistoryIdx, setRegio
         var selected = document.getElementById("regionElement")
         
         console.log('selected.value',data.value)
-        setSelectedRegion(data.value)
+        
+        
+        
         setRegionHistoryIdx(regionHistoryIdx+1);
         
         // remember, some modules can access the city/county level of US region
@@ -145,18 +153,25 @@ export const SideBarWrapper = ({regionHistoryIdx , setRegionHistoryIdx, setRegio
     }
     function buildRequestBody() {
         return new Promise((resolve, reject)=> {
-            var region = document.getElementById("regionElement").value
-            var body = {  module:moduleName,  region:region?region:null  }
+            // var region = document.getElementById("regionElement").value
+            var body = {  module:moduleName,  geo:null  }
             
             if(moduleName=="dailyTrends") {
                 var trendDate = document.getElementById("trendDateElement").value
                 body["trendDate"] = trendDate;
+                if(selectedRegion=="<global>") {}       //throw error ("dailyTrends" requires a specific region)
+                else if(selectedRegion.length==3) {
+                    if(selectedRegion=="USA") {}
+                    else body["geo"] = A3toA2[selectedRegion];
+                }
+                
             }
             else if(moduleName=="realTimeTrends") {
                 // body["category"] = abridgedCategories[document.getElementById("categoryElement").value]
             }
-        
             else if(moduleName=="interestOverTime" || moduleName=="interestByRegion" || moduleName=="relatedQueries") {
+
+
                 var startDate = document.getElementById("startDateElement").value
                 var endDate = document.getElementById("endDateElement").value
                 searchTerms = []
@@ -164,7 +179,14 @@ export const SideBarWrapper = ({regionHistoryIdx , setRegionHistoryIdx, setRegio
                 for(let e=0; e < searchTermElements.length; ++e) {
                     if(!searchTerms.includes(searchTermElements[e].innerText)) searchTerms.push(searchTermElements[e].innerText)
                 }
-                
+                if(selectedRegion=="<global>") body["geo"] = null
+
+                else if(selectedRegion.length==3)  {
+                    console.log(A3toA2)
+                    body["geo"] = A3toA2[selectedRegion];
+                }
+                console.log('selectedRegion',selectedRegion)
+                console.log("body", body)
                 body["keyword"] = searchTerms;
                 body["startTime"] = startDate;
                 body["endTime"] = endDate;
@@ -391,9 +413,8 @@ export const SideBarWrapper = ({regionHistoryIdx , setRegionHistoryIdx, setRegio
             <Menu.Header>Input Form</Menu.Header>
             <Menu.Item id="settingsTab">
                 <Segment>
-                    <Dropdown fluid floating labeled button text="Map View" options={regionViewOptions} onChange={(e,d)=>regionViewChanged(e,d)}>
+                    <Dropdown fluid floating labeled button text="Map View" options={regionViewOptions} onChange={(e,d)=>regionViewChanged(e,d)} />
 
-                    </Dropdown>
                 </Segment>
             </Menu.Item>
             <Menu.Item id="trendsTab" >
@@ -406,7 +427,6 @@ export const SideBarWrapper = ({regionHistoryIdx , setRegionHistoryIdx, setRegio
                                         <Dropdown fluid labeled button placeholder="Module"  id="moduleSelectElement" options={moduleOptions} onChange={(e,d)=>moduleChanged(e,d)} />
                                     </Grid.Column>
                                 </Grid.Row>
-
                                 <Grid.Row>
                                     <Grid.Column  id="regionSection" >
                                         <Dropdown scrolling floating labeled button placeholder='Select Region' fluid id="regionElement" onChange={(e,d)=> regionChanged(e,d)} options={regionDropdownOptions} />  
@@ -471,7 +491,7 @@ export const SideBarWrapper = ({regionHistoryIdx , setRegionHistoryIdx, setRegio
                 </Item.Group>
                 </Menu.Item>
                 <List id="resultItems" divided relaxed>
-                    {readyResults && readyResults.data.searches.map((item,key)=> {
+                    {readyResults && readyResults.moduleName=="dailyTrends" && readyResults.data.searches.map((item,key)=> {
                         return (
                             <List.Item key={key}>
                                 <img src={item.image.imgUrl}/>

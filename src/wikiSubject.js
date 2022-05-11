@@ -32,6 +32,30 @@ function reformatURL(url) {
 
 
 
+// for fetching data form https://www.wikidata.org
+// for more info, look at: https://www.wikidata.org/wiki/Wikidata:Data_access
+function wikiDataSearch(wikiDataId) {
+    return new Promise((resolve,reject)=>{
+       
+        
+        var url = `https://www.wikidata.org/w/api.php?action=parse&origin=*&format=json&page=${wikiDataId}&formatversion=2&prop=sections`
+        
+        var req = new Request(url,{method:'GET',mode:'cors'});
+        fetch(req)
+        .then(response => {    return response.json();})
+        .then(result=>{
+            console.log("result",result)
+            return result;
+            // var query = result.query
+            // if(query.search.length==0)  return reject("not found");
+            // return resolve(query.search[0].title);
+        })
+    })
+}
+
+
+
+
 
 
 
@@ -470,7 +494,7 @@ class WikiSubject {      // extends React.Component
 
 
 module.exports ={
-
+    wikiDataSearch: wikiDataSearch,
     WikiSubject:WikiSubject,
     reformatURL:reformatURL,
     wikiTitleSearch:wikiTitleSearch

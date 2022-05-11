@@ -92,12 +92,19 @@ var relatedQueriesModule = (req, res) => {
 
     
     // geo = 'US-AL-630';
-    console.log('geo',geo)
+    
     var keyword = query.keyword;
     googleTrends.relatedQueries({keyword: keyword, startTime: startTime, endTime: endTime, geo: geo}, function(err,results) {
-        var data = results.toString();
-        data = JSON.parse(data);
-        res.send({data:data.default, ok:true, moduleName:"relatedQueries"})
+        if(err) {
+            console.log("err", err)
+        }
+        else {
+            
+            var data = results.toString();
+            data = JSON.parse(data);
+            res.send({data:data.default, ok:true, moduleName:"relatedQueries"})
+        }
+        
     })
 
 }
@@ -112,14 +119,21 @@ var interestByRegionModule = (req, res) => {
     var startTime = query.startTime? new Date(query.startTime) : new Date('2004-01-01');
     var endTime = query.endTime? new Date(query.endTime) : new Date();
     var keyword = query.keyword;
-    console.log('query.geo',query.geo)
+   
     
         //all categories might be supported
          // , category:418
-    googleTrends.interestByRegion({ keyword:keyword, startTime: startTime, endTime:endTime , category:7}, (err, results)=> {
-        var data = results.toString();
-        data = JSON.parse(data);
-        res.send({data:data.default, ok:true, moduleName:"interestByRegion"})
+         
+    googleTrends.interestByRegion({resolution: 'CITY', keyword:keyword, startTime: startTime, endTime:endTime , category:7}, (err, results)=> {
+        if(err) {
+            console.log("err", err)
+        }
+        else {
+            
+            var data = results.toString();
+            data = JSON.parse(data);
+            res.send({data:data.default, ok:true, moduleName:"interestByRegion"})
+        }
     })
     
     

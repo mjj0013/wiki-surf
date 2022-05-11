@@ -392,10 +392,21 @@ code {
 
 .state {
   pointer-events:initial;
+  z-index:50;
+  
 }
 .metro {
   pointer-events:initial;
+  transform:translateY(0);
+  z-index:50;
+  transition:transform .25s ease;
 } 
+.metro:hover {
+  transform:translateY(-1px);
+  z-index:51;
+  
+
+}
 /* .county {
   pointer-events:all;
 } */

@@ -432,21 +432,27 @@ export var Home = () => {
         if(searchClicked) {
             // if(inputData.module=="dailyTrends" || inputData.module=="realTimeTrends") { }
             if(inputData.geo=="US") {
-                var mKeys = Object.keys(metroData)
+                var mKeys = Object.keys(metroData).map(k=> {
+                    return `US-${metroData[k].state}-${k.substr(1)}`
+                })
+                if(inputData.keyword.length==1) {
+                    var newKeyword = []
+                    for(let k=0; k < mKeys.length; ++k) {
+                        newKeyword.push(inputData.keyword[0])
+                        
+                    }
+                    // inputData.keyword = newKeyword;
+                    
+                }
                 // inputData.geo = mKeys     //mKeys
                 // processClientRequest("searchClicked","/server",inputData)
                 // let k =0;
-                for(let k=0; k <mKeys.length; ++k) {
-                    // mKeys.forEach((key)=> {
-                    let key = 
-                    inputData.geo =  `US-${metroData[mKeys[k]].state}-${mKeys[k].substr(1)}`
-                  
-                    processClientRequest("searchClicked","/server",inputData).then(result=> {
-                        console.log("result",result)
-
-                    })
-                }
-                    
+                
+                // inputData.geo = mKeys  
+                console.log(inputData)
+                processClientRequest("searchClicked","/server",inputData).then(result=> {
+                    console.log("result",result)
+                })
                 
             }
             else processClientRequest("searchClicked","/server",inputData)

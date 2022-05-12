@@ -1,4 +1,8 @@
 const express = require('express');
+const rateLimit = require('express-rate-limit');
+
+
+
 const schedule = require('node-schedule')
 const googleTrends = require('google-trends-api');
 
@@ -10,6 +14,14 @@ const path = require("path")
 const bodyParser = require("body-parser");      // a middleware
 // const {fetch} = require('node-fetch');
 
+// limit the number of requests to 10 QPS (queries per second)
+const apiReqLimiter = rateLimit({
+    windowMs:1000,
+    max:10
+})
+
+
+
 
 const {rulePacifUS, ruleCentUS, ruleEastUS, ruleMountUS} = require('./fetchDailyScheduler.js');
 
@@ -20,6 +32,7 @@ const {regionCodes, getDateObj, trendCategories} = require('./geoHelpers.js');
 
 const app = express();
 app.use(express.static(DIST_DIR));
+// app.use(apiReqLimiter);
 app.use(bodyParser.urlencoded({extended:false}));
 app.use(bodyParser.json());
 app.listen(PORT, ()=> { console.log("Server running on port "+PORT); })
@@ -30,7 +43,7 @@ const {metroData} = require('../src/usMetroMap.js')
 
 
 
-
+// if 429 error: delete all cookies
 
 
                                 
@@ -88,18 +101,15 @@ var relatedQueriesModule = (req, res) => {
     var startTime = query.startTime? new Date(query.startTime) : new Date('2004-01-01');
     var endTime = query.endTime? new Date(query.endTime) : new Date();
     var geo = query.geo? query.geo : regionCodes["United States"];
-    // geo = 'US-AL-691';
+    var keyword = query.keyword;
 
     
-    // geo = 'US-AL-630';
-    
-    var keyword = query.keyword;
     googleTrends.relatedQueries({keyword: keyword, startTime: startTime, endTime: endTime, geo: geo}, function(err,results) {
         if(err) {
             console.log("err", err)
         }
         else {
-            
+            console.log('results',results)
             var data = results.toString();
             data = JSON.parse(data);
             res.send({data:data.default, ok:true, moduleName:"relatedQueries"})

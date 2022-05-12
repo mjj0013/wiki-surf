@@ -206,7 +206,7 @@ var globalDb = [
     {
       ADMIN: 'Brazilian Island',
       ADM0_A3: 'BRI',
-      ISO_A2: '-99',
+      ISO_A2: 'BR',
       permittedForTrendSearch: false
     },
     {
@@ -494,7 +494,7 @@ var globalDb = [
     {
       ADMIN: 'France',
       ADM0_A3: 'FRA',
-      ISO_A2: '-99',
+      ISO_A2: 'FR',
       permittedForTrendSearch: false
     },
     {

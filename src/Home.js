@@ -145,6 +145,7 @@ export var Home = () => {
         let zoomVar = Math.pow(zoomIntensity,wheelNorm);
     
         for(var i =0; i < 6; ++i) {transformMatrix[i] *= zoomVar }
+        console.log("zoomVar",zoomVar)
         transformMatrix[4] += (1-zoomVar)*(lastZoom.x);
         transformMatrix[5] += (1-zoomVar)*(lastZoom.y);
         
@@ -175,8 +176,6 @@ export var Home = () => {
         e = e || window.event;
         var regionKeys = Object.keys(allRegionProperties);
         if(regionKeys.includes(e.target.id)) {
-            // console.log(allRegionProperties[e.target.id]);
-            
             var regionA3 = allRegionProperties[e.target.id]["ADM0_A3"];
             console.log('regionHistoryIdx',regionHistoryIdx)
             setRegionHistoryIdx(++regionHistoryIdx)
@@ -196,10 +195,8 @@ export var Home = () => {
         lastZoom.y = e.offsetY;
         dragStart = getTransformedPt(lastZoom.x, lastZoom.y, transformMatrix);
 
-        // these would be used for orthographic projection
-        // projection.rotate([lambda(dragStart.x), theta(dragStart.y)]);
-        // svg.selectAll("path").attr("d", path);
-        
+     
+
         document.onmouseup = closeDragElement;
         document.onmousemove = elementDrag;
         return e.preventDefault() && false;
@@ -209,11 +206,18 @@ export var Home = () => {
     var elementDrag = (e) => {    
         e = e || window.event;
         lastZoom = {x:e.offsetX, y:e.offsetY}
+      
+        
+        
+        // document.getElementById("worldMap").querySelectorAll("path").attr("d",path)
         if(dragStart) {
             var pt = getTransformedPt(lastZoom.x, lastZoom.y, transformMatrix);
+            
             panSVG((pt.x-dragStart.x)/4, (pt.y-dragStart.y)/4)
-        }
-        return e.preventDefault() && false;
+            
+            // projection.rotate([(lambda(lastZoom.x)),theta((lastZoom.y))])
+            // d3.select("#continents").selectAll("path").attr("d",path)
+        }return e.preventDefault() && false;
     }
 
     var panSVG = (dx,dy) =>{
@@ -287,7 +291,7 @@ export var Home = () => {
     var projection = d3.geo.orthographic()
             .scale(250)
             .translate([W/2, H/2])
-            .clipAngle(90)
+            .clipAngle(30)
     var lambda = d3.scale.linear()
         .domain([0,W])
         .range([-180,180])
@@ -365,6 +369,8 @@ export var Home = () => {
         regionNavStarted = true;
         
     }
+    var selectedRegionBox = {x:W/2, y:H/2};
+    var selectedRegionZoom = 1;
     useEffect(()=> {
         console.log('regionSelectHistory',regionSelectHistory)
         if(!regionNavStarted) regionHistoryIdx = regionSelectHistory.length-1;
@@ -404,21 +410,55 @@ export var Home = () => {
                 document.getElementById("worldMap").classList.toggle("hidden")
 
                 // adjust Hawaii, Alaska, Puerto Rico
-                // var stateHI = document.getElementById("HI");
-                // stateHI.setAttributeNS(null, "transform","translate(125 0)")
-                // var statePR = document.getElementById("PR");
-                // statePR.setAttributeNS(null, "transform","translate(-50 0)")
-                // var stateAK = document.getElementById("AK");
-                // stateAK.setAttributeNS(null, "transform",  "translate(125 175) scale(.3 .3)")
+                var stateHI = document.getElementById("HI");
+                stateHI.setAttributeNS(null, "transform","translate(125 0)")
+                var statePR = document.getElementById("PR");
+                statePR.setAttributeNS(null, "transform","translate(-50 0)")
+                var stateAK = document.getElementById("AK");
+                stateAK.setAttributeNS(null, "transform",  "translate(125 175) scale(.3 .3)")
 
                 transformMatrix = [5.751490340144962, 0, 0 ,5.751490340144962 ,-656.582896430975,-514.5546459430193]
-
+                console.log(usCountyMap.getBBox())
+                console.log("svg dims", W, H)
                 document.getElementById("usLocal").setAttributeNS(null, "transform","matrix(5.751490340144962 0 0 5.751490340144962 -656.582896430975 -514.5546459430193)")
               
                 usCountyMap.addEventListener("wheel",(e)=>captureZoomEvent(e),false);
                 usCountyMap.addEventListener("DOMMouseScroll", (e)=> captureZoomEvent(e),false);
                 usCountyMap.addEventListener("mousedown", (e)=>dragMouseDown(e), false);
                 
+            }
+            else {
+                var box = document.getElementById(selectedRegion).getBBox();
+                // var pt = getTransformedPt(lastZoom.x, lastZoom.y, transformMatrix);
+                // panSVG((pt.x-dragStart.x)/4, (pt.y-dragStart.y)/4)
+                
+                // zooming in:  zoomVar, and zoomVar>1
+                // zooming out: 1/zoomVar
+                // var zoomVar = 1/1.2130435711726304;
+                
+                if(lastSelectedRegion=="<global>") {
+                    // [1,0,0,1,0,0]
+                    
+                }
+                else {
+
+                    // for(var i =0; i < 6; ++i) {transformMatrix[i] *= (1/selectedRegionZoom) }
+                    // transformMatrix[4] += (1-1/selectedRegionZoom)*(selectedRegionBox.x);
+                    // transformMatrix[5] += (1-1/selectedRegionZoom)*(selectedRegionBox.y);
+                }
+
+                selectedRegionBox = {x:box.x + box.width/2, y:box.y + box.height/2}
+                selectedRegionBox = getTransformedPt(selectedRegionBox.x, selectedRegionBox.y, transformMatrix);
+                selectedRegionZoom = ((H)/(2*box.height)) //+ ((W)/(2*box.width))
+                selectedRegionZoom = ((H*W)/(4*box.width*box.height)) //+ ((W)/(2*box.width))
+
+                transformMatrix = [1,0,0,1,0,0];
+                for(var i =0; i < 6; ++i) {transformMatrix[i] *= (selectedRegionZoom) }
+                transformMatrix[4] += (1-selectedRegionZoom)*(selectedRegionBox.x);
+                transformMatrix[5] += (1-selectedRegionZoom)*(selectedRegionBox.y);
+                
+                document.getElementById('continents').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
+
             }
             lastSelectedRegion = selectedRegion;
         }
@@ -432,18 +472,19 @@ export var Home = () => {
         if(searchClicked) {
             // if(inputData.module=="dailyTrends" || inputData.module=="realTimeTrends") { }
             if(inputData.geo=="US") {
-                var mKeys = Object.keys(metroData).map(k=> {
-                    return `US-${metroData[k].state}-${k.substr(1)}`
-                })
-                if(inputData.keyword.length==1) {
-                    var newKeyword = []
-                    for(let k=0; k < mKeys.length; ++k) {
-                        newKeyword.push(inputData.keyword[0])
+                // var mKeys = Object.keys(metroData).map(k=> {
+                //     return `US-${metroData[k].state}-${k.substr(1)}`
+                // })
+                // if(inputData.keyword.length==1) {
+                //     var newKeyword = []
+                //     for(let k=0; k < mKeys.length; ++k) {
+                //         newKeyword.push(inputData.keyword[0])
                         
-                    }
-                    // inputData.keyword = newKeyword;
+                //     }
+                //     inputData.keyword = newKeyword;
                     
-                }
+                // }
+                
                 // inputData.geo = mKeys     //mKeys
                 // processClientRequest("searchClicked","/server",inputData)
                 // let k =0;
@@ -456,10 +497,6 @@ export var Home = () => {
                 
             }
             else processClientRequest("searchClicked","/server",inputData)
-            
-
-            
-
 
         }
 
@@ -480,7 +517,7 @@ export var Home = () => {
                 for(let p=0; p < data.objects.admin_counties.geometries.length; ++p) {
                     var geometries = data.objects.admin_counties.geometries[p];
                    
-                    //mercator , orthographic <-- types of projections
+                    
                     var stateName = geometries.properties["REGION"];
                     stateName = stateName.replace(/\(|\)/gi, '')
                     stateName = stateName.replace(/\s/gi, '_')
@@ -496,7 +533,7 @@ export var Home = () => {
                     if(countyObj) {
                         var metroName = document.getElementById(`${geometries.properties["WIKIDATAID"]}`)           //getting metro name by finding parent element of county
                         metroName = metroName? metroName.parentElement.id : null;
-
+                        
                         d3.select(`#${geometries.properties["WIKIDATAID"]}`)
                         .datum(topojson.feature(data, geometries))
                         .attr("d", d3.geo.path().projection(d3.geo.mercator()))
@@ -526,7 +563,7 @@ export var Home = () => {
                 for(let p=0; p < data.objects.admin.geometries.length; ++p) {
                     var geometries = data.objects.admin.geometries[p];
                     
-                    //mercator , orthographic
+                   //mercator , orthographic <-- types of projections
                     var contName = geometries.properties["CONTINENT"];
                     contName = contName.replace(/\(|\)/gi, '')
                     contName = contName.replace(/\s/gi, '_')
@@ -538,6 +575,7 @@ export var Home = () => {
                                 .datum(topojson.feature(data, geometries))
                                 .attr("id", geometries.properties["ADM0_A3"])
                                 .attr("d", d3.geo.path().projection(d3.geo.mercator()))
+                                // .attr("d", d3.geo.path().projection(d3.geo.orthographic()))
                                 .attr("fill", ()=> {
                                     if(mapColorView=="default") {
                                         return `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
@@ -567,6 +605,7 @@ export var Home = () => {
                             .datum(topojson.feature(data, geometries))
                             .attr("id", geometries.properties["ADM0_A3"])
                             .attr("d", d3.geo.path().projection(d3.geo.mercator()))
+                            // .attr("d", d3.geo.path().projection(d3.geo.orthographic()))
                             .attr("fill", ()=> {
                                 if(mapColorView=="default") {
                                     return `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
@@ -587,7 +626,6 @@ export var Home = () => {
             worldMap.addEventListener("DOMMouseScroll", captureZoomEvent,false);
             worldMap.addEventListener("mousedown", dragMouseDown, false);
             setMapCreated(true)
-            
         }
         else {
             var regionKeys = Object.keys(allRegionProperties);
@@ -612,16 +650,7 @@ export var Home = () => {
                 }
                 lastMapColorView = mapColorView;
             }
-            
-            
-            
         }
-
-
-        
-        
-       
-        
     },[searchClicked, mapColorView, regionHistoryIdx, selectedRegion]);
 
     //for orthographic projcetion: https://bl.ocks.org/mbostock/3795040
@@ -659,6 +688,15 @@ export var Home = () => {
                    </div>
                     
                     <svg id="usCountyMap" className="map" width={W} height={H} >
+                        <filter id="landShadows">
+                            <feGaussianBlur stdDeviation={1} result="shadowBlur" />
+                            <feComposite operator='out' in='SourceGraphic' in2="shadowBlur" result="insetShadow" />
+                            <feFlood floodColor="black" floodOpacity={.95} result="shadowColor" />
+                            <feComposite operator="in" in="shadowColor" in2="insetShadow" result="shadow" />
+                            <feComposite operator="over" in="shadow" in2="SourceGraphic" />
+
+                        </filter>
+                        <rect className="ocean"/>
                         <g id="usLocal">
 
                             <g id="southeast">        
@@ -732,6 +770,7 @@ export var Home = () => {
                         </g>
                     </svg>
                     <svg id="worldMap" className="map" width={W} height={H} >
+                        <rect className="ocean"/>
                         <g id="continents"/>
                     </svg>
                 </div>

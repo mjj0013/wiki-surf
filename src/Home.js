@@ -128,6 +128,7 @@ export var Home = () => {
     var [lastZoom, setLastZoom] = useState({x:0, y:0})
 
     var [transformMatrix, setTransformMatrix] = useState([1, 0, 0, 1, 0, 0]);
+    var transformMatrixHistory = [];
     var zoomIntensity = 0.2;
     var [dragStart, setDragStart] = useState({x:0, y:0})
 
@@ -369,7 +370,7 @@ export var Home = () => {
         regionNavStarted = true;
         
     }
-    var selectedRegionBox = {x:W/2, y:H/2};
+    var selectedRegionBox = {width:W, height:H ,cx:W/2, cy:H/2};
     var selectedRegionZoom = 1;
     useEffect(()=> {
         console.log('regionSelectHistory',regionSelectHistory)
@@ -429,6 +430,7 @@ export var Home = () => {
             }
             else {
                 var box = document.getElementById(selectedRegion).getBBox();
+                console.log('box',box)
                 // var pt = getTransformedPt(lastZoom.x, lastZoom.y, transformMatrix);
                 // panSVG((pt.x-dragStart.x)/4, (pt.y-dragStart.y)/4)
                 
@@ -436,27 +438,27 @@ export var Home = () => {
                 // zooming out: 1/zoomVar
                 // var zoomVar = 1/1.2130435711726304;
                 
-                if(lastSelectedRegion=="<global>") {
-                    // [1,0,0,1,0,0]
-                    
-                }
-                else {
+              
+                // selectedRegionBox.cx = box.x + box.width/2;
+                // selectedRegionBox.cy = box.y + box.height/2;
+                selectedRegionBox.cx = box.x + box.width/2
+                selectedRegionBox.cy = box.y + box.height/2
+             
+                // selectedRegionBox = getTransformedPt(selectedRegionBox.cx, selectedRegionBox.cy, transformMatrix);
+                selectedRegionZoom = .5*((selectedRegionBox.width)/(box.width)) 
+                // selectedRegionZoom = ((selectedRegionBox.height*selectedRegionBox.width)/(16*box.width*box.height)) 
 
-                    // for(var i =0; i < 6; ++i) {transformMatrix[i] *= (1/selectedRegionZoom) }
-                    // transformMatrix[4] += (1-1/selectedRegionZoom)*(selectedRegionBox.x);
-                    // transformMatrix[5] += (1-1/selectedRegionZoom)*(selectedRegionBox.y);
-                }
-
-                selectedRegionBox = {x:box.x + box.width/2, y:box.y + box.height/2}
-                selectedRegionBox = getTransformedPt(selectedRegionBox.x, selectedRegionBox.y, transformMatrix);
-                selectedRegionZoom = ((H)/(2*box.height)) //+ ((W)/(2*box.width))
-                selectedRegionZoom = ((H*W)/(4*box.width*box.height)) //+ ((W)/(2*box.width))
-
-                transformMatrix = [1,0,0,1,0,0];
-                for(var i =0; i < 6; ++i) {transformMatrix[i] *= (selectedRegionZoom) }
-                transformMatrix[4] += (1-selectedRegionZoom)*(selectedRegionBox.x);
-                transformMatrix[5] += (1-selectedRegionZoom)*(selectedRegionBox.y);
+                var tempMatrix = [1,0,0,1,0,0];
+                for(var i =0; i < 6; ++i) {tempMatrix[i] *= (selectedRegionZoom) }
+                tempMatrix[4] += (1-selectedRegionZoom)*(selectedRegionBox.cx);
+                tempMatrix[5] += (1-selectedRegionZoom)*(selectedRegionBox.cy);
+                selectedRegionBox.height = box.height;
+                selectedRegionBox.width = box.width;
+           
+                console.log("vp", document.getElementById("worldMap").viewPort)
                 
+                transformMatrixHistory.push(transformMatrix)
+                transformMatrix = tempMatrix;
                 document.getElementById('continents').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
 
             }

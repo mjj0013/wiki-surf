@@ -49,7 +49,11 @@ import {abridgedCategories, regionCodes, regionCodesReformatted} from '../server
 //     ["Russia", new Date(1978, 6, 13)]
 // ]);
 
-
+var childIdExistsD3 = (parent, queryStr) => {
+    var selection = d3.select(parent).select(queryStr);
+    if(selection.size==1 && selection[0]==null) return;         //then its empty
+    else return selection[0][0]; 
+}
 
 
 
@@ -301,8 +305,7 @@ export var Home = () => {
         .range([-90,90])
     var path = d3.geo.path()
         .projection(projection)
-    var svg;
-    var svgConts;
+    
 
     var [allRegionProperties,setAllRegionProperties]  = useState({});
     var [allCountyProperties,setAllCountyProperties]  = useState({});
@@ -331,57 +334,192 @@ export var Home = () => {
     var [regionSelectHistory,setRegionSelectHistory] = useState(["<global>"]);
     var [regionHistoryIdx,setRegionHistoryIdx] = useState(0);
     var regionNavStarted = false;
+
+
+    var backRegionBtnClicked =(e) => {
+        if(regionHistoryIdx-1 > 0) {
+            selectedRegion = regionSelectHistory[regionHistoryIdx-1];
+            setRegionHistoryIdx( --regionHistoryIdx)
+        }
+        if(regionHistoryIdx == 0) {
+            document.getElementById("backRegionBtn").classList.add("disabled");
+        }
+    }
+    var fwdRegionBtnClicked =(e) => {
+        if(regionHistoryIdx+1 < regionSelectHistory.length-1) {
+            selectedRegion = regionSelectHistory[regionHistoryIdx+1];
+            setRegionHistoryIdx( ++regionHistoryIdx)
+        }
+        if(regionHistoryIdx == regionSelectHistory.length-1) {
+            document.getElementById("fwdRegionBtn").classList.add("disabled");
+        }
+
+    }
+    var toGlobalBtnClicked =(e) => {
+        if(regionSelectHistory[regionSelectHistory.length-1] !="<global>") {
+            regionSelectHistory.push("<global>")
+            setRegionHistoryIdx( --regionHistoryIdx)
+        }
+    }
     
 
     function regionNavBtnClicked(e) {
         
-        var btnName = e.target.id;
+        
         if(regionHistoryIdx+1==regionSelectHistory.length-1)  document.getElementById("fwdRegionBtn").classList.add("disabled");
         else document.getElementById("fwdRegionBtn").classList.remove("disabled");
 
         if(regionHistoryIdx-1==0)  document.getElementById("backRegionBtn").classList.add("disabled");
         else document.getElementById("backRegionBtn").classList.remove("disabled");
 
-        if(btnName=="fwdRegionBtn") {
-            if(regionHistoryIdx+1 <= regionSelectHistory.length-1) {
-                var nextRegion = regionSelectHistory[regionHistoryIdx+1]
-                selectedRegion = nextRegion;
-               
-                setRegionHistoryIdx( ++regionHistoryIdx)
-                // if(nextRegion!="<global>") {}
-            }
-        }
-        if(btnName=="backRegionBtn") {
-            if(regionHistoryIdx-1 >= 0) {
-                var nextRegion = regionSelectHistory[regionHistoryIdx-1]
-                selectedRegion = nextRegion;
-                setRegionHistoryIdx( --regionHistoryIdx)
-            }
-        }
-
-        if(btnName=="toGlobalBtn") {
-            if(regionSelectHistory[regionSelectHistory.length-1] !="<global>") {
-                regionSelectHistory.push("<global>")
-                setRegionHistoryIdx( --regionHistoryIdx)
-            }
-            
-        }
         console.log("current Region: "+regionSelectHistory[regionHistoryIdx])
         regionNavStarted = true;
         
     }
+    function updateMap(svg) {
+        var regionKeys = Object.keys(allRegionProperties);
+        if(lastMapColorView != mapColorView) {
+            for(let k=0; k < regionKeys.length; ++k) {
+                var key = regionKeys[k];
+                var regionObj = allRegionProperties[key];
+                var contName = regionObj["CONTINENT"];
+                contName = contName.replace(/\(|\)/gi, '')
+                contName = contName.replace(/\s/gi, '_')
+
+                svg.select("#continents").select(`#${contName}`)
+                .select(`#${key}`)
+                .attr("fill", ()=> {
+                    if(mapColorView=="default") {
+                        return `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
+                    }
+                    if(mapColorView=="continent") {
+                        return `hsl( ${continentHues[contName]}, ${getRandomInt(40,55)}%, ${getRandomInt(30,45)}%)`    
+                    }
+                })
+            }
+            lastMapColorView = mapColorView;
+        }
+    }
+    function createMap() {
+        if(!mapCreated) {
+            var svgConts = d3.select("#continents")
+            d3.json("./world_w_us_counties.json", function(error, data) {
+                // *********************************************************************************
+                // US county level
+                for(let p=0; p < data.objects.admin_counties.geometries.length; ++p) {
+                    var geometries = data.objects.admin_counties.geometries[p];
+                   
+                    var stateName = geometries.properties["REGION"].replace(/\(|\)/gi, '').replace(/\s/gi, '_')
+
+                    // human-readable county name
+                    var countyName = geometries.properties["NAME_ALT"].replace(/\(|\)/gi, '').replace(/\s/gi, '_')
+
+                    var countyObj = childIdExistsD3(`#usCountyMap`,`#${geometries.properties["WIKIDATAID"]}`)
+                    if(countyObj) {
+                        var metroName = document.getElementById(`${geometries.properties["WIKIDATAID"]}`)           //getting metro name by finding parent element of county
+                        metroName = metroName? metroName.parentElement.id : null;
+                        
+                        d3.select(`#${geometries.properties["WIKIDATAID"]}`)
+                        .datum(topojson.feature(data, geometries))
+                        .attr("d", d3.geo.path().projection(d3.geo.mercator()))
+                        .attr("fill", ()=> {
+                            if(metroName) return metroData[metroName].color
+                            else return 'black'  
+                        })
+                    }
+                    else {
+                        d3.select(`#${stateName}`)
+                        .append("path")
+                            .datum(topojson.feature(data, geometries))
+                            .attr("id", geometries.properties["WIKIDATAID"])
+                            .attr("d", d3.geo.path().projection(d3.geo.mercator()))
+                            .attr("fill", ()=> { return `hsl( ${0}, 40%, 90%)` })
+                    }
+                    allCountyProperties[geometries.properties["WIKIDATAID"]] = geometries.properties;
+                }
+
+                // *********************************************************************************
+                // international level
+                for(let p=0; p < data.objects.admin.geometries.length; ++p) {
+                    var geometries = data.objects.admin.geometries[p];
+                    
+                   //mercator , orthographic <-- types of projections
+                    var contName = geometries.properties["CONTINENT"].replace(/\(|\)/gi, '').replace(/\s/gi, '_')
+    
+                    if(!continents.includes(contName)) {                // this section is for initializing continents and adding the region belonging to the newly created continent
+                        svgConts.append("g")
+                            .attr("id",contName)
+                            .append("path")
+                                .datum(topojson.feature(data, geometries))
+                                .attr("id", geometries.properties["ADM0_A3"])
+                                .attr("d", d3.geo.path().projection(d3.geo.mercator()))
+                                // .attr("d", d3.geo.path().projection(d3.geo.orthographic()))
+                                .attr("fill", ()=> {
+                                    if(mapColorView=="default") {
+                                        return `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
+                                    }
+                                    if(mapColorView=="continent") {
+                                        return `hsl( ${continentHues[contName]},${getRandomInt(40,55)}%, ${getRandomInt(30,45)}%)`;
+                                    }
+                                })
+                        continents.push(contName);
+                        allRegionProperties[geometries.properties["ADM0_A3"]] = geometries.properties;
+                    }
+                    else {                                          // this section is for adding region to already existing continent
+                        var group = d3.selectAll(`#${contName}`)
+                        var regionObj = childIdExistsD3("#continents",`#${geometries.properties["ADM0_A3"]}`)
+                        if(regionObj) {
+                            regionObj.attr("fill", ()=> {
+                                if(mapColorView=="default") {
+                                    return `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
+                                }
+                                if(mapColorView=="continent") {
+                                    return `hsl( ${continentHues[contName]}, ${getRandomInt(40,55)}%, ${getRandomInt(30,45)}%)`
+                                }
+                            })
+                            continue;
+                        }
+                        group.append("path")
+                            .datum(topojson.feature(data, geometries))
+                            .attr("id", geometries.properties["ADM0_A3"])
+                            .attr("d", d3.geo.path().projection(d3.geo.mercator()))
+                            // .attr("d", d3.geo.path().projection(d3.geo.orthographic()))
+                            .attr("fill", ()=> {
+                                if(mapColorView=="default") {
+                                    return `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
+                                }
+                                if(mapColorView=="continent") {
+                                    return `hsl( ${continentHues[contName]}, ${getRandomInt(40,55)}%, ${getRandomInt(30,45)}%)`    
+                                }
+                            })
+                        allRegionProperties[geometries.properties["ADM0_A3"]] = geometries.properties;
+                    }
+                }
+            })
+            var worldMap = document.getElementById("worldMap")
+            worldMap.addEventListener("wheel",captureZoomEvent,false);
+            worldMap.addEventListener("DOMMouseScroll", captureZoomEvent,false);
+            worldMap.addEventListener("mousedown", dragMouseDown, false);
+            setMapCreated(true)
+        }
+    }
+
+    // ****************************************
+    // try openstreetmaps, https://wiki.openstreetmap.org/wiki/API_v0.6
+    // https://planet.openstreetmap.org/planet/
+    // ****************************************
+
     var selectedRegionBox = {width:W, height:H ,cx:W/2, cy:H/2};
-    var selectedRegionZoom = 1;
+    var selectedRegionZoom = 1
+    var prevSelectedRegionZoom = 1
+    var activeSVG = d3.select("#worldMap");
     useEffect(()=> {
-        console.log('regionSelectHistory',regionSelectHistory)
         if(!regionNavStarted) regionHistoryIdx = regionSelectHistory.length-1;
         selectedRegion = regionSelectHistory[regionHistoryIdx];
         setSelectedRegion(regionSelectHistory[regionHistoryIdx]);
         if(lastSelectedRegion != selectedRegion) {
             
-            
-            var worldMap = document.getElementById('worldMap')
-            var regionObj = document.getElementById(selectedRegion);
+           
             // regionSelectHistory.push(selectedRegion)
             if(regionSelectHistory.length>1) {
                 // document.getElementById("mapBtnGroup").classList.toggle("showing");
@@ -419,8 +557,7 @@ export var Home = () => {
                 stateAK.setAttributeNS(null, "transform",  "translate(125 175) scale(.3 .3)")
 
                 transformMatrix = [5.751490340144962, 0, 0 ,5.751490340144962 ,-656.582896430975,-514.5546459430193]
-                console.log(usCountyMap.getBBox())
-                console.log("svg dims", W, H)
+               
                 document.getElementById("usLocal").setAttributeNS(null, "transform","matrix(5.751490340144962 0 0 5.751490340144962 -656.582896430975 -514.5546459430193)")
               
                 usCountyMap.addEventListener("wheel",(e)=>captureZoomEvent(e),false);
@@ -430,32 +567,41 @@ export var Home = () => {
             }
             else {
                 var box = document.getElementById(selectedRegion).getBBox();
-                console.log('box',box)
+               
                 // var pt = getTransformedPt(lastZoom.x, lastZoom.y, transformMatrix);
                 // panSVG((pt.x-dragStart.x)/4, (pt.y-dragStart.y)/4)
                 
                 // zooming in:  zoomVar, and zoomVar>1
                 // zooming out: 1/zoomVar
                 // var zoomVar = 1/1.2130435711726304;
-                
-              
-                // selectedRegionBox.cx = box.x + box.width/2;
-                // selectedRegionBox.cy = box.y + box.height/2;
+           
                 selectedRegionBox.cx = box.x + box.width/2
                 selectedRegionBox.cy = box.y + box.height/2
-             
+                lastZoom.x = selectedRegionBox.cx;
+                lastZoom.y = selectedRegionBox.cy;
                 // selectedRegionBox = getTransformedPt(selectedRegionBox.cx, selectedRegionBox.cy, transformMatrix);
-                selectedRegionZoom = .5*((selectedRegionBox.width)/(box.width)) 
-                // selectedRegionZoom = ((selectedRegionBox.height*selectedRegionBox.width)/(16*box.width*box.height)) 
+                prevSelectedRegionZoom = selectedRegionZoom;
+                selectedRegionZoom = Math.sqrt((selectedRegionBox.height*selectedRegionBox.width)/(box.width*box.height))/2
+            
+                // selectedRegionZoom = ((box.width)/(selectedRegionBox.width)) - selectedRegionZoom;
+                
+                
 
                 var tempMatrix = [1,0,0,1,0,0];
                 for(var i =0; i < 6; ++i) {tempMatrix[i] *= (selectedRegionZoom) }
-                tempMatrix[4] += (1-selectedRegionZoom)*(selectedRegionBox.cx);
-                tempMatrix[5] += (1-selectedRegionZoom)*(selectedRegionBox.cy);
+                // tempMatrix[4] += (prevSelectedRegionZoom - selectedRegionZoom)*(selectedRegionBox.cx);
+                // tempMatrix[5] += (prevSelectedRegionZoom - selectedRegionZoom)*(selectedRegionBox.cy);
+                tempMatrix[4] += (1 - selectedRegionZoom)*(selectedRegionBox.cx);
+                tempMatrix[5] += (1 - selectedRegionZoom)*(selectedRegionBox.cy);
+
+
                 selectedRegionBox.height = box.height;
                 selectedRegionBox.width = box.width;
-           
-                console.log("vp", document.getElementById("worldMap").viewPort)
+                
+                // box.x
+                // box.x + tempMatrix[0]*box.width
+                console.log(document.getElementById(selectedRegion).getBBox())
+
                 
                 transformMatrixHistory.push(transformMatrix)
                 transformMatrix = tempMatrix;
@@ -466,7 +612,6 @@ export var Home = () => {
         }
         if(!regionOptionsLoaded) {
             processClientRequest("getRegionDb","/server/getRegionDb").then(result=> {
-                
                 setRegionOptions(result)
                 setRegionOptionsLoaded(true)
             })
@@ -502,157 +647,10 @@ export var Home = () => {
 
         }
 
-        var idExists = (parent, queryStr) => {
-            var selection = d3.select(parent).select(queryStr);
-            if(selection.size==1 && selection[0]==null) return;         //then its empty
-            else return selection[0][0]; 
-        }
-
-
-        
-        svg = d3.select("#worldMap")
-        if(!mapCreated) {
-            svgConts = d3.select("#continents")
-            d3.json("./world_w_us_counties.json", function(error, data) {
-                
-                // US county level
-                for(let p=0; p < data.objects.admin_counties.geometries.length; ++p) {
-                    var geometries = data.objects.admin_counties.geometries[p];
-                   
-                    
-                    var stateName = geometries.properties["REGION"];
-                    stateName = stateName.replace(/\(|\)/gi, '')
-                    stateName = stateName.replace(/\s/gi, '_')
-
-
-                    
-                    // human-readable county name
-                    var countyName = geometries.properties["NAME_ALT"];              
-                    countyName = countyName.replace(/\(|\)/gi, '')
-                    countyName = countyName.replace(/\s/gi, '_')
-
-                    var countyObj = idExists(`#usCountyMap`,`#${geometries.properties["WIKIDATAID"]}`)
-                    if(countyObj) {
-                        var metroName = document.getElementById(`${geometries.properties["WIKIDATAID"]}`)           //getting metro name by finding parent element of county
-                        metroName = metroName? metroName.parentElement.id : null;
-                        
-                        d3.select(`#${geometries.properties["WIKIDATAID"]}`)
-                        .datum(topojson.feature(data, geometries))
-                        .attr("d", d3.geo.path().projection(d3.geo.mercator()))
-                        .attr("fill", ()=> {
-                            if(metroName) return metroData[metroName].color
-                            else return 'black'  
-                        })
-                    }
-                    else {
-                        d3.select(`#${stateName}`)
-                        .append("path")
-                        .datum(topojson.feature(data, geometries))
-                        .attr("id", geometries.properties["WIKIDATAID"])
-                        .attr("d", d3.geo.path().projection(d3.geo.mercator()))
-                        .attr("fill", ()=> {
-                             return `hsl( ${0}, 40%, 90%)`
-                        
-                        })
-                    }
-
-                    allCountyProperties[geometries.properties["WIKIDATAID"]] = geometries.properties;
-                    
-                }
-
-                // *********************************************************************************
-                // international level
-                for(let p=0; p < data.objects.admin.geometries.length; ++p) {
-                    var geometries = data.objects.admin.geometries[p];
-                    
-                   //mercator , orthographic <-- types of projections
-                    var contName = geometries.properties["CONTINENT"];
-                    contName = contName.replace(/\(|\)/gi, '')
-                    contName = contName.replace(/\s/gi, '_')
-    
-                    if(!continents.includes(contName)) {                // this section is for initializing continents and adding the region belonging to the newly created continent
-                        svgConts.append("g")
-                            .attr("id",contName)
-                            .append("path")
-                                .datum(topojson.feature(data, geometries))
-                                .attr("id", geometries.properties["ADM0_A3"])
-                                .attr("d", d3.geo.path().projection(d3.geo.mercator()))
-                                // .attr("d", d3.geo.path().projection(d3.geo.orthographic()))
-                                .attr("fill", ()=> {
-                                    if(mapColorView=="default") {
-                                        return `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
-                                    }
-                                    if(mapColorView=="continent") {
-                                        return `hsl( ${continentHues[contName]},${getRandomInt(40,55)}%, ${getRandomInt(30,45)}%)`;
-                                    }
-                                })
-                        continents.push(contName);
-                        allRegionProperties[geometries.properties["ADM0_A3"]] = geometries.properties;
-                    }
-                    else {                                          // this section is for adding region to already existing continent
-                        var group = d3.selectAll(`#${contName}`)
-                        var regionObj = idExists("#continents",`#${geometries.properties["ADM0_A3"]}`)
-                        if(regionObj) {
-                            regionObj.attr("fill", ()=> {
-                                if(mapColorView=="default") {
-                                    return `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
-                                }
-                                if(mapColorView=="continent") {
-                                    return `hsl( ${continentHues[contName]}, ${getRandomInt(40,55)}%, ${getRandomInt(30,45)}%)`
-                                }
-                            })
-                            continue;
-                        }
-                        group.append("path")
-                            .datum(topojson.feature(data, geometries))
-                            .attr("id", geometries.properties["ADM0_A3"])
-                            .attr("d", d3.geo.path().projection(d3.geo.mercator()))
-                            // .attr("d", d3.geo.path().projection(d3.geo.orthographic()))
-                            .attr("fill", ()=> {
-                                if(mapColorView=="default") {
-                                    return `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
-                                }
-                                if(mapColorView=="continent") {
-                                    return `hsl( ${continentHues[contName]}, ${getRandomInt(40,55)}%, ${getRandomInt(30,45)}%)`    
-                                }
-                            })
-                        allRegionProperties[geometries.properties["ADM0_A3"]] = geometries.properties;
-                    }
-                }
-                console.log("allRegionProperties",allRegionProperties)
-                
-                
-            })
-            var worldMap = document.getElementById("worldMap")
-            worldMap.addEventListener("wheel",captureZoomEvent,false);
-            worldMap.addEventListener("DOMMouseScroll", captureZoomEvent,false);
-            worldMap.addEventListener("mousedown", dragMouseDown, false);
-            setMapCreated(true)
-        }
-        else {
-            var regionKeys = Object.keys(allRegionProperties);
-            if(lastMapColorView != mapColorView) {
-                for(let k=0; k < regionKeys.length; ++k) {
-                    var key = regionKeys[k];
-                    var regionObj = allRegionProperties[key];
-                    var contName = regionObj["CONTINENT"];
-                    contName = contName.replace(/\(|\)/gi, '')
-                    contName = contName.replace(/\s/gi, '_')
-    
-                    svg.select("#continents").select(`#${contName}`)
-                    .select(`#${key}`)
-                    .attr("fill", ()=> {
-                        if(mapColorView=="default") {
-                            return `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
-                        }
-                        if(mapColorView=="continent") {
-                            return `hsl( ${continentHues[contName]}, ${getRandomInt(40,55)}%, ${getRandomInt(30,45)}%)`    
-                        }
-                    })
-                }
-                lastMapColorView = mapColorView;
-            }
-        }
+       
+        if(mapCreated) updateMap(activeSVG)
+        else createMap();
+     
     },[searchClicked, mapColorView, regionHistoryIdx, selectedRegion]);
 
     //for orthographic projcetion: https://bl.ocks.org/mbostock/3795040
@@ -684,9 +682,9 @@ export var Home = () => {
             <SideBarWrapper regionHistoryIdx={regionHistoryIdx}  setRegionHistoryIdx={setRegionHistoryIdx} selectedRegion={selectedRegion} setSelectedRegion={setSelectedRegion} mapColorView={mapColorView} setMapColorView={setMapColorView} sideBarVisible={sideBarVisible} setSideBarVisible={setSideBarVisible} setInputData={setInputData} inputData={inputData} readyResults={readyResults} setReadyResults={setReadyResults} searchClicked={searchClicked} setSearchClicked={setSearchClicked} setCurrentTab={setCurrentTab} regionOptions={regionOptions} setRegionOptions={setRegionOptions} isVisible={sideBarVisible} setVisible={setSideBarVisible}>
                 <div id="globalSearch" >
                    <div id="mapBtnGroup" className="regionNavBtnGroup">
-                        <Button id="backRegionBtn" className="regionNavBtn" onClick={(e)=>regionNavBtnClicked(e)} attached icon="arrow left" />
-                        <Button id="toGlobalBtn" className="regionNavBtn" onClick={(e)=>regionNavBtnClicked(e)} attached icon={<i className="bi bi-globe2"></i>}/>
-                        <Button id="fwdRegionBtn" className="regionNavBtn" onClick={(e)=>regionNavBtnClicked(e)} attached icon="arrow right"/>
+                        <Button id="backRegionBtn" className="regionNavBtn" onClick={(e)=>backRegionBtnClicked(e)} attached icon="arrow left" />
+                        <Button id="toGlobalBtn" className="regionNavBtn" onClick={(e)=>toGlobalBtnClicked(e)} attached icon={<i className="bi bi-globe2"></i>}/>
+                        <Button id="fwdRegionBtn" className="regionNavBtn" onClick={(e)=>fwdRegionBtnClicked(e)} attached icon="arrow right"/>
                    </div>
                     
                     <svg id="usCountyMap" className="map" width={W} height={H} >

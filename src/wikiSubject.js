@@ -5,9 +5,6 @@ var {processTableData} = require('./tableHelpers.js')       //isNumber, isEntity
 // const {fetch} = require('node-fetch');
 //"https://en.wikipedia.org/w/api.php?&origin=*&action=opensearch&search=Belgium&limit=5"
 
-var SparqlParser = require('sparqljs').Parser;
-var sParser = new SparqlParser();
-
 
 
 function findObjInArray(array, keyName, keyValue) {
@@ -77,23 +74,42 @@ fragment StatementItemValue on Statement{
 // GraphQL queries are sent to https://tptools.toolforge.org/wdql.php
 function wikiDataSearch(wikiDataId) {
     return new Promise((resolve,reject)=>{
-        // var url = `https://www.wikidata.org/w/api.php?action=parse&origin=*&format=json&page=${wikiDataId}&formatversion=2&prop=sections`
-        var url = `https://tptools.toolforge.org/wdql.php`
-        var parsedQuery = sParser.parse(
-            `PREFIX foaf: ${url} `
-            // SELECT * {}`
-        )
-        console.log('parsedQuery',parsedQuery)
         
-        // var req = new Request(url,{method:'GET',mode:'cors'});
-        // fetch(req)
-        // .then(response => {    return response.json();})
-        // .then(result=>{
-        //     return result;
-        //     // var query = result.query
-        //     // if(query.search.length==0)  return reject("not found");
-        //     // return resolve(query.search[0].title);
-        // })
+        var url = `https://query.wikidata.org/sparql?query=SELECT%20%3Fitem%20%3FitemLabel%0AWHERE%0A%7B%0A%3Fitem%20wdt%3AP31%20wd%3AQ13410400%20.%0ASERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22%5BAUTO_LANGUAGE%5D%2Cen%22%20%7D%0A%7D`
+
+        
+        
+
+        // var url = `https://www.wikidata.org/w/api.php?action=parse&origin=*&format=json&page=${wikiDataId}&formatversion=2&prop=sections`
+        // var url = `https://tptools.toolforge.org/wdql.php`
+
+       
+        
+        var req = new Request(url, {  method:"POST"   })
+        fetch(req)
+        .then(response => {    
+            // var result = convert.xml2json(response.body, {compact: false, spaces: 4}); 
+            
+            return response;
+        })
+        .then(result=>{
+            var parser = new DOMParser();
+            
+            // var r = convert.xml2json(result.text(), {compact: false, spaces: 4});
+            result.text().then(r=> {
+                
+                var jsonData = convert.xml2json(r, {spaces: 4});
+                jsonData = JSON.parse(jsonData);
+                console.log("jsonData",jsonData)
+
+            })
+            // xmlDoc = parser.parseFromString(result,"text/xml");
+         
+            return result;
+            // var query = result.query
+            // if(query.search.length==0)  return reject("not found");
+            // return resolve(query.search[0].title);
+        })
     })
 }
 

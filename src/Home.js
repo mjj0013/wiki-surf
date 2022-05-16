@@ -229,6 +229,7 @@ export var Home = () => {
         // other possible modules:    relatedQueries, relatedTopics, interestOverTime, interestByRegion
         return new Promise((resolve, reject) => {
             var headers = {"Content-Type":"application/json", "Accept":"application/json"}
+           
             var req;
             if(action=="searchClicked") {
                 req = new Request(path, {  method:"POST",  headers:headers,    body: JSON.stringify(body)   });
@@ -644,13 +645,12 @@ export var Home = () => {
 
     document.addEventListener("keydown", (e)=> {
         if(e.key=='b') startListingCounties = true;
-       
         if(e.key=='e') {
             console.log(currentSelectedCounties)
             startListingCounties = false;
             currentSelectedCounties = []
         }
-    }, false)
+    }, false);
     var metroKeys = Object.keys(metroData);
     for(let m=0; m < metroKeys.length; ++m) {
         metroData[metroKeys[m]]["color"] = `hsl( ${getRandomInt(0,359)}, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
@@ -676,7 +676,6 @@ export var Home = () => {
                         </filter>
                         <rect className="ocean"/>
                         <g id="usLocal">
-
                             <g id="southeast">        
                                 { seStates.map((s,idx0)=> { return (
                                         <g id={s} key={idx0} className="state">

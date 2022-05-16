@@ -1,10 +1,14 @@
 const { isElementOfType } = require( 'react-dom/test-utils');
 var convert = require('xml-js');
-
 var {processTableData} = require('./tableHelpers.js')       //isNumber, isEntity,isPlusMinusNumber,isPercent,isPercentVar,isDollarPrice,isDollarRange,isAngleDegree,isTempDegree,isYenPrice,isEuroPrice,isPoundPrice,phoneNumTest,isNumberMoreThan,isNumberLessThan,isNumberRangeDash,isNumberRangeVar,isNumberWithUnit
 
 // const {fetch} = require('node-fetch');
 //"https://en.wikipedia.org/w/api.php?&origin=*&action=opensearch&search=Belgium&limit=5"
+
+var SparqlParser = require('sparqljs').Parser;
+var sParser = new SparqlParser();
+
+
 
 function findObjInArray(array, keyName, keyValue) {
     for(let item=0; item < array.length; ++item) {
@@ -12,6 +16,9 @@ function findObjInArray(array, keyName, keyValue) {
     }
     return -1;
 }
+
+
+
 
 
 function reformatURL(url) {
@@ -30,39 +37,94 @@ function reformatURL(url) {
     return url;
 }
 
+/*
+query {
+  item (id: "Q57225") {
+    statements(propertyIds:"P25") {
+      ...StatementItemValue
+    }
+  }
+}
+fragment StatementItemValue on Statement{
+	data:mainsnak {
+    ... on PropertyValueSnak {
+				# property {
+				# id
+				# }
+      item:value {
+        ...	on StringValue {
+          value
+        }
+        ... on Item {
+          label(language: "en") {
+            text
+          }
+        }
+      }
+    }
+  }
+}
 
+*/
 
 // for fetching data form https://www.wikidata.org
 // for more info, look at: https://www.wikidata.org/wiki/Wikidata:Data_access
+// list of all Wikidata properties: https://quarry.wmcloud.org/run/45013/output/1/json
+// mainsnak : a snak found in a claim
+// https://phabricator.wikimedia.org/T173214
+
+// https://doc.wikimedia.org/Wikibase/master/js/#!/api/Property
+// GraphQL queries are sent to https://tptools.toolforge.org/wdql.php
 function wikiDataSearch(wikiDataId) {
     return new Promise((resolve,reject)=>{
-       
+        // var url = `https://www.wikidata.org/w/api.php?action=parse&origin=*&format=json&page=${wikiDataId}&formatversion=2&prop=sections`
+        var url = `https://tptools.toolforge.org/wdql.php`
+        var parsedQuery = sParser.parse(
+            `PREFIX foaf: ${url} `
+            // SELECT * {}`
+        )
+        console.log('parsedQuery',parsedQuery)
         
-        var url = `https://www.wikidata.org/w/api.php?action=parse&origin=*&format=json&page=${wikiDataId}&formatversion=2&prop=sections`
-        
-        var req = new Request(url,{method:'GET',mode:'cors'});
-        fetch(req)
-        .then(response => {    return response.json();})
-        .then(result=>{
-            console.log("result",result)
-            return result;
-            // var query = result.query
-            // if(query.search.length==0)  return reject("not found");
-            // return resolve(query.search[0].title);
-        })
+        // var req = new Request(url,{method:'GET',mode:'cors'});
+        // fetch(req)
+        // .then(response => {    return response.json();})
+        // .then(result=>{
+        //     return result;
+        //     // var query = result.query
+        //     // if(query.search.length==0)  return reject("not found");
+        //     // return resolve(query.search[0].title);
+        // })
     })
 }
 
 
 
-
+function constructURL(params) {
+    var url = "https://en.wikipedia.org/w/api.php"
+    url += "?origin=*"
+    Object.keys(params).forEach((key)=> {
+        url += `&${key}=${params[key]}`
+    })
+    return url;
+}
 
 
 
 
 function wikiTitleSearch(queryName) {
     return new Promise((resolve,reject)=>{
-        var url = `https://en.wikipedia.org/w/api.php?action=query&list=search&srwhat=text&srsearch=${reformatURL(queryName)}&srprop=categorysnippet&format=json&origin=*`;
+        var params = {
+            action:"query",
+            list:"search",
+            srwhat:"text",
+            srsearch:reformatURL(queryName),
+            srprop:"categorysnippet",
+            format:"json",
+        }
+        var url = constructURL(params);
+        // var url = `https://en.wikipedia.org/w/api.php?action=query&list=search&srwhat=text&srsearch=${reformatURL(queryName)}&srprop=categorysnippet&format=json&origin=*`;
+        
+        
         var req = new Request(url,{method:'GET',mode:'cors'});
         fetch(req)
         .then(response => {    return response.json();})
@@ -224,6 +286,7 @@ class WikiSubject {      // extends React.Component
                 fetch(req)
                 .then(response => {return response.json()})
                 .then(data => {
+                    
                     var redirectCheck  = data.parse.parsetree
                     if(redirectCheck.substr(6,9)=="#REDIRECT")  {
                         var matchLinkRE = /\[\[(.*?)\]\]/gi
@@ -236,7 +299,7 @@ class WikiSubject {      // extends React.Component
                     else {
                         var result = convert.xml2json(data.parse.parsetree, {compact: false, spaces: 4});       //  https://goessner.net/download/prj/jsonxml/
                         var contentLevel = JSON.parse(result)["elements"][0]["elements"]
-                        console.log('contentLevel',contentLevel)
+                        console.log('result data',result)
                         //the 1st text-type element is the introduction
                         //if element has name "h", it's the header for the section following it
         

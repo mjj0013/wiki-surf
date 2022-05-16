@@ -52,6 +52,7 @@
     "semantic-ui-css": "^2.4.1",
     "semantic-ui-react": "^2.1.2",
     "source-map-resolve": "^0.6.0",
+    "sparqljs": "^3.5.1",
     "stream": "^0.0.2",
     "stream-browserify": "^3.0.0",
     "stream-http": "^3.2.0",

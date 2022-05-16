@@ -130,7 +130,6 @@ export var Home = () => {
         }
     }
     var [lastZoom, setLastZoom] = useState({x:0, y:0})
-
     var [transformMatrix, setTransformMatrix] = useState([1, 0, 0, 1, 0, 0]);
     var transformMatrixHistory = [];
     var zoomIntensity = 0.2;
@@ -138,7 +137,6 @@ export var Home = () => {
 
 
     var captureZoomEvent = (e) => {
-        
         lastZoom.x = e.offsetX;
         lastZoom.y = e.offsetY;
         let delta = e.wheelDelta/1000;
@@ -148,14 +146,10 @@ export var Home = () => {
     var updateZoom = (delta) => {
         let wheelNorm = delta;
         let zoomVar = Math.pow(zoomIntensity,wheelNorm);
-    
         for(var i =0; i < 6; ++i) {transformMatrix[i] *= zoomVar }
-        console.log("zoomVar",zoomVar)
         transformMatrix[4] += (1-zoomVar)*(lastZoom.x);
         transformMatrix[5] += (1-zoomVar)*(lastZoom.y);
-        
-        
-        
+
         if(selectedRegion == "USA") {
             document.getElementById('usLocal').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
         }
@@ -177,7 +171,6 @@ export var Home = () => {
     }
     
     var dragMouseDown = (e) =>{
-        
         e = e || window.event;
         var regionKeys = Object.keys(allRegionProperties);
         if(regionKeys.includes(e.target.id)) {
@@ -186,12 +179,10 @@ export var Home = () => {
             setRegionHistoryIdx(++regionHistoryIdx)
             regionSelectHistory.push(regionA3)
             
-            
         }
         else {
             if(startListingCounties) {
                 currentSelectedCounties.push(e.target.id)
-
                 e.target.setAttributeNS(null, "fill", 'rgb(0,0,0)');
             }
           
@@ -199,8 +190,6 @@ export var Home = () => {
         lastZoom.x = e.offsetX;
         lastZoom.y = e.offsetY;
         dragStart = getTransformedPt(lastZoom.x, lastZoom.y, transformMatrix);
-
-     
 
         document.onmouseup = closeDragElement;
         document.onmousemove = elementDrag;
@@ -211,29 +200,20 @@ export var Home = () => {
     var elementDrag = (e) => {    
         e = e || window.event;
         lastZoom = {x:e.offsetX, y:e.offsetY}
-      
-        
-        
-        // document.getElementById("worldMap").querySelectorAll("path").attr("d",path)
         if(dragStart) {
             var pt = getTransformedPt(lastZoom.x, lastZoom.y, transformMatrix);
-            
             panSVG((pt.x-dragStart.x)/4, (pt.y-dragStart.y)/4)
-            
-            // projection.rotate([(lambda(lastZoom.x)),theta((lastZoom.y))])
-            // d3.select("#continents").selectAll("path").attr("d",path)
-        }return e.preventDefault() && false;
+        }
+        return e.preventDefault() && false;
     }
 
     var panSVG = (dx,dy) =>{
         transformMatrix[4] += dx;
         transformMatrix[5] += dy;
         // document.getElementById('usLocal').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
-        
         // document.getElementById('continents').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
         // document.getElementById('curveGroup').setAttributeNS(null, "transform", `matrix(${this.transformMatrix.join(' ')})`);
         // document.getElementById('ptGroup').setAttributeNS(null, "transform", `matrix(${this.transformMatrix.join(' ')})`);
-
 
         if(selectedRegion == "USA") {
             document.getElementById('usLocal').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
@@ -501,6 +481,7 @@ export var Home = () => {
             worldMap.addEventListener("DOMMouseScroll", captureZoomEvent,false);
             worldMap.addEventListener("mousedown", dragMouseDown, false);
             setMapCreated(true)
+            
         }
     }
 
@@ -513,6 +494,7 @@ export var Home = () => {
     var selectedRegionZoom = 1
     var prevSelectedRegionZoom = 1
     var activeSVG = d3.select("#worldMap");
+    wikiDataSearch("Q156191")
     useEffect(()=> {
         if(!regionNavStarted) regionHistoryIdx = regionSelectHistory.length-1;
         selectedRegion = regionSelectHistory[regionHistoryIdx];
@@ -559,15 +541,15 @@ export var Home = () => {
                 transformMatrix = [5.751490340144962, 0, 0 ,5.751490340144962 ,-656.582896430975,-514.5546459430193]
                
                 document.getElementById("usLocal").setAttributeNS(null, "transform","matrix(5.751490340144962 0 0 5.751490340144962 -656.582896430975 -514.5546459430193)")
-              
                 usCountyMap.addEventListener("wheel",(e)=>captureZoomEvent(e),false);
                 usCountyMap.addEventListener("DOMMouseScroll", (e)=> captureZoomEvent(e),false);
                 usCountyMap.addEventListener("mousedown", (e)=>dragMouseDown(e), false);
                 
             }
             else {
+                // getWikiTitleData(allRegionProperties[selectedRegion]["ADMIN"])
+                // console.log('allRegionProperties',allRegionProperties[selectedRegion])
                 var box = document.getElementById(selectedRegion).getBBox();
-               
                 // var pt = getTransformedPt(lastZoom.x, lastZoom.y, transformMatrix);
                 // panSVG((pt.x-dragStart.x)/4, (pt.y-dragStart.y)/4)
                 
@@ -582,10 +564,6 @@ export var Home = () => {
                 // selectedRegionBox = getTransformedPt(selectedRegionBox.cx, selectedRegionBox.cy, transformMatrix);
                 prevSelectedRegionZoom = selectedRegionZoom;
                 selectedRegionZoom = Math.sqrt((selectedRegionBox.height*selectedRegionBox.width)/(box.width*box.height))/2
-            
-                // selectedRegionZoom = ((box.width)/(selectedRegionBox.width)) - selectedRegionZoom;
-                
-                
 
                 var tempMatrix = [1,0,0,1,0,0];
                 for(var i =0; i < 6; ++i) {tempMatrix[i] *= (selectedRegionZoom) }

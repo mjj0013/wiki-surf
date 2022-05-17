@@ -48,29 +48,100 @@ function searchWikidataProperties(search) {
     `https://www.wikidata.org/w/api.php?origin=*&action=wbsearchentities&type=property&language=en&search=${search}`
 }
 
+/*
+    named after : P138      ,  
 
+    participant : P710
 
-function wikiDataSearch(queryType,params={}) {
+    instance of : P31       ,   more general source of definition
+    part of : P361          ,   being a part of a proper object/event
+
+    point-in-time : P585    , typically for events/movements
+    inception : P571        , when an entity begins to exist, typically for buildings/organizations
+    coordinate location : P625
+*/
+
+function wikiDataSearch(queryClass,params={}) {
     return new Promise((resolve,reject)=>{
-        if(queryType=="proximity") {
+
+        var baseQuery = [`SELECT ?item ?itemLabel ?location ?time WHERE {`, `}`]
+        var insertIdx = 1;
+        var queryClassList = queryClass.split(" ")
+        if(queryClassList.includes("proximity")) {
             params.coordPt = params.coordPt? params.coordPt : {long:0, lat:0};
             params.searchRadius = params.searchRadius? params.searchRadius : 250;
+            params.additional = params.additional? params.additional : null;
+
+            var proximitySubQuery = 
+            `SERVICE wikibase:around {
+                ?item wdt:P625 ?location.
+                bd.serviceParam wikibase:center "Point(${params.coordPt.long} ${params.coordPt.lat})"^^ geo:wktLiteral.
+                bd.serviceParam wikibase:radius "${params.searchRadius}".}
+            SERVICE wikibase:label {bd.serviceParam wikibase:language "en".}
+            BIND(geof:distance("Point(${params.coordPt.long} ${params.coordPt.lat})"^^geo:wktLiteral, ?location) as ?dist).`
+            
+            
+            baseQuery = [...baseQuery.slice(0,insertIdx),proximitySubQuery,...baseQuery.slice(insertIdx)]
+            ++insertIdx;
+        }
+        if(queryClassList.includes("time-around")) {
+            // "1992-12-31T00:00:00Z"^^xsd:dateTime
+            var timeSubQuery=``;
+            if(params.targetEventId) {  // must start with Q
+
+            }
+            if(params.targetEventId && !params.startingTimeStr && !params.endingTimeStr) {  // eventId given, but time range not given
+                params.startingTimeStr = `1992-12-31T00:00:00Z`
+                timeSubQuery= `
+                ?item (wdt:P585|wdt:P571) ?time.
+                wd:${params.targetEventId} (wdt:P585|wdt:P571) ?targetEvent.
+                FILTER( (YEAR(?time)>YEAR(?targetEvent)-50 ) && (YEAR(?time)<YEAR(?targetEvent)+50)).
+                `
+
+            }
+            else if(params.startingTimeStr && params.endingTimeStr) {
+                // "2000-2-01T00:00:00Z"^^xsd:dateTime
+                timeSubQuery= `
+                ?item (wdt:P585|wdt:P571) ?time.
+                wd:${params.targetEventId} (wdt:P585|wdt:P571) ?targetEvent.
+                FILTER( (?time >="${params.startingTimeStr}"^^xsd:dateTime) && (?time <="${params.endingTimeStr}"^^xsd:dateTime)).
+                `
+            }
+            
+            
+
+
+            baseQuery = [...baseQuery.slice(0,insertIdx),timeSubQuery,...baseQuery.slice(insertIdx)]
+            ++insertIdx;
+             //by time range
+        //?place (wdt:P585|wdt:P571) ?time.
+        //wd:Q16471 (wdt:P585|wdt:P571) ?targetEvent.
+        //FILTER( (YEAR(?time)>YEAR(?targetEvent)-50 ) && (YEAR(?time)<YEAR(?targetEvent)+50)).
         }
         
-        var proximityQuery = `
-            SELECT ?place ?placeLabel ?location ?instanceLabel WHERE {
-                SERVICE wikibase:around {
-                    ?place wdt:P625 ?location.
-                    bd.serviceParam wikibase:center "Point(${params.coordPt.long} ${params.coordPt.lat})"^^ geo:wktLiteral.
-                    bd.serviceParam wikibase:radius "${params.searchRadius}".
-                }
-                SERVICE wikibase:label {
-                    bd.serviceParam wikibase:language "en".
-                }
-                BIND(geof:distance("Point(${params.coordPt.long} ${params.coordPt.lat})"^^geo:wktLiteral, ?location) as ?dist)
-            }
-            ORDER BY ?dist
-        `
+
+
+        
+
+        // var proximityQuery = `
+        //     SELECT ?place ?placeLabel ?location ?instanceLabel WHERE {
+        //         SERVICE wikibase:around {
+        //             ?place wdt:P625 ?location.
+        //             bd.serviceParam wikibase:center "Point(${params.coordPt.long} ${params.coordPt.lat})"^^ geo:wktLiteral.
+        //             bd.serviceParam wikibase:radius "${params.searchRadius}".
+        //         }
+        //         SERVICE wikibase:label {
+        //             bd.serviceParam wikibase:language "en".
+        //         }
+        //         BIND(geof:distance("Point(${params.coordPt.long} ${params.coordPt.lat})"^^geo:wktLiteral, ?location) as ?dist).
+                
+        //     }
+        //     ORDER BY ?dist
+        // `
+
+       
+     
+
 
 
         // queries items that have the statement: "instance of Mediterranean country" 

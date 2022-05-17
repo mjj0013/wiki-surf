@@ -34,35 +34,6 @@ function reformatURL(url) {
     return url;
 }
 
-/*
-query {
-  item (id: "Q57225") {
-    statements(propertyIds:"P25") {
-      ...StatementItemValue
-    }
-  }
-}
-fragment StatementItemValue on Statement{
-	data:mainsnak {
-    ... on PropertyValueSnak {
-				# property {
-				# id
-				# }
-      item:value {
-        ...	on StringValue {
-          value
-        }
-        ... on Item {
-          label(language: "en") {
-            text
-          }
-        }
-      }
-    }
-  }
-}
-
-*/
 
 // for fetching data form https://www.wikidata.org
 // for more info, look at: https://www.wikidata.org/wiki/Wikidata:Data_access
@@ -72,47 +43,78 @@ fragment StatementItemValue on Statement{
 
 // https://doc.wikimedia.org/Wikibase/master/js/#!/api/Property
 // GraphQL queries are sent to https://tptools.toolforge.org/wdql.php
-function wikiDataSearch(wikiDataId) {
+
+function searchWikidataProperties(search) {
+    `https://www.wikidata.org/w/api.php?origin=*&action=wbsearchentities&type=property&language=en&search=${search}`
+}
+
+
+
+function wikiDataSearch(queryType,params={}) {
     return new Promise((resolve,reject)=>{
+        if(queryType=="proximity") {
+            params.coordPt = params.coordPt? params.coordPt : {long:0, lat:0};
+            params.searchRadius = params.searchRadius? params.searchRadius : 250;
+        }
         
-        var url = `https://query.wikidata.org/sparql?query=SELECT%20%3Fitem%20%3FitemLabel%0AWHERE%0A%7B%0A%3Fitem%20wdt%3AP31%20wd%3AQ13410400%20.%0ASERVICE%20wikibase%3Alabel%20%7B%20bd%3AserviceParam%20wikibase%3Alanguage%20%22%5BAUTO_LANGUAGE%5D%2Cen%22%20%7D%0A%7D`
+        var proximityQuery = `
+            SELECT ?place ?placeLabel ?location ?instanceLabel WHERE {
+                SERVICE wikibase:around {
+                    ?place wdt:P625 ?location.
+                    bd.serviceParam wikibase:center "Point(${params.coordPt.long} ${params.coordPt.lat})"^^ geo:wktLiteral.
+                    bd.serviceParam wikibase:radius "${params.searchRadius}".
+                }
+                SERVICE wikibase:label {
+                    bd.serviceParam wikibase:language "en".
+                }
+                BIND(geof:distance("Point(${params.coordPt.long} ${params.coordPt.lat})"^^geo:wktLiteral, ?location) as ?dist)
+            }
+            ORDER BY ?dist
+        `
 
-        
-        
 
-        // var url = `https://www.wikidata.org/w/api.php?action=parse&origin=*&format=json&page=${wikiDataId}&formatversion=2&prop=sections`
-        // var url = `https://tptools.toolforge.org/wdql.php`
-
-       
+        // queries items that have the statement: "instance of Mediterranean country" 
+        var sparqlQuery = `SELECT ?item ?itemLabel WHERE {
+            ?item wdt:P31 wd:Q51576574 .
+            SERVICE wikibase:label {
+              bd:serviceParam wikibase:language "en" .}}`
         
+        
+        
+        var url = `https://query.wikidata.org/sparql?query=${reformatURL(sparqlQuery)}`
+      
         var req = new Request(url, {  method:"POST"   })
         fetch(req)
-        .then(response => {    
-            // var result = convert.xml2json(response.body, {compact: false, spaces: 4}); 
-            
-            return response;
-        })
+        .then(response => {  return response })
         .then(result=>{
-            var parser = new DOMParser();
-            
-            // var r = convert.xml2json(result.text(), {compact: false, spaces: 4});
             result.text().then(r=> {
-                
                 var jsonData = convert.xml2json(r, {spaces: 4});
                 jsonData = JSON.parse(jsonData);
-                console.log("jsonData",jsonData)
-
+                resolve(parseWikiDataResult(jsonData))
             })
-            // xmlDoc = parser.parseFromString(result,"text/xml");
-         
-            return result;
-            // var query = result.query
-            // if(query.search.length==0)  return reject("not found");
-            // return resolve(query.search[0].title);
         })
     })
 }
+function parseWikiDataResult(objList) {
+    
+    var data = objList.elements[0].elements;
+    var headAttrs = data[0].elements.map(h=> { return h.attributes.name  })
+    var entries = data[1].elements
+    var resultList = [];
+    for(let e=0; e < entries.length; ++e) {
+      
+        var obj = []
+       
+        for(let a=0; a < headAttrs.length; ++a) {
+         
+            obj.push({"head":headAttrs[a], "type":entries[e].elements[a].elements[0].name,"value":entries[e].elements[a].elements[0].elements[0].text})
 
+        }
+        resultList.push(obj)
+    }
+    return resultList;
+   
+}
 
 
 function constructURL(params) {
@@ -180,6 +182,9 @@ class WikiSubject {      // extends React.Component
         
         this.waitBuild = props.waitBuild? props.waitBuild : false;
        
+
+        this.rawUrl = props.rawUrl? props.rawUrl : null
+
         this.sourceObj = null;
         if(!this.waitBuild) {
             if(this.wikiTitle==null) this.initSubject(true);
@@ -250,6 +255,7 @@ class WikiSubject {      // extends React.Component
         return new Promise((resolve, reject)=> {
             var url='';
             if(random)              url=`https://en.wikipedia.org/w/api.php?action=query&generator=random&grnnamespace=0&format=json&origin=*&prop=categories`                    
+            else if(this.rawUrl) url = this.rawUrl
             else if(this.wikiTitle) url=`http://en.wikipedia.org/w/api.php?action=query&origin=*&format=json&titles=${this.wikiTitle}&prop=categories`             //&prop=categories|categoryinfo`
             else return "ERROR";
             
@@ -298,7 +304,12 @@ class WikiSubject {      // extends React.Component
             for(let k=0; k < this.sourceObj.length; ++k) {
                 var title = this.sourceObj[k].title;
                 var urlFormattedTitle = reformatURL(title);
-                var req = new Request(`http://en.wikipedia.org/w/api.php?action=parse&origin=*&format=json&page=${urlFormattedTitle}&prop=parsetree&formatversion=2`,{method:'GET',mode:'cors'})        
+                var url;
+
+                if(this.rawUrl) url = this.rawUrl
+                else url = `http://en.wikipedia.org/w/api.php?action=parse&origin=*&format=json&page=${urlFormattedTitle}&prop=parsetree&formatversion=2`
+
+                var req = new Request(url,{method:'GET',mode:'cors'})        
                 fetch(req)
                 .then(response => {return response.json()})
                 .then(data => {

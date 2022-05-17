@@ -8,7 +8,7 @@ const userAgents = require("user-agents");
 import { ReactGoogleChartEvent, Chart } from 'react-google-charts';
 import {Button} from 'semantic-ui-react';
 
-import {wikiDataSearch, WikiSubject, wikiTitleSearch, countryBaseData} from './wikiSubject.js';
+import wikiSubject, {wikiDataSearch, WikiSubject, wikiTitleSearch, countryBaseData} from './wikiSubject.js';
 import { SideBarWrapper } from './sideBarForm.js';
 import {sendRequestToBackend} from './frontEndHelpers.js';
 import usMetroMap, {metrosByState, metroData} from './usMetroMap.js'
@@ -496,6 +496,11 @@ export var Home = () => {
     var prevSelectedRegionZoom = 1
     var activeSVG = d3.select("#worldMap");
     wikiDataSearch("Q156191")
+    .then(result=> {
+        console.log("result",result)
+    })
+    
+    
     useEffect(()=> {
         if(!regionNavStarted) regionHistoryIdx = regionSelectHistory.length-1;
         selectedRegion = regionSelectHistory[regionHistoryIdx];

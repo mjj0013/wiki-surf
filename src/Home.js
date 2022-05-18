@@ -6,7 +6,7 @@ import {AppContext} from './AppContext.js';
 // import {chartEvents} from './chartEventHandlers.tsx'
 const userAgents = require("user-agents");
 import { ReactGoogleChartEvent, Chart } from 'react-google-charts';
-import {Button} from 'semantic-ui-react';
+import {Button, Card} from 'semantic-ui-react';
 
 import wikiSubject, {wikiDataSearch, WikiSubject, wikiTitleSearch, countryBaseData} from './wikiSubject.js';
 import { SideBarWrapper } from './sideBarForm.js';
@@ -80,8 +80,6 @@ function getWikiTitleData(queryName) {
 export var Home = () => {   
     var searchTerms = []
    
-
-
     function displayMapValues(moduleName, data) {
         if(moduleName=="interestByRegion") {
             var header= ["Region", ...searchTerms];
@@ -134,8 +132,7 @@ export var Home = () => {
     var transformMatrixHistory = [];
     var zoomIntensity = 0.2;
     var [dragStart, setDragStart] = useState({x:0, y:0})
-
-
+   
     var captureZoomEvent = (e) => {
         lastZoom.x = e.offsetX;
         lastZoom.y = e.offsetY;
@@ -146,9 +143,13 @@ export var Home = () => {
     var updateZoom = (delta) => {
         let wheelNorm = delta;
         let zoomVar = Math.pow(zoomIntensity,wheelNorm);
-        for(var i =0; i < 6; ++i) {transformMatrix[i] *= zoomVar }
-        transformMatrix[4] += (1-zoomVar)*(lastZoom.x);
-        transformMatrix[5] += (1-zoomVar)*(lastZoom.y);
+        if(transformMatrix[0]*zoomVar >=1) {
+            for(var i =0; i < 6; ++i) {transformMatrix[i] *= zoomVar }
+        
+            transformMatrix[4] += (1-zoomVar)*(lastZoom.x);
+            transformMatrix[5] += (1-zoomVar)*(lastZoom.y);
+        }
+        
 
         if(selectedRegion == "USA") {
             document.getElementById('usLocal').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
@@ -159,6 +160,7 @@ export var Home = () => {
     }
 
     var closeDragElement = () =>{
+        console.log(document.getElementById("continents").getBBox())
         document.onmouseup = null;
         document.onmousemove = null;
     }
@@ -173,6 +175,9 @@ export var Home = () => {
     var dragMouseDown = (e) =>{
         e = e || window.event;
         var regionKeys = Object.keys(allRegionProperties);
+
+        
+        console.log(inverseMercator(e.offsetX, e.offsetY))
         if(regionKeys.includes(e.target.id)) {
             var regionA3 = allRegionProperties[e.target.id]["ADM0_A3"];
             console.log('regionHistoryIdx',regionHistoryIdx)
@@ -201,6 +206,7 @@ export var Home = () => {
         e = e || window.event;
         lastZoom = {x:e.offsetX, y:e.offsetY}
         if(dragStart) {
+
             var pt = getTransformedPt(lastZoom.x, lastZoom.y, transformMatrix);
             panSVG((pt.x-dragStart.x)/4, (pt.y-dragStart.y)/4)
         }
@@ -208,13 +214,22 @@ export var Home = () => {
     }
 
     var panSVG = (dx,dy) =>{
-        transformMatrix[4] += dx;
-        transformMatrix[5] += dy;
-        // document.getElementById('usLocal').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
-        // document.getElementById('continents').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
-        // document.getElementById('curveGroup').setAttributeNS(null, "transform", `matrix(${this.transformMatrix.join(' ')})`);
-        // document.getElementById('ptGroup').setAttributeNS(null, "transform", `matrix(${this.transformMatrix.join(' ')})`);
+        
 
+        if(transformMatrix[0]==1 && transformMatrix[3]==1) {
+            transformMatrix[4] = 0;
+            transformMatrix[5] = 0;
+        }
+        else {
+            
+            // var currentX = Math.abs(transformMatrix[4] - transformMatrix[4]/transformMatrix[0])
+            // var currentY = Math.abs(transformMatrix[5] - transformMatrix[5]/transformMatrix[3])
+            // if((worldMapLimits.right > (currentX+dx)) && (worldMapLimits.left < (currentX+dx))) transformMatrix[4] += dx;
+            // if((worldMapLimits.bottom > (currentY+dy)) && (worldMapLimits.top < (currentY+dy))) transformMatrix[5] += dy;
+            transformMatrix[4] += dx;
+            transformMatrix[5] += dy;
+        }
+        
         if(selectedRegion == "USA") {
             document.getElementById('usLocal').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
         }
@@ -274,18 +289,14 @@ export var Home = () => {
     }
     var W =  1160;      //960 , 1160
     var H = 1000;      // 500 , 1000
-    var projection = d3.geo.orthographic()
-            .scale(250)
+    var projection = d3.geo.mercator()
             .translate([W/2, H/2])
-            .clipAngle(30)
-    var lambda = d3.scale.linear()
-        .domain([0,W])
-        .range([-180,180])
-    var theta = d3.scale.linear()
-        .domain([0,H])
-        .range([-90,90])
+            // .clipAngle(30)
+
     var path = d3.geo.path()
         .projection(projection)
+
+
     
 
     var [allRegionProperties,setAllRegionProperties]  = useState({});
@@ -303,14 +314,12 @@ export var Home = () => {
     var mwStates = ['NE','MI','WI','IA','MO','IL','KS','ND','IN','SD','MN']     //,'SE'
     var swStates=['TX','NM','OK','CA','NV','CO','UT','AZ']
     var nwStates = ['WA','OR','ID','MT','AK','HI', 'WY']
-    var usRegionHues = {"midwest":0, "southeast":72, "northwest":144, "southwest":216, "northeast":288}
+    
 
     const [regionOptionsLoaded, setRegionOptionsLoaded] = useState(false)
     var lastMapColorView = "default"
     var lastSelectedRegion = "<global>"
 
-    // var selectedRegionBox = {x:0,y:0}
-    // selectedRegionBox = regionObj.getBBox()
 
     var [regionSelectHistory,setRegionSelectHistory] = useState(["<global>"]);
     var [regionHistoryIdx,setRegionHistoryIdx] = useState(0);
@@ -342,8 +351,35 @@ export var Home = () => {
             setRegionHistoryIdx( --regionHistoryIdx)
         }
     }
+
+
+
+    function inverseMercator(x,y) {
+        //https://mathworld.wolfram.com/MercatorProjection.html
+        console.log('Math.exp(y)',Math.exp(y))
+        console.log('2*Math.atan(Math.exp(y))',2*Math.atan(Math.exp(y)))
+        let phi = 2*Math.atan(Math.exp(y)) - Math.PI/2;         // - 1.5707963267948966
+        
+        // let phi =  Math.atan(Math.sinh(y));         
+        let gamma = x;
+        return [Math.cos(y*0.0174533)*Math.sin(x*0.0174533), Math.sin(y*0.0174533)];
+
+
+
+    }
+
     
 
+    function mercator(gamma, phi) {
+        //https://mathworld.wolfram.com/MercatorProjection.html
+        let x = gamma;
+        // let y = Math.asinh(Math.tan(phi))
+
+        // or try:
+        let y=Math.log(Math.tan((Math.PI/2)+(phi)))
+        return [x,y];
+        
+    }
     function regionNavBtnClicked(e) {
         
         
@@ -402,7 +438,7 @@ export var Home = () => {
                         
                         d3.select(`#${geometries.properties["WIKIDATAID"]}`)
                         .datum(topojson.feature(data, geometries))
-                        .attr("d", d3.geo.path().projection(d3.geo.mercator()))
+                        .attr("d", path)
                         .attr("fill", ()=> {
                             if(metroName) return metroData[metroName].color
                             else return 'black'  
@@ -413,7 +449,7 @@ export var Home = () => {
                         .append("path")
                             .datum(topojson.feature(data, geometries))
                             .attr("id", geometries.properties["WIKIDATAID"])
-                            .attr("d", d3.geo.path().projection(d3.geo.mercator()))
+                            .attr("d", path)
                             .attr("fill", ()=> { return `hsl( ${0}, 40%, 90%)` })
                     }
                     allCountyProperties[geometries.properties["WIKIDATAID"]] = geometries.properties;
@@ -433,7 +469,7 @@ export var Home = () => {
                             .append("path")
                                 .datum(topojson.feature(data, geometries))
                                 .attr("id", geometries.properties["ADM0_A3"])
-                                .attr("d", d3.geo.path().projection(d3.geo.mercator()))
+                                .attr("d", path)
                                 // .attr("d", d3.geo.path().projection(d3.geo.orthographic()))
                                 .attr("fill", ()=> {
                                     if(mapColorView=="default") {
@@ -463,7 +499,7 @@ export var Home = () => {
                         group.append("path")
                             .datum(topojson.feature(data, geometries))
                             .attr("id", geometries.properties["ADM0_A3"])
-                            .attr("d", d3.geo.path().projection(d3.geo.mercator()))
+                            .attr("d", path)
                             // .attr("d", d3.geo.path().projection(d3.geo.orthographic()))
                             .attr("fill", ()=> {
                                 if(mapColorView=="default") {
@@ -476,6 +512,9 @@ export var Home = () => {
                         allRegionProperties[geometries.properties["ADM0_A3"]] = geometries.properties;
                     }
                 }
+                var worldMapBBox = document.getElementById('continents').getBoundingClientRect();
+                console.log('worldMapBBox',worldMapBBox)
+                worldMapLimits = worldMapBBox
             })
             var worldMap = document.getElementById("worldMap")
             worldMap.addEventListener("wheel",captureZoomEvent,false);
@@ -500,11 +539,21 @@ export var Home = () => {
         console.log("result",result)
     })
     
+
+    var worldMapLimits;
+
+
     
     useEffect(()=> {
+        console.log('regionSelectHistory',regionSelectHistory)
         if(!regionNavStarted) regionHistoryIdx = regionSelectHistory.length-1;
         selectedRegion = regionSelectHistory[regionHistoryIdx];
         setSelectedRegion(regionSelectHistory[regionHistoryIdx]);
+
+
+        
+
+
         if(lastSelectedRegion != selectedRegion) {
             
            
@@ -593,6 +642,46 @@ export var Home = () => {
 
             }
             lastSelectedRegion = selectedRegion;
+            
+            // var card = document.createElement("Card");
+            // card.setAttribute("className", "historyCard")
+            // card.setAttribute("top",0);
+            // card.setAttribute("left",100*regionHistoryIdx)
+            // card.setAttribute("width",100);
+            // card.setAttribute("height",100);
+
+            var cardImage = document.createElement("svg");
+            cardImage.setAttribute("className", "historyCard")
+            // cardImage.setAttribute("top",0);
+            // cardImage.setAttribute("left",0)
+            cardImage.setAttribute("left",100*regionHistoryIdx)
+            cardImage.setAttribute("width",100);
+            cardImage.setAttribute("width",100);
+            cardImage.setAttribute("height",100);
+            cardImage.setAttribute("viewBox","0 0 100 100");
+
+            var regionShape = document.createElement("path")
+            regionShape.setAttribute("d",document.getElementById(selectedRegion).getAttribute('d'));
+            regionShape.setAttribute("fill",document.getElementById(selectedRegion).getAttribute('fill'));
+            regionShape.setAttribute("width",100);
+            regionShape.setAttribute("height",100);
+            regionShape.setAttribute("x",0);
+            regionShape.setAttribute("y",0);
+            cardImage.appendChild(regionShape)
+           
+         
+
+
+            // 
+            document.getElementById("regionHistoryCards").appendChild(cardImage);
+            // regionHistoryIdx>1 && regionSelectHistory.slice(1).map( (regionCode,key) =>{
+            //     <Card key={key} className="historyCard">
+            //         <Card.Content>
+                        
+            //         </Card.Content>
+                     
+            //     </Card>
+            //     })
         }
         if(!regionOptionsLoaded) {
             processClientRequest("getRegionDb","/server/getRegionDb").then(result=> {
@@ -664,6 +753,12 @@ export var Home = () => {
     return (
             <SideBarWrapper regionHistoryIdx={regionHistoryIdx}  setRegionHistoryIdx={setRegionHistoryIdx} selectedRegion={selectedRegion} setSelectedRegion={setSelectedRegion} mapColorView={mapColorView} setMapColorView={setMapColorView} sideBarVisible={sideBarVisible} setSideBarVisible={setSideBarVisible} setInputData={setInputData} inputData={inputData} readyResults={readyResults} setReadyResults={setReadyResults} searchClicked={searchClicked} setSearchClicked={setSearchClicked} setCurrentTab={setCurrentTab} regionOptions={regionOptions} setRegionOptions={setRegionOptions} isVisible={sideBarVisible} setVisible={setSideBarVisible}>
                 <div id="globalSearch" >
+
+                    <Card id="regionHistoryCards">
+
+                   </Card>
+
+        
                    <div id="mapBtnGroup" className="regionNavBtnGroup">
                         <Button id="backRegionBtn" className="regionNavBtn" onClick={(e)=>backRegionBtnClicked(e)} attached icon="arrow left" />
                         <Button id="toGlobalBtn" className="regionNavBtn" onClick={(e)=>toGlobalBtnClicked(e)} attached icon={<i className="bi bi-globe2"></i>}/>

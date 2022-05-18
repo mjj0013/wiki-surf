@@ -88,41 +88,28 @@ function wikiDataSearch(queryClass,params={}) {
             // "1992-12-31T00:00:00Z"^^xsd:dateTime
             var timeSubQuery=``;
             if(params.targetEventId) {  // must start with Q
-
-            }
-            if(params.targetEventId && !params.startingTimeStr && !params.endingTimeStr) {  // eventId given, but time range not given
-                params.startingTimeStr = `1992-12-31T00:00:00Z`
-                timeSubQuery= `
-                ?item (wdt:P585|wdt:P571) ?time.
-                wd:${params.targetEventId} (wdt:P585|wdt:P571) ?targetEvent.
-                FILTER( (YEAR(?time)>YEAR(?targetEvent)-50 ) && (YEAR(?time)<YEAR(?targetEvent)+50)).
-                `
-
-            }
-            else if(params.startingTimeStr && params.endingTimeStr) {
-                // "2000-2-01T00:00:00Z"^^xsd:dateTime
-                timeSubQuery= `
-                ?item (wdt:P585|wdt:P571) ?time.
-                wd:${params.targetEventId} (wdt:P585|wdt:P571) ?targetEvent.
-                FILTER( (?time >="${params.startingTimeStr}"^^xsd:dateTime) && (?time <="${params.endingTimeStr}"^^xsd:dateTime)).
-                `
+                if(params.targetEventId && !params.startingTimeStr && !params.endingTimeStr) {  // eventId given, but time range not given
+                    params.startingTimeStr = `1992-12-31T00:00:00Z`
+                    timeSubQuery= `
+                    ?item (wdt:P585|wdt:P571) ?time.
+                    wd:${params.targetEventId} (wdt:P585|wdt:P571) ?targetEvent.
+                    FILTER( (YEAR(?time)>YEAR(?targetEvent)-50 ) && (YEAR(?time)<YEAR(?targetEvent)+50)).`
+                }
+                else if(params.startingTimeStr && params.endingTimeStr) {
+                    // "2000-2-01T00:00:00Z"^^xsd:dateTime
+                    timeSubQuery= `
+                    ?item (wdt:P585|wdt:P571) ?time.
+                    wd:${params.targetEventId} (wdt:P585|wdt:P571) ?targetEvent.
+                    FILTER( (?time >="${params.startingTimeStr}"^^xsd:dateTime) && (?time <="${params.endingTimeStr}"^^xsd:dateTime)).`
+                }
             }
             
-            
-
 
             baseQuery = [...baseQuery.slice(0,insertIdx),timeSubQuery,...baseQuery.slice(insertIdx)]
             ++insertIdx;
-             //by time range
-        //?place (wdt:P585|wdt:P571) ?time.
-        //wd:Q16471 (wdt:P585|wdt:P571) ?targetEvent.
-        //FILTER( (YEAR(?time)>YEAR(?targetEvent)-50 ) && (YEAR(?time)<YEAR(?targetEvent)+50)).
+
+
         }
-        
-
-
-        
-
         // var proximityQuery = `
         //     SELECT ?place ?placeLabel ?location ?instanceLabel WHERE {
         //         SERVICE wikibase:around {
@@ -133,16 +120,10 @@ function wikiDataSearch(queryClass,params={}) {
         //         SERVICE wikibase:label {
         //             bd.serviceParam wikibase:language "en".
         //         }
-        //         BIND(geof:distance("Point(${params.coordPt.long} ${params.coordPt.lat})"^^geo:wktLiteral, ?location) as ?dist).
-                
+        //         BIND(geof:distance("Point(${params.coordPt.long} ${params.coordPt.lat})"^^geo:wktLiteral, ?location) as ?dist).          
         //     }
         //     ORDER BY ?dist
         // `
-
-       
-     
-
-
 
         // queries items that have the statement: "instance of Mediterranean country" 
         var sparqlQuery = `SELECT ?item ?itemLabel WHERE {

@@ -126,7 +126,7 @@ function categoryChanged() {}
 
 
 
-export const SideBarWrapper = ({regionHistoryIdx , setRegionHistoryIdx, setRegionOptions, regionOptions, selectedRegion, setSelectedRegion, mapColorView, setMapColorView, sideBarVisible, setSideBarVisible,setInputData, inputData, setReadyResults, readyResults, setSearchClicked, searchClicked, setCurrentTab,  isVisible, setVisible,...props}) => {
+export const SideBarWrapper = ({regionSelectHistory,setRegionSelectHistory,regHistQueueIdx , setRegHistQueueIdx, setRegionOptions, regionOptions, selectedRegion, setSelectedRegion, mapColorView, setMapColorView, sideBarVisible, setSideBarVisible,setInputData, inputData, setReadyResults, readyResults, setSearchClicked, searchClicked, setCurrentTab,  isVisible, setVisible,...props}) => {
     
     // const [RegionOptions, setRegionOptions] = useState({region:"US" });       //, displayMode:"regions",resolution:"countries"
 
@@ -139,11 +139,18 @@ export const SideBarWrapper = ({regionHistoryIdx , setRegionHistoryIdx, setRegio
     function regionChanged(e,data) {
         var selected = document.getElementById("regionElement")
         
-        console.log('selected.value',data.value)
+        console.log('data.value',data.value)
         
+        if(!regionSelectHistory.includes(data.value)) {
+            
+            setRegHistQueueIdx({...regHistQueueIdx, next:regionSelectHistory.length})
+            regionSelectHistory.push(data.value)
+        }
+        else {
+            setRegHistQueueIdx({...regHistQueueIdx, next:regionSelectHistory.indexOf(data.value)})
+        }
         
-        
-        setRegionHistoryIdx(regionHistoryIdx+1);
+        // setRegHistQueueIdx(regHistQueueIdx+1);
         
         // remember, some modules can access the city/county level of US region
 

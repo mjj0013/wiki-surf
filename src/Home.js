@@ -6,7 +6,7 @@ import {AppContext} from './AppContext.js';
 // import {chartEvents} from './chartEventHandlers.tsx'
 const userAgents = require("user-agents");
 import { ReactGoogleChartEvent, Chart } from 'react-google-charts';
-import {Button, Card} from 'semantic-ui-react';
+import {Container,Button, Card} from 'semantic-ui-react';
 
 import wikiSubject, {wikiDataSearch, WikiSubject, wikiTitleSearch, countryBaseData} from './wikiSubject.js';
 import { SideBarWrapper } from './sideBarForm.js';
@@ -15,6 +15,7 @@ import usMetroMap, {metrosByState, metroData} from './usMetroMap.js'
 
 
 import {abridgedCategories, regionCodes, regionCodesReformatted} from '../server/geoHelpers.js';        //regionData
+import { zoom } from 'd3-zoom';
 // import { resolve } from 'url';
 // https://www.statista.com/statistics/262966/number-of-internet-users-in-selected-countries/
 // https://worldpopulationreview.com/countries
@@ -160,7 +161,7 @@ export var Home = () => {
     }
 
     var closeDragElement = () =>{
-        console.log(document.getElementById("continents").getBBox())
+        // console.log(document.getElementById("continents").getBBox())
         document.onmouseup = null;
         document.onmousemove = null;
     }
@@ -176,13 +177,46 @@ export var Home = () => {
         e = e || window.event;
         var regionKeys = Object.keys(allRegionProperties);
 
-        
-        console.log(inverseMercator(e.offsetX, e.offsetY))
+        // console.log(inverseMercator(e.offsetX, e.offsetY))
         if(regionKeys.includes(e.target.id)) {
             var regionA3 = allRegionProperties[e.target.id]["ADM0_A3"];
-            console.log('regionHistoryIdx',regionHistoryIdx)
-            setRegionHistoryIdx(++regionHistoryIdx)
-            regionSelectHistory.push(regionA3)
+            
+            if(!regionSelectHistory.includes(regionA3)) {
+                regionSelectHistory.push(regionA3)
+                setRegHistQueueIdx(regionSelectHistory.length-1);
+                
+
+                var card = document.createElement("Card");
+            
+                card.className = "region-card"
+
+
+
+                var cardImage = document.createElement("svg");
+                
+                cardImage.className = "region-card";
+                
+                
+                // cardImage.setAttribute("viewBox","0 0 100 100");
+                var regionShape = document.createElement("path");
+                // regionShape.setAttribute("xmlns","http://www.w3.org/2000/svg")
+                regionShape.className = "region-card-path";
+                regionShape.d = document.getElementById(regionA3).getAttribute('d')
+                // regionShape.setAttribute("d",);
+                regionShape.setAttribute("fill",document.getElementById(regionA3).getAttribute('fill'));
+                
+
+                cardImage.appendChild(regionShape)
+
+                card.appendChild(cardImage)
+                document.getElementById("regionHistoryCards").appendChild(card);
+
+                    // regionSelectHistory.push(selectedRegion)
+                
+            }
+            else {
+                setRegHistQueueIdx(regionSelectHistory.indexOf(regionA3));
+            }       
             
         }
         else {
@@ -190,7 +224,6 @@ export var Home = () => {
                 currentSelectedCounties.push(e.target.id)
                 e.target.setAttributeNS(null, "fill", 'rgb(0,0,0)');
             }
-          
         }
         lastZoom.x = e.offsetX;
         lastZoom.y = e.offsetY;
@@ -214,14 +247,11 @@ export var Home = () => {
     }
 
     var panSVG = (dx,dy) =>{
-        
-
         if(transformMatrix[0]==1 && transformMatrix[3]==1) {
             transformMatrix[4] = 0;
             transformMatrix[5] = 0;
         }
         else {
-            
             // var currentX = Math.abs(transformMatrix[4] - transformMatrix[4]/transformMatrix[0])
             // var currentY = Math.abs(transformMatrix[5] - transformMatrix[5]/transformMatrix[3])
             // if((worldMapLimits.right > (currentX+dx)) && (worldMapLimits.left < (currentX+dx))) transformMatrix[4] += dx;
@@ -318,29 +348,29 @@ export var Home = () => {
 
     const [regionOptionsLoaded, setRegionOptionsLoaded] = useState(false)
     var lastMapColorView = "default"
-    var lastSelectedRegion = "<global>"
+    var lastRegionHistoryIdx = 0
 
 
     var [regionSelectHistory,setRegionSelectHistory] = useState(["<global>"]);
-    var [regionHistoryIdx,setRegionHistoryIdx] = useState(0);
+    var [regHistQueueIdx,setRegHistQueueIdx] = useState(0);         
     var regionNavStarted = false;
 
 
     var backRegionBtnClicked =(e) => {
-        if(regionHistoryIdx-1 > 0) {
-            selectedRegion = regionSelectHistory[regionHistoryIdx-1];
-            setRegionHistoryIdx( --regionHistoryIdx)
+        if(regHistQueueIdx-1 > 0) {
+            selectedRegion = regionSelectHistory[regHistQueueIdx-1];
+            setRegHistQueueIdx( --regHistQueueIdx)
         }
-        if(regionHistoryIdx == 0) {
+        if(regHistQueueIdx == 0) {
             document.getElementById("backRegionBtn").classList.add("disabled");
         }
     }
     var fwdRegionBtnClicked =(e) => {
-        if(regionHistoryIdx+1 < regionSelectHistory.length-1) {
-            selectedRegion = regionSelectHistory[regionHistoryIdx+1];
-            setRegionHistoryIdx( ++regionHistoryIdx)
+        if(regHistQueueIdx+1 < regionSelectHistory.length-1) {
+            selectedRegion = regionSelectHistory[regHistQueueIdx+1];
+            setRegHistQueueIdx( ++regHistQueueIdx)
         }
-        if(regionHistoryIdx == regionSelectHistory.length-1) {
+        if(regHistQueueIdx == regionSelectHistory.length-1) {
             document.getElementById("fwdRegionBtn").classList.add("disabled");
         }
 
@@ -348,7 +378,7 @@ export var Home = () => {
     var toGlobalBtnClicked =(e) => {
         if(regionSelectHistory[regionSelectHistory.length-1] !="<global>") {
             regionSelectHistory.push("<global>")
-            setRegionHistoryIdx( --regionHistoryIdx)
+            setRegHistQueueIdx( --regHistQueueIdx)
         }
     }
 
@@ -356,19 +386,13 @@ export var Home = () => {
 
     function inverseMercator(x,y) {
         //https://mathworld.wolfram.com/MercatorProjection.html
-        console.log('Math.exp(y)',Math.exp(y))
-        console.log('2*Math.atan(Math.exp(y))',2*Math.atan(Math.exp(y)))
         let phi = 2*Math.atan(Math.exp(y)) - Math.PI/2;         // - 1.5707963267948966
         
         // let phi =  Math.atan(Math.sinh(y));         
         let gamma = x;
         return [Math.cos(y*0.0174533)*Math.sin(x*0.0174533), Math.sin(y*0.0174533)];
 
-
-
     }
-
-    
 
     function mercator(gamma, phi) {
         //https://mathworld.wolfram.com/MercatorProjection.html
@@ -381,17 +405,12 @@ export var Home = () => {
         
     }
     function regionNavBtnClicked(e) {
-        
-        
-        if(regionHistoryIdx+1==regionSelectHistory.length-1)  document.getElementById("fwdRegionBtn").classList.add("disabled");
+        if(regHistQueueIdx+1==regionSelectHistory.length-1)  document.getElementById("fwdRegionBtn").classList.add("disabled");
         else document.getElementById("fwdRegionBtn").classList.remove("disabled");
 
-        if(regionHistoryIdx-1==0)  document.getElementById("backRegionBtn").classList.add("disabled");
+        if(regHistQueueIdx-1==0)  document.getElementById("backRegionBtn").classList.add("disabled");
         else document.getElementById("backRegionBtn").classList.remove("disabled");
-
-        console.log("current Region: "+regionSelectHistory[regionHistoryIdx])
         regionNavStarted = true;
-        
     }
     function updateMap(svg) {
         var regionKeys = Object.keys(allRegionProperties);
@@ -462,7 +481,6 @@ export var Home = () => {
                     
                    //mercator , orthographic <-- types of projections
                     var contName = geometries.properties["CONTINENT"].replace(/\(|\)/gi, '').replace(/\s/gi, '_')
-    
                     if(!continents.includes(contName)) {                // this section is for initializing continents and adding the region belonging to the newly created continent
                         svgConts.append("g")
                             .attr("id",contName)
@@ -500,7 +518,6 @@ export var Home = () => {
                             .datum(topojson.feature(data, geometries))
                             .attr("id", geometries.properties["ADM0_A3"])
                             .attr("d", path)
-                            // .attr("d", d3.geo.path().projection(d3.geo.orthographic()))
                             .attr("fill", ()=> {
                                 if(mapColorView=="default") {
                                     return `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
@@ -525,206 +542,141 @@ export var Home = () => {
         }
     }
 
+    function mapTransitionToUS() {
+        var usCountyMap = document.getElementById("usCountyMap")
+        // make alternative map that includes all states compactly
+        
+        document.getElementById("continents").classList.toggle("withEase")
+        document.getElementById("continents").classList.toggle("usLocal")
+        
+        usCountyMap.classList.toggle("showing")
+        document.getElementById("worldMap").classList.toggle("hidden")
+
+        // adjust Hawaii, Alaska, Puerto Rico
+        var stateHI = document.getElementById("HI");
+        stateHI.setAttributeNS(null, "transform","translate(125 0)")
+        var statePR = document.getElementById("PR");
+        statePR.setAttributeNS(null, "transform","translate(-50 0)")
+        var stateAK = document.getElementById("AK");
+        stateAK.setAttributeNS(null, "transform",  "translate(125 175) scale(.3 .3)")
+
+        transformMatrix = [5.751490340144962, 0, 0 ,5.751490340144962 ,-656.582896430975,-514.5546459430193]
+       
+        document.getElementById("usLocal").setAttributeNS(null, "transform","matrix(5.751490340144962 0 0 5.751490340144962 -656.582896430975 -514.5546459430193)")
+        usCountyMap.addEventListener("wheel",(e)=>captureZoomEvent(e),false);
+        usCountyMap.addEventListener("DOMMouseScroll", (e)=> captureZoomEvent(e),false);
+        usCountyMap.addEventListener("mousedown", (e)=>dragMouseDown(e), false);
+    }
+
     // ****************************************
     // try openstreetmaps, https://wiki.openstreetmap.org/wiki/API_v0.6
     // https://planet.openstreetmap.org/planet/
     // ****************************************
 
-    var selectedRegionBox = {width:W, height:H ,cx:W/2, cy:H/2};
-    var selectedRegionZoom = 1
-    var prevSelectedRegionZoom = 1
+    var selectedRegionBox = {zoom:1, width:W, height:H ,cx:W/2, cy:H/2};
+    var selectedRegionZoom = 1;
     var activeSVG = d3.select("#worldMap");
-    wikiDataSearch("Q156191")
-    .then(result=> {
-        console.log("result",result)
-    })
+    // wikiDataSearch("Q156191")
+    // .then(result=> {
+    //     console.log("result",result)
+    // })
     
-
+   
     var worldMapLimits;
 
-
+    useEffect(()=> {
+        if(mapCreated) updateMap(activeSVG)
+        else createMap();
+    },[mapColorView])
     
     useEffect(()=> {
-        console.log('regionSelectHistory',regionSelectHistory)
-        if(!regionNavStarted) regionHistoryIdx = regionSelectHistory.length-1;
-        selectedRegion = regionSelectHistory[regionHistoryIdx];
-        setSelectedRegion(regionSelectHistory[regionHistoryIdx]);
-
-
-        
-
-
-        if(lastSelectedRegion != selectedRegion) {
-            
-           
-            // regionSelectHistory.push(selectedRegion)
-            if(regionSelectHistory.length>1) {
-                // document.getElementById("mapBtnGroup").classList.toggle("showing");
-                document.getElementById("backRegionBtn").classList.remove("disabled")
-                document.getElementById("toGlobalBtn").classList.remove("disabled")  
-           
-            }
-
-            if(document.getElementById("worldMap").classList.contains("hidden") && selectedRegion!="USA") {
-                console.log("changing from US")
-                var usCountyMap = document.getElementById("usCountyMap")
-                usCountyMap.classList.remove("showing")
-                document.getElementById("worldMap").classList.remove("hidden")
-                document.getElementById("continents").classList.remove("withEase")
-                document.getElementById("continents").classList.remove("usLocal")
-            }
-
-            
-            if(selectedRegion=="USA") {
-                var usCountyMap = document.getElementById("usCountyMap")
-                // make alternative map that includes all states compactly
-                
-                document.getElementById("continents").classList.toggle("withEase")
-                document.getElementById("continents").classList.toggle("usLocal")
-                
-                usCountyMap.classList.toggle("showing")
-                document.getElementById("worldMap").classList.toggle("hidden")
-
-                // adjust Hawaii, Alaska, Puerto Rico
-                var stateHI = document.getElementById("HI");
-                stateHI.setAttributeNS(null, "transform","translate(125 0)")
-                var statePR = document.getElementById("PR");
-                statePR.setAttributeNS(null, "transform","translate(-50 0)")
-                var stateAK = document.getElementById("AK");
-                stateAK.setAttributeNS(null, "transform",  "translate(125 175) scale(.3 .3)")
-
-                transformMatrix = [5.751490340144962, 0, 0 ,5.751490340144962 ,-656.582896430975,-514.5546459430193]
-               
-                document.getElementById("usLocal").setAttributeNS(null, "transform","matrix(5.751490340144962 0 0 5.751490340144962 -656.582896430975 -514.5546459430193)")
-                usCountyMap.addEventListener("wheel",(e)=>captureZoomEvent(e),false);
-                usCountyMap.addEventListener("DOMMouseScroll", (e)=> captureZoomEvent(e),false);
-                usCountyMap.addEventListener("mousedown", (e)=>dragMouseDown(e), false);
-                
-            }
-            else {
-                // getWikiTitleData(allRegionProperties[selectedRegion]["ADMIN"])
-                // console.log('allRegionProperties',allRegionProperties[selectedRegion])
-                var box = document.getElementById(selectedRegion).getBBox();
-                // var pt = getTransformedPt(lastZoom.x, lastZoom.y, transformMatrix);
-                // panSVG((pt.x-dragStart.x)/4, (pt.y-dragStart.y)/4)
-                
-                // zooming in:  zoomVar, and zoomVar>1
-                // zooming out: 1/zoomVar
-                // var zoomVar = 1/1.2130435711726304;
-           
-                selectedRegionBox.cx = box.x + box.width/2
-                selectedRegionBox.cy = box.y + box.height/2
-                lastZoom.x = selectedRegionBox.cx;
-                lastZoom.y = selectedRegionBox.cy;
-                // selectedRegionBox = getTransformedPt(selectedRegionBox.cx, selectedRegionBox.cy, transformMatrix);
-                prevSelectedRegionZoom = selectedRegionZoom;
-                selectedRegionZoom = Math.sqrt((selectedRegionBox.height*selectedRegionBox.width)/(box.width*box.height))/2
-
-                var tempMatrix = [1,0,0,1,0,0];
-                for(var i =0; i < 6; ++i) {tempMatrix[i] *= (selectedRegionZoom) }
-                // tempMatrix[4] += (prevSelectedRegionZoom - selectedRegionZoom)*(selectedRegionBox.cx);
-                // tempMatrix[5] += (prevSelectedRegionZoom - selectedRegionZoom)*(selectedRegionBox.cy);
-                tempMatrix[4] += (1 - selectedRegionZoom)*(selectedRegionBox.cx);
-                tempMatrix[5] += (1 - selectedRegionZoom)*(selectedRegionBox.cy);
-
-
-                selectedRegionBox.height = box.height;
-                selectedRegionBox.width = box.width;
-                
-                // box.x
-                // box.x + tempMatrix[0]*box.width
-                console.log(document.getElementById(selectedRegion).getBBox())
-
-                
-                transformMatrixHistory.push(transformMatrix)
-                transformMatrix = tempMatrix;
-                document.getElementById('continents').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
-
-            }
-            lastSelectedRegion = selectedRegion;
-            
-            // var card = document.createElement("Card");
-            // card.setAttribute("className", "historyCard")
-            // card.setAttribute("top",0);
-            // card.setAttribute("left",100*regionHistoryIdx)
-            // card.setAttribute("width",100);
-            // card.setAttribute("height",100);
-
-            var cardImage = document.createElement("svg");
-            cardImage.setAttribute("className", "historyCard")
-            // cardImage.setAttribute("top",0);
-            // cardImage.setAttribute("left",0)
-            cardImage.setAttribute("left",100*regionHistoryIdx)
-            cardImage.setAttribute("width",100);
-            cardImage.setAttribute("width",100);
-            cardImage.setAttribute("height",100);
-            cardImage.setAttribute("viewBox","0 0 100 100");
-
-            var regionShape = document.createElement("path")
-            regionShape.setAttribute("d",document.getElementById(selectedRegion).getAttribute('d'));
-            regionShape.setAttribute("fill",document.getElementById(selectedRegion).getAttribute('fill'));
-            regionShape.setAttribute("width",100);
-            regionShape.setAttribute("height",100);
-            regionShape.setAttribute("x",0);
-            regionShape.setAttribute("y",0);
-            cardImage.appendChild(regionShape)
-           
-         
-
-
-            // 
-            document.getElementById("regionHistoryCards").appendChild(cardImage);
-            // regionHistoryIdx>1 && regionSelectHistory.slice(1).map( (regionCode,key) =>{
-            //     <Card key={key} className="historyCard">
-            //         <Card.Content>
-                        
-            //         </Card.Content>
-                     
-            //     </Card>
-            //     })
-        }
         if(!regionOptionsLoaded) {
             processClientRequest("getRegionDb","/server/getRegionDb").then(result=> {
                 setRegionOptions(result)
                 setRegionOptionsLoaded(true)
             })
         }
+    })
+    useEffect(()=> {
+        console.log('regHistQueueIdx',regHistQueueIdx)
+        console.log('regionSelectHistory',regionSelectHistory)
+        setSelectedRegion(regionSelectHistory[regHistQueueIdx]);
+        // setSelectedRegion(regionSelectHistory[regHistQueueIdx.next]);
+        
+            // console.log("regionSelectHistory", regionSelectHistory)
+            // selectedRegion = regionSelectHistory[regHistQueueIdx.next];
+            // setSelectedRegion(regionSelectHistory[regHistQueueIdx.next]);
+           
+            
+        if(regionSelectHistory.length>1) {
+            // document.getElementById("mapBtnGroup").classList.toggle("showing");
+            document.getElementById("backRegionBtn").classList.remove("disabled")
+            document.getElementById("toGlobalBtn").classList.remove("disabled")  
+        
+        }
+
+        if(document.getElementById("worldMap").classList.contains("hidden") && selectedRegion!="USA") {
+            console.log("changing from US")
+            var usCountyMap = document.getElementById("usCountyMap")
+            usCountyMap.classList.remove("showing")
+            document.getElementById("worldMap").classList.remove("hidden")
+            document.getElementById("continents").classList.remove("withEase")
+            document.getElementById("continents").classList.remove("usLocal")
+        }
+
+        
+        if(selectedRegion=="USA")  mapTransitionToUS()
+        else if(selectedRegion=="<global>") {}
+        else {
+            // getWikiTitleData(allRegionProperties[selectedRegion]["ADMIN"])
+            // zooming in:  zoomVar, and zoomVar>1  ;  zooming out: 1/zoomVar
+            
+            let box = document.getElementById(selectedRegion).getBBox();
+            
+            selectedRegionBox.cx = box.x+box.width/2;
+            selectedRegionBox.cy = box.y+box.height/2;
+            // setLastZoom({x:selectedRegionBox.cx, y:selectedRegionBox.cy})
+            lastZoom = {x:selectedRegionBox.cx, y:selectedRegionBox.cy};
+            
+            selectedRegionZoom = Math.sqrt((selectedRegionBox.height*selectedRegionBox.width)/(box.width*box.height))/2
+            
+
+            var tempMatrix = [1,0,0,1,0,0];
+            for(let i =0; i < 6; ++i) {tempMatrix[i] *= (selectedRegionZoom) }
+            // tempMatrix[4] += (prevSelectedRegionZoom - selectedRegionZoom)*(selectedRegionBox.cx);
+            // tempMatrix[5] += (prevSelectedRegionZoom - selectedRegionZoom)*(selectedRegionBox.cy);
+            tempMatrix[4] += (1 - selectedRegionZoom)*(selectedRegionBox.cx);
+            tempMatrix[5] += (1 - selectedRegionZoom)*(selectedRegionBox.cy);
+
+            selectedRegionBox.width = box.width;
+            selectedRegionBox.height = box.height;
+            transformMatrix = tempMatrix;
+            document.getElementById('continents').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
+            console.log("moved to:", selectedRegion)
+
+        }
+        
+        
+        
+    }, [regHistQueueIdx,selectedRegion])
+    useEffect(()=> {
+        // if(!regionNavStarted) regHistQueueIdx = regionSelectHistory.length-1;
+        
         if(searchClicked) {
             // if(inputData.module=="dailyTrends" || inputData.module=="realTimeTrends") { }
             if(inputData.geo=="US") {
-                // var mKeys = Object.keys(metroData).map(k=> {
-                //     return `US-${metroData[k].state}-${k.substr(1)}`
-                // })
-                // if(inputData.keyword.length==1) {
-                //     var newKeyword = []
-                //     for(let k=0; k < mKeys.length; ++k) {
-                //         newKeyword.push(inputData.keyword[0])
-                        
-                //     }
-                //     inputData.keyword = newKeyword;
-                    
-                // }
-                
-                // inputData.geo = mKeys     //mKeys
-                // processClientRequest("searchClicked","/server",inputData)
-                // let k =0;
-                
-                // inputData.geo = mKeys  
                 console.log(inputData)
                 processClientRequest("searchClicked","/server",inputData).then(result=> {
                     console.log("result",result)
                 })
-                
             }
             else processClientRequest("searchClicked","/server",inputData)
-
         }
 
        
-        if(mapCreated) updateMap(activeSVG)
-        else createMap();
+        
      
-    },[searchClicked, mapColorView, regionHistoryIdx, selectedRegion]);
+    },[searchClicked]);        //selectedRegion
 
     //for orthographic projcetion: https://bl.ocks.org/mbostock/3795040
     // https://www.naturalearthdata.com/downloads/10m-cultural-vectors/
@@ -751,12 +703,24 @@ export var Home = () => {
     }
 
     return (
-            <SideBarWrapper regionHistoryIdx={regionHistoryIdx}  setRegionHistoryIdx={setRegionHistoryIdx} selectedRegion={selectedRegion} setSelectedRegion={setSelectedRegion} mapColorView={mapColorView} setMapColorView={setMapColorView} sideBarVisible={sideBarVisible} setSideBarVisible={setSideBarVisible} setInputData={setInputData} inputData={inputData} readyResults={readyResults} setReadyResults={setReadyResults} searchClicked={searchClicked} setSearchClicked={setSearchClicked} setCurrentTab={setCurrentTab} regionOptions={regionOptions} setRegionOptions={setRegionOptions} isVisible={sideBarVisible} setVisible={setSideBarVisible}>
-                <div id="globalSearch" >
+            <SideBarWrapper regionSelectHistory={regionSelectHistory} setRegionSelectHistory={setRegionSelectHistory} regHistQueueIdx={regHistQueueIdx}  setRegHistQueueIdx={setRegHistQueueIdx} selectedRegion={selectedRegion} setSelectedRegion={setSelectedRegion} mapColorView={mapColorView} setMapColorView={setMapColorView} sideBarVisible={sideBarVisible} setSideBarVisible={setSideBarVisible} setInputData={setInputData} inputData={inputData} readyResults={readyResults} setReadyResults={setReadyResults} searchClicked={searchClicked} setSearchClicked={setSearchClicked} setCurrentTab={setCurrentTab} regionOptions={regionOptions} setRegionOptions={setRegionOptions} isVisible={sideBarVisible} setVisible={setSideBarVisible}>
+                
 
-                    <Card id="regionHistoryCards">
 
-                   </Card>
+                <div className="region-container">
+                    <div className='region-container-history'>
+                        {/* <Input label="Keyword(s)" id='keywordInput' onKeyUp={(e)=> keyUpOnKeywordInput(e)} onKeyDown={(e)=> keyDownOnKeywordInput(e)}
+                            action={
+                                <button  className="ui icon button"  id="addKeywordButton"type="button"  onClick={addKeywordPressed} style={{display:'block'}}>
+                                    <img src="plus.svg" width="20" height="20"/>
+                                </button>} /> */}
+                    </div>    
+                    <div id="regionHistoryCards" className="region-card-container"></div>
+                </div>
+
+                <div id="globalSearch">
+
+                    
 
         
                    <div id="mapBtnGroup" className="regionNavBtnGroup">

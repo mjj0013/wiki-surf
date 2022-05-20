@@ -182,36 +182,54 @@ export var Home = () => {
             var regionA3 = allRegionProperties[e.target.id]["ADM0_A3"];
             
             if(!regionSelectHistory.includes(regionA3)) {
+                var regionQueue = document.getElementById("regionHistoryCards");
                 regionSelectHistory.push(regionA3)
+
+                var regionBBox = document.getElementById(regionA3).getBoundingClientRect();
                 setRegHistQueueIdx(regionSelectHistory.length-1);
                 
 
                 var card = document.createElement("Card");
             
                 card.className = "region-card"
+                var xmlns = "http://www.w3.org/2000/svg";
 
 
-
-                var cardImage = document.createElement("svg");
-                
-                cardImage.className = "region-card";
+                var cardImage = document.createElementNS(xmlns,"svg");
                 
                 
-                // cardImage.setAttribute("viewBox","0 0 100 100");
-                var regionShape = document.createElement("path");
-                // regionShape.setAttribute("xmlns","http://www.w3.org/2000/svg")
-                regionShape.className = "region-card-path";
-                regionShape.d = document.getElementById(regionA3).getAttribute('d')
-                // regionShape.setAttribute("d",);
-                regionShape.setAttribute("fill",document.getElementById(regionA3).getAttribute('fill'));
+                cardImage.setAttributeNS(null, "width","100");
+                cardImage.setAttributeNS(null, "height","100");
+                cardImage.style.display = "block"
+               
+                cardImage.setAttributeNS(null, "viewBox",`${regionBBox.left} ${regionBBox.top} ${regionBBox.width} ${regionBBox.height}`);
+                var regionShape = document.createElementNS(xmlns,"path");
+                var regionD = document.getElementById(regionA3).getAttribute('d');
+                var regionFill = document.getElementById(regionA3).getAttribute('fill')
+                
+                regionShape.setAttributeNS(null, "d", regionD);
+                regionShape.setAttributeNS(null,"fill",regionFill);
+                regionShape.setAttributeNS(null, "stroke", "#000")
+                
+                var pathStart = regionD.match(/(?<=M)[-+]?[0-9]+\.[0-9]+\,[-+]?[0-9]+\.[0-9]+/)[0].split(',')
+                var pathStartPt = {x:parseFloat(pathStart[0]), y:parseFloat(pathStart[1])}
+                console.log('pathStartPt', pathStartPt);
+                // regionShape.setAttributeNS(null, "transform", `matrix(${10} 0 0 ${10} 0 0)`);
+                var thumbnailZoom = Math.sqrt((regionBBox.height*regionBBox.width)/(100*100))/2
+                // var thumbnailZoom = regionBBox.height/100
+                var thumbnailMatrix = [1,0,0,1,0,0];
+                for(let i=0; i < 6; ++i) thumbnailMatrix[i] *=thumbnailZoom
+                thumbnailMatrix[4] += (1-thumbnailZoom)*(-pathStartPt.x)      //429
+                thumbnailMatrix[5] += (1-thumbnailZoom)*(-pathStartPt.y)                   //582
+                
+                // regionShape.setAttributeNS(null, "transform", `matrix(${thumbnailMatrix.join(' ')})`);
+                // regionShape.setAttributeNS(null,'transform', `scale(${thumbnailMatrix[0]} ${thumbnailMatrix[3]}) translate(${-pathStartPt.x} ${-pathStartPt.y})`)
+                regionShape.setAttributeNS(null,'transform', `translate(${50} ${50})`);
                 
 
                 cardImage.appendChild(regionShape)
-
                 card.appendChild(cardImage)
-                document.getElementById("regionHistoryCards").appendChild(card);
-
-                    // regionSelectHistory.push(selectedRegion)
+                regionQueue.appendChild(card);
                 
             }
             else {
@@ -707,16 +725,16 @@ export var Home = () => {
                 
 
 
-                <div className="region-container">
-                    <div className='region-container-history'>
-                        {/* <Input label="Keyword(s)" id='keywordInput' onKeyUp={(e)=> keyUpOnKeywordInput(e)} onKeyDown={(e)=> keyDownOnKeywordInput(e)}
+                {/* <div className="region-container"> */}
+                    {/* <div className='region-container-history'>
+                        <Input label="Keyword(s)" id='keywordInput' onKeyUp={(e)=> keyUpOnKeywordInput(e)} onKeyDown={(e)=> keyDownOnKeywordInput(e)}
                             action={
                                 <button  className="ui icon button"  id="addKeywordButton"type="button"  onClick={addKeywordPressed} style={{display:'block'}}>
                                     <img src="plus.svg" width="20" height="20"/>
-                                </button>} /> */}
-                    </div>    
+                                </button>} />
+                    </div>     */}
                     <div id="regionHistoryCards" className="region-card-container"></div>
-                </div>
+                {/* </div> */}
 
                 <div id="globalSearch">
 

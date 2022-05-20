@@ -463,27 +463,33 @@ code {
 }
 
 
-.region-container-history {
-  display:flex;
-  flex-direction:row;
-  align-items: center;
-}
-
 
 .region-card-container {
-  
-  display:flex;
-  /* border: 2px solid #bbb;
-  border-radius: 3px; */
+
   flex-wrap:wrap;
+
+  display:flex;
   flex-direction:row;
+
+
+  flex-basis:250px;
+
+  width:500px;
+  height:100px;
+
+  position:absolute;
+  top:0px;
+  left:250px;
+  border:1px solid black;
+  
 }
 
 .region-card-container .region-card {
   /* padding:4px; */
   border: 1px solid #ccf;
   /* margin:5px; */
-  display:flex;
+  display:block;
+  z-index:100;
 
   /* border-radius:3px; */
   /* background:#f2f2f2; */
@@ -493,13 +499,7 @@ code {
   
   
 }
-
-.region-card-path {
+.region-card-container .region-card > * {
   z-index:100;
-  
-  /* top:0%;
-  left:0%; */
-  /* display:block; */
-  /* transform: scale(625); */
-  /* translate(-1000px, -1000px)  */
 }
+

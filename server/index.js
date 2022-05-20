@@ -180,13 +180,10 @@ var realTimeTrendsModule = (req,res) => {
     console.log('optionsObj',optionsObj)
     googleTrends.realTimeTrends(optionsObj)
     .then((results)=> {
-        
         var data = results.toString();
         data = JSON.parse(data);
-        // console.log("data",data)
         
         var stories = data["storySummaries"]["trendingStories"]
-        // console.log(stories)
         var resultData = {searches:[]}
         
         for(let d=0 ; d < stories.length; ++d) {

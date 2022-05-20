@@ -134,6 +134,8 @@ export var Home = () => {
     var zoomIntensity = 0.2;
     var [dragStart, setDragStart] = useState({x:0, y:0})
    
+    var regionCardQueue = [];
+
     var captureZoomEvent = (e) => {
         lastZoom.x = e.offsetX;
         lastZoom.y = e.offsetY;
@@ -188,7 +190,7 @@ export var Home = () => {
                 var regionBBox = document.getElementById(regionA3).getBoundingClientRect();
                 setRegHistQueueIdx(regionSelectHistory.length-1);
                 
-
+                
                 var card = document.createElement("Card");
             
                 card.className = "region-card"
@@ -198,11 +200,11 @@ export var Home = () => {
                 var cardImage = document.createElementNS(xmlns,"svg");
                 
                 
-                cardImage.setAttributeNS(null, "width","100");
-                cardImage.setAttributeNS(null, "height","100");
+                cardImage.setAttributeNS(null, "width","80");
+                cardImage.setAttributeNS(null, "height","80");
                 cardImage.style.display = "block"
                
-                cardImage.setAttributeNS(null, "viewBox",`${regionBBox.left} ${regionBBox.top} ${regionBBox.width} ${regionBBox.height}`);
+                
                 var regionShape = document.createElementNS(xmlns,"path");
                 var regionD = document.getElementById(regionA3).getAttribute('d');
                 var regionFill = document.getElementById(regionA3).getAttribute('fill')
@@ -214,26 +216,124 @@ export var Home = () => {
                 var pathStart = regionD.match(/(?<=M)[-+]?[0-9]+\.[0-9]+\,[-+]?[0-9]+\.[0-9]+/)[0].split(',')
                 var pathStartPt = {x:parseFloat(pathStart[0]), y:parseFloat(pathStart[1])}
                 console.log('pathStartPt', pathStartPt);
-                // regionShape.setAttributeNS(null, "transform", `matrix(${10} 0 0 ${10} 0 0)`);
-                var thumbnailZoom = Math.sqrt((regionBBox.height*regionBBox.width)/(100*100))/2
-                // var thumbnailZoom = regionBBox.height/100
+                
+                var thumbnailZoom = Math.sqrt((regionBBox.height*regionBBox.width)/(100*100))/2;
+                
                 var thumbnailMatrix = [1,0,0,1,0,0];
                 for(let i=0; i < 6; ++i) thumbnailMatrix[i] *=thumbnailZoom
-                thumbnailMatrix[4] += (1-thumbnailZoom)*(-pathStartPt.x)      //429
-                thumbnailMatrix[5] += (1-thumbnailZoom)*(-pathStartPt.y)                   //582
+                thumbnailMatrix[4] += (1-thumbnailZoom)*(pathStartPt.x)      //429
+                thumbnailMatrix[5] += (1-thumbnailZoom)*(pathStartPt.y)                   //582
                 
                 // regionShape.setAttributeNS(null, "transform", `matrix(${thumbnailMatrix.join(' ')})`);
-                // regionShape.setAttributeNS(null,'transform', `scale(${thumbnailMatrix[0]} ${thumbnailMatrix[3]}) translate(${-pathStartPt.x} ${-pathStartPt.y})`)
-                regionShape.setAttributeNS(null,'transform', `translate(${50} ${50})`);
                 
+                regionShape.setAttributeNS(null,'transform', `translate(${250-(1+regionCardQueue.length)*100-regionBBox.left} ${80-regionBBox.top})`)     //   
+                // regionShape.setAttributeNS(null,'transform', `translate(${-pathStartPt.x} ${-pathStartPt.y})`);
+              
+                cardImage.setAttributeNS(null, "viewBox",`0 0 100 100`);
 
                 cardImage.appendChild(regionShape)
                 card.appendChild(cardImage)
-                regionQueue.appendChild(card);
+
+                regionCardQueue.push(card)
+                /*  Progression of one card as more are added consecutively 
+                   third (selected) -> second  .. 
+                */
+                var subClasses = ["first","second","third","fourth","fifth"]
+                if(regionCardQueue.length >= 5) {
+
+                    
+                    for(let c=0; c < 5; ++c) {regionCardQueue[regionSelectHistory.length - 1 ].classList.replace(subClasses[c], "third") }
+                    for(let c=0; c < 5; ++c) {regionCardQueue[regionSelectHistory.length - 2 ].classList.replace(subClasses[c], "second") }
+                    for(let c=0; c < 5; ++c) {regionCardQueue[regionSelectHistory.length - 3 ].classList.replace(subClasses[c], "first") }
+                    for(let c=0; c < 5; ++c) {regionCardQueue[0].classList.replace(subClasses[c], "fourth") }
+                    for(let c=0; c < 5; ++c) {regionCardQueue[1].classList.replace(subClasses[c], "fifth") }
+                    
+                   
+
+
+                }
+                else {
+                    regionQueue.appendChild(card);
+                    if(regionCardQueue.length==1) {
+                        regionCardQueue[0].classList.add("third");
+                    }
+                    else if(regionCardQueue.length==2) {
+                        regionCardQueue[1].classList.add("third");
+                        // regionCardQueue[0].classList[1] = "second";
+                        regionCardQueue[0].classList.replace("third", "second")
+                    }
+                    else if(regionCardQueue.length==3) {
+                        regionCardQueue[2].classList.add("third");
+                        regionCardQueue[1].classList.replace("third", "second")
+                        regionCardQueue[0].classList.replace("second", "fourth")
+                    }
+                    else if(regionCardQueue.length==4) {
+                        regionCardQueue[3].classList.add("third");
+                        regionCardQueue[2].classList.replace("third", "second")
+                        regionCardQueue[1].classList.replace("second", "fourth")
+                        regionCardQueue[0].classList.replace("fourth", "second")
+
+              
+                    }
+                    
+                    
+                }
+                
+
                 
             }
             else {
-                setRegHistQueueIdx(regionSelectHistory.indexOf(regionA3));
+                var selectedCardIdx = regionSelectHistory.indexOf(regionA3);
+
+                
+                if(regionCardQueue.length >= 5) {
+                    var firstIdx = selectedCardIdx-2<0? regionCardQueue.length+selectedCardIdx-2 : selectedCardIdx-2
+                    var secondIdx = selectedCardIdx-1<0? regionCardQueue.length+selectedCardIdx-1 : selectedCardIdx-1
+                    var thirdIdx = selectedCardIdx
+                    var fourthIdx = (selectedCardIdx+1)%regionCardQueue.length
+                    var fifthIdx = (selectedCardIdx+2)%regionCardQueue.length
+                    
+                    regionCardQueue[firstIdx].classList.classList[1] = "first";
+                    regionCardQueue[secondIdx].classList.classList[1] = "second";
+                    regionCardQueue[thirdIdx].classList.add("third");
+                    regionCardQueue[fourthIdx].classList.classList[1] = "fourth";
+                    regionCardQueue[fifthIdx].classList.classList[1] = "fifth";
+                    
+                }
+                else {
+                    
+                    if(regionCardQueue.length == 4) {
+                        var firstIdx = selectedCardIdx-2<0? regionCardQueue.length+selectedCardIdx-2 : selectedCardIdx-2
+                        var secondIdx = selectedCardIdx-1<0?regionCardQueue.length+selectedCardIdx-1: selectedCardIdx-1
+                        var thirdIdx = selectedCardIdx
+                        var fourthIdx = (selectedCardIdx+1)%regionCardQueue.length
+                        var fifthIdx = (selectedCardIdx+2)%regionCardQueue.length
+                    }
+
+                    if(regionCardQueue.length == 3) {
+                     
+                        var secondIdx = selectedCardIdx-1<0?regionCardQueue.length+selectedCardIdx-1: selectedCardIdx-1
+                        var thirdIdx = selectedCardIdx
+                        var fourthIdx = (selectedCardIdx+1)%regionCardQueue.length
+                    
+                    }
+
+
+
+
+                    
+                    
+                    regionCardQueue[firstIdx].classList.classList[1] = "first";
+                    regionCardQueue[secondIdx].classList.classList[1] = "second";
+                    regionCardQueue[thirdIdx].classList.add("third");
+                    regionCardQueue[fourthIdx].classList.classList[1] = "fourth";
+                    regionCardQueue[fifthIdx].classList.classList[1] = "fifth";
+                }
+             
+                setRegHistQueueIdx(selectedCardIdx);
+
+
+
             }       
             
         }
@@ -733,7 +833,7 @@ export var Home = () => {
                                     <img src="plus.svg" width="20" height="20"/>
                                 </button>} />
                     </div>     */}
-                    <div id="regionHistoryCards" className="region-card-container"></div>
+                <div id="regionHistoryCards" className="region-card-container"></div>
                 {/* </div> */}
 
                 <div id="globalSearch">

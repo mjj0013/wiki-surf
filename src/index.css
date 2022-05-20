@@ -465,14 +465,11 @@ code {
 
 
 .region-card-container {
-
-  flex-wrap:wrap;
-
+  display:block;
+  /* flex-wrap:wrap;
   display:flex;
   flex-direction:row;
-
-
-  flex-basis:250px;
+  flex-basis:250px; */
 
   width:500px;
   height:100px;
@@ -480,21 +477,26 @@ code {
   position:absolute;
   top:0px;
   left:250px;
-  border:1px solid black;
+  /* border:1px solid black; */
   
 }
 
-.region-card-container .region-card {
-  /* padding:4px; */
+/* .region-card-container .region-card { */
+.region-card {
+  padding:4px;
   border: 1px solid #ccf;
   /* margin:5px; */
   display:block;
-  z-index:100;
 
+  z-index:100;
+  position:absolute;
   /* border-radius:3px; */
   /* background:#f2f2f2; */
   height:100px;
   width:100px;
+  opacity: .5;
+  transition: opacity 1s ease, left .5s ease;
+  
   
   
   
@@ -502,4 +504,45 @@ code {
 .region-card-container .region-card > * {
   z-index:100;
 }
+
+
+.region-card .first {
+  top:0px;
+  left:250px;
+  opacity:.25;
+  border: thick double #777777;
+}
+.region-card .second {
+  top:0px;
+  left:350px;
+  opacity:.50;
+  border: thick double #868686;
+}
+.region-card .third {
+  top:0px;
+  left:450px;
+  opacity:.60;
+  border: thick double #fff1ce;
+}
+.region-card .fourth {
+  top:0px;
+  left:550px;
+  opacity:.50;
+  border: thick double #868686;
+}
+.region-card .fifth {
+  top:0px;
+  left:650px;
+  opacity:.25;
+  border: thick double #777777;
+  
+}
+
+
+.region-card:hover {
+  opacity:1.0;
+}
+
+
+
 

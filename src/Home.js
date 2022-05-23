@@ -6,7 +6,7 @@ import {AppContext} from './AppContext.js';
 // import {chartEvents} from './chartEventHandlers.tsx'
 const userAgents = require("user-agents");
 import { ReactGoogleChartEvent, Chart } from 'react-google-charts';
-import {Container,Button, Card} from 'semantic-ui-react';
+import {Dimmer, List, Container,Button, Card} from 'semantic-ui-react';
 
 import wikiSubject, {wikiDataSearch, WikiSubject, wikiTitleSearch, countryBaseData} from './wikiSubject.js';
 import { SideBarWrapper } from './sideBarForm.js';
@@ -80,7 +80,6 @@ function getWikiTitleData(queryName) {
 
 export var Home = () => {   
     var searchTerms = []
-   
     function displayMapValues(moduleName, data) {
         if(moduleName=="interestByRegion") {
             var header= ["Region", ...searchTerms];
@@ -130,11 +129,8 @@ export var Home = () => {
     }
     var [lastZoom, setLastZoom] = useState({x:0, y:0})
     var [transformMatrix, setTransformMatrix] = useState([1, 0, 0, 1, 0, 0]);
-    var transformMatrixHistory = [];
     var zoomIntensity = 0.2;
     var [dragStart, setDragStart] = useState({x:0, y:0})
-   
-    var regionCardQueue = [];
 
     var captureZoomEvent = (e) => {
         lastZoom.x = e.offsetX;
@@ -148,7 +144,6 @@ export var Home = () => {
         let zoomVar = Math.pow(zoomIntensity,wheelNorm);
         if(transformMatrix[0]*zoomVar >=1) {
             for(var i =0; i < 6; ++i) {transformMatrix[i] *= zoomVar }
-        
             transformMatrix[4] += (1-zoomVar)*(lastZoom.x);
             transformMatrix[5] += (1-zoomVar)*(lastZoom.y);
         }
@@ -163,7 +158,6 @@ export var Home = () => {
     }
 
     var closeDragElement = () =>{
-        // console.log(document.getElementById("continents").getBBox())
         document.onmouseup = null;
         document.onmousemove = null;
     }
@@ -184,27 +178,29 @@ export var Home = () => {
             var regionA3 = allRegionProperties[e.target.id]["ADM0_A3"];
             
             if(!regionSelectHistory.includes(regionA3)) {
+                
                 var regionQueue = document.getElementById("regionHistoryCards");
+                
                 regionSelectHistory.push(regionA3)
 
                 var regionBBox = document.getElementById(regionA3).getBoundingClientRect();
                 setRegHistQueueIdx(regionSelectHistory.length-1);
-                
-                
-                var card = document.createElement("Card");
-            
-                card.className = "region-card"
+       
+                var container = document.createElementNS("http://www.w3.org/1999/xhtml","container");
+                container.setAttributeNS(null,"class","region-card");
+
+                var card = document.createElementNS("http://www.w3.org/1999/xhtml", "div");
+                card.setAttributeNS(null,"class","ui card");
+
+                // card.addEventListener("mouseover",(e)=> {}, false);
+
                 var xmlns = "http://www.w3.org/2000/svg";
 
-
                 var cardImage = document.createElementNS(xmlns,"svg");
-                
-                
                 cardImage.setAttributeNS(null, "width","80");
                 cardImage.setAttributeNS(null, "height","80");
                 cardImage.style.display = "block"
                
-                
                 var regionShape = document.createElementNS(xmlns,"path");
                 var regionD = document.getElementById(regionA3).getAttribute('d');
                 var regionFill = document.getElementById(regionA3).getAttribute('fill')
@@ -215,7 +211,6 @@ export var Home = () => {
                 
                 var pathStart = regionD.match(/(?<=M)[-+]?[0-9]+\.[0-9]+\,[-+]?[0-9]+\.[0-9]+/)[0].split(',')
                 var pathStartPt = {x:parseFloat(pathStart[0]), y:parseFloat(pathStart[1])}
-                console.log('pathStartPt', pathStartPt);
                 
                 var thumbnailZoom = Math.sqrt((regionBBox.height*regionBBox.width)/(100*100))/2;
                 
@@ -223,69 +218,76 @@ export var Home = () => {
                 for(let i=0; i < 6; ++i) thumbnailMatrix[i] *=thumbnailZoom
                 thumbnailMatrix[4] += (1-thumbnailZoom)*(pathStartPt.x)      //429
                 thumbnailMatrix[5] += (1-thumbnailZoom)*(pathStartPt.y)                   //582
+
+
+                // issue: in order for slightly accurate thumbnail, you have to zoom back to global and then click on next region. Solve this
+                regionShape.setAttributeNS(null,'transform', `translate(${220-(100)-regionBBox.left} ${80-regionBBox.top})`) 
                 
-                // regionShape.setAttributeNS(null, "transform", `matrix(${thumbnailMatrix.join(' ')})`);
-                
-                regionShape.setAttributeNS(null,'transform', `translate(${250-(1+regionCardQueue.length)*100-regionBBox.left} ${80-regionBBox.top})`)     //   
-                // regionShape.setAttributeNS(null,'transform', `translate(${-pathStartPt.x} ${-pathStartPt.y})`);
               
                 cardImage.setAttributeNS(null, "viewBox",`0 0 100 100`);
 
                 cardImage.appendChild(regionShape)
                 card.appendChild(cardImage)
+                container.appendChild(card)
+                regionQueue.appendChild(container)
 
-                regionCardQueue.push(card)
-                /*  Progression of one card as more are added consecutively 
-                   third (selected) -> second  .. 
-                */
-                var subClasses = ["first","second","third","fourth","fifth"]
+                var regionCardQueue = regionQueue.children;
                 if(regionCardQueue.length >= 5) {
-
-                    
-                    for(let c=0; c < 5; ++c) {regionCardQueue[regionSelectHistory.length - 1 ].classList.replace(subClasses[c], "third") }
-                    for(let c=0; c < 5; ++c) {regionCardQueue[regionSelectHistory.length - 2 ].classList.replace(subClasses[c], "second") }
-                    for(let c=0; c < 5; ++c) {regionCardQueue[regionSelectHistory.length - 3 ].classList.replace(subClasses[c], "first") }
-                    for(let c=0; c < 5; ++c) {regionCardQueue[0].classList.replace(subClasses[c], "fourth") }
-                    for(let c=0; c < 5; ++c) {regionCardQueue[1].classList.replace(subClasses[c], "fifth") }
-                    
-                   
+                    regionCardQueue[regionCardQueue.length - 1 ].classList.add("ord3") 
 
 
+                    regionCardQueue[regionCardQueue.length - 2 ].classList.remove("exit");
+                    for(let c=1; c < 6; ++c) {
+                        regionCardQueue[regionCardQueue.length - 2 ].classList.replace(`ord${c}`, "ord2") 
+                    }
+
+
+                    regionCardQueue[regionCardQueue.length - 3 ].classList.remove("exit");
+                    for(let c=1; c < 6; ++c) {
+                        regionCardQueue[regionCardQueue.length - 3 ].classList.replace(`ord${c}`, "ord1") 
+                    }
+
+                    regionCardQueue[1].classList.remove("exit");
+                    for(let c=1; c < 6; ++c) {
+                        regionCardQueue[1].classList.replace(`ord${c}`, "ord5") 
+                    }
+
+                    regionCardQueue[0].classList.remove("exit");
+                    for(let c=1; c < 6; ++c) {
+                        regionCardQueue[0].classList.replace(`ord${c}`, "ord4") 
+                    }
+        
+                    if(2 != regionCardQueue.length - 4) {
+                        for(let c=2; c < regionCardQueue.length - 4; ++c) {
+                            regionCardQueue[c].classList.add("exit");
+                            regionCardQueue[c].classList.add("exit");
+                        }
+                    }
                 }
                 else {
-                    regionQueue.appendChild(card);
                     if(regionCardQueue.length==1) {
-                        regionCardQueue[0].classList.add("third");
+                        document.getElementById("mapBtnGroup").classList.toggle("collapsed");
+                        regionCardQueue[0].classList.add("ord3");
                     }
                     else if(regionCardQueue.length==2) {
-                        regionCardQueue[1].classList.add("third");
-                        // regionCardQueue[0].classList[1] = "second";
-                        regionCardQueue[0].classList.replace("third", "second")
+                        regionCardQueue[1].classList.add("ord3");
+                        regionCardQueue[0].classList.replace("ord3", "ord2")
                     }
                     else if(regionCardQueue.length==3) {
-                        regionCardQueue[2].classList.add("third");
-                        regionCardQueue[1].classList.replace("third", "second")
-                        regionCardQueue[0].classList.replace("second", "fourth")
+                        regionCardQueue[2].classList.add("ord3");
+                        regionCardQueue[1].classList.replace("ord3", "ord2")
+                        regionCardQueue[0].classList.replace("ord2", "ord4")
                     }
                     else if(regionCardQueue.length==4) {
-                        regionCardQueue[3].classList.add("third");
-                        regionCardQueue[2].classList.replace("third", "second")
-                        regionCardQueue[1].classList.replace("second", "fourth")
-                        regionCardQueue[0].classList.replace("fourth", "second")
-
-              
+                        regionCardQueue[3].classList.add("ord3");
+                        regionCardQueue[2].classList.replace("ord3", "ord2")
+                        regionCardQueue[1].classList.replace("ord2", "ord4")
+                        regionCardQueue[0].classList.replace("ord4", "ord1")
                     }
-                    
-                    
                 }
-                
-
-                
             }
             else {
                 var selectedCardIdx = regionSelectHistory.indexOf(regionA3);
-
-                
                 if(regionCardQueue.length >= 5) {
                     var firstIdx = selectedCardIdx-2<0? regionCardQueue.length+selectedCardIdx-2 : selectedCardIdx-2
                     var secondIdx = selectedCardIdx-1<0? regionCardQueue.length+selectedCardIdx-1 : selectedCardIdx-1
@@ -298,7 +300,6 @@ export var Home = () => {
                     regionCardQueue[thirdIdx].classList.add("third");
                     regionCardQueue[fourthIdx].classList.classList[1] = "fourth";
                     regionCardQueue[fifthIdx].classList.classList[1] = "fifth";
-                    
                 }
                 else {
                     
@@ -311,31 +312,18 @@ export var Home = () => {
                     }
 
                     if(regionCardQueue.length == 3) {
-                     
                         var secondIdx = selectedCardIdx-1<0?regionCardQueue.length+selectedCardIdx-1: selectedCardIdx-1
                         var thirdIdx = selectedCardIdx
                         var fourthIdx = (selectedCardIdx+1)%regionCardQueue.length
-                    
                     }
-
-
-
-
-                    
-                    
                     regionCardQueue[firstIdx].classList.classList[1] = "first";
                     regionCardQueue[secondIdx].classList.classList[1] = "second";
                     regionCardQueue[thirdIdx].classList.add("third");
                     regionCardQueue[fourthIdx].classList.classList[1] = "fourth";
                     regionCardQueue[fifthIdx].classList.classList[1] = "fifth";
                 }
-             
                 setRegHistQueueIdx(selectedCardIdx);
-
-
-
             }       
-            
         }
         else {
             if(startListingCounties) {
@@ -357,7 +345,6 @@ export var Home = () => {
         e = e || window.event;
         lastZoom = {x:e.offsetX, y:e.offsetY}
         if(dragStart) {
-
             var pt = getTransformedPt(lastZoom.x, lastZoom.y, transformMatrix);
             panSVG((pt.x-dragStart.x)/4, (pt.y-dragStart.y)/4)
         }
@@ -392,7 +379,6 @@ export var Home = () => {
         // other possible modules:    relatedQueries, relatedTopics, interestOverTime, interestByRegion
         return new Promise((resolve, reject) => {
             var headers = {"Content-Type":"application/json", "Accept":"application/json"}
-           
             var req;
             if(action=="searchClicked") {
                 req = new Request(path, {  method:"POST",  headers:headers,    body: JSON.stringify(body)   });
@@ -417,7 +403,6 @@ export var Home = () => {
             }
         })
     }
-    
     const [data,setRegionData] = useState(null);
     const [sideBarVisible, setSideBarVisible] = useState(false);
     const [regionOptions, setRegionOptions] = useState([]);       //, displayMode:"continents",resolution:"countries"
@@ -426,9 +411,6 @@ export var Home = () => {
     const [readyResults, setReadyResults] = useState(null);
     const [inputData, setInputData] = useState(null);
     const [mapColorView, setMapColorView] = useState("default");
-
-    
-
 
     function getRandomInt(min, max) {
         min = Math.ceil(min);
@@ -441,11 +423,7 @@ export var Home = () => {
             .translate([W/2, H/2])
             // .clipAngle(30)
 
-    var path = d3.geo.path()
-        .projection(projection)
-
-
-    
+    var path = d3.geo.path().projection(projection)
 
     var [allRegionProperties,setAllRegionProperties]  = useState({});
     var [allCountyProperties,setAllCountyProperties]  = useState({});
@@ -471,7 +449,6 @@ export var Home = () => {
 
     var [regionSelectHistory,setRegionSelectHistory] = useState(["<global>"]);
     var [regHistQueueIdx,setRegHistQueueIdx] = useState(0);         
-    var regionNavStarted = false;
 
 
     var backRegionBtnClicked =(e) => {
@@ -719,13 +696,7 @@ export var Home = () => {
         console.log('regHistQueueIdx',regHistQueueIdx)
         console.log('regionSelectHistory',regionSelectHistory)
         setSelectedRegion(regionSelectHistory[regHistQueueIdx]);
-        // setSelectedRegion(regionSelectHistory[regHistQueueIdx.next]);
-        
-            // console.log("regionSelectHistory", regionSelectHistory)
-            // selectedRegion = regionSelectHistory[regHistQueueIdx.next];
-            // setSelectedRegion(regionSelectHistory[regHistQueueIdx.next]);
-           
-            
+     
         if(regionSelectHistory.length>1) {
             // document.getElementById("mapBtnGroup").classList.toggle("showing");
             document.getElementById("backRegionBtn").classList.remove("disabled")
@@ -742,7 +713,6 @@ export var Home = () => {
             document.getElementById("continents").classList.remove("usLocal")
         }
 
-        
         if(selectedRegion=="USA")  mapTransitionToUS()
         else if(selectedRegion=="<global>") {}
         else {
@@ -773,9 +743,6 @@ export var Home = () => {
             console.log("moved to:", selectedRegion)
 
         }
-        
-        
-        
     }, [regHistQueueIdx,selectedRegion])
     useEffect(()=> {
         // if(!regionNavStarted) regHistQueueIdx = regionSelectHistory.length-1;
@@ -790,19 +757,10 @@ export var Home = () => {
             }
             else processClientRequest("searchClicked","/server",inputData)
         }
-
-       
-        
-     
     },[searchClicked]);        //selectedRegion
 
     //for orthographic projcetion: https://bl.ocks.org/mbostock/3795040
     // https://www.naturalearthdata.com/downloads/10m-cultural-vectors/
-    //SE = 10
-    //NE = 15
-    //MW = 9
-    //SW = 8
-    //NW = 6
 
     var currentSelectedCounties = [];
     var startListingCounties = false
@@ -822,31 +780,17 @@ export var Home = () => {
 
     return (
             <SideBarWrapper regionSelectHistory={regionSelectHistory} setRegionSelectHistory={setRegionSelectHistory} regHistQueueIdx={regHistQueueIdx}  setRegHistQueueIdx={setRegHistQueueIdx} selectedRegion={selectedRegion} setSelectedRegion={setSelectedRegion} mapColorView={mapColorView} setMapColorView={setMapColorView} sideBarVisible={sideBarVisible} setSideBarVisible={setSideBarVisible} setInputData={setInputData} inputData={inputData} readyResults={readyResults} setReadyResults={setReadyResults} searchClicked={searchClicked} setSearchClicked={setSearchClicked} setCurrentTab={setCurrentTab} regionOptions={regionOptions} setRegionOptions={setRegionOptions} isVisible={sideBarVisible} setVisible={setSideBarVisible}>
+                <Container id="regionHistoryCards" className="region-card-container">
+                </Container>
+                <div id="mapBtnGroup" className="regionNavBtnGroup collapsed">
+                    <Button id="backRegionBtn" className="regionNavBtn" onClick={(e)=>backRegionBtnClicked(e)} attached icon="arrow left" />
+                    <Button id="toGlobalBtn" className="regionNavBtn" onClick={(e)=>toGlobalBtnClicked(e)} attached icon="bi bi-globe2"></Button>
+                    
+                    {/* icon={<i id="globeIcon" className="bi bi-globe2"></i>} */}
+                    <Button id="fwdRegionBtn" className="regionNavBtn" onClick={(e)=>fwdRegionBtnClicked(e)} attached icon="arrow right"/>
+                </div>
                 
-
-
-                {/* <div className="region-container"> */}
-                    {/* <div className='region-container-history'>
-                        <Input label="Keyword(s)" id='keywordInput' onKeyUp={(e)=> keyUpOnKeywordInput(e)} onKeyDown={(e)=> keyDownOnKeywordInput(e)}
-                            action={
-                                <button  className="ui icon button"  id="addKeywordButton"type="button"  onClick={addKeywordPressed} style={{display:'block'}}>
-                                    <img src="plus.svg" width="20" height="20"/>
-                                </button>} />
-                    </div>     */}
-                <div id="regionHistoryCards" className="region-card-container"></div>
-                {/* </div> */}
-
                 <div id="globalSearch">
-
-                    
-
-        
-                   <div id="mapBtnGroup" className="regionNavBtnGroup">
-                        <Button id="backRegionBtn" className="regionNavBtn" onClick={(e)=>backRegionBtnClicked(e)} attached icon="arrow left" />
-                        <Button id="toGlobalBtn" className="regionNavBtn" onClick={(e)=>toGlobalBtnClicked(e)} attached icon={<i className="bi bi-globe2"></i>}/>
-                        <Button id="fwdRegionBtn" className="regionNavBtn" onClick={(e)=>fwdRegionBtnClicked(e)} attached icon="arrow right"/>
-                   </div>
-                    
                     <svg id="usCountyMap" className="map" width={W} height={H} >
                         <filter id="landShadows">
                             <feGaussianBlur stdDeviation={1} result="shadowBlur" />
@@ -854,7 +798,6 @@ export var Home = () => {
                             <feFlood floodColor="black" floodOpacity={.95} result="shadowColor" />
                             <feComposite operator="in" in="shadowColor" in2="insetShadow" result="shadow" />
                             <feComposite operator="over" in="shadow" in2="SourceGraphic" />
-
                         </filter>
                         <rect className="ocean"/>
                         <g id="usLocal">

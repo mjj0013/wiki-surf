@@ -360,15 +360,18 @@ code {
   transform: translate3d(-550px, 0, 0);
   opacity:90%;
 }
-
+.regionNavBtnGroup.collapsed {
+  top:0px;
+}
 .regionNavBtnGroup {
   display:inline-grid;
   width:100px;
   grid-template-columns: auto auto auto;
-
+  column-gap:5px;
+  display:flex;
   position:absolute;
-  top:0%;
-  left:0%;
+  top:110px;
+  left:557px;
   transition: opacity 1s ease;
   z-index:999;
   opacity:1;
@@ -377,6 +380,9 @@ code {
 .regionNavBtn {
   /* position:absolute;
   display:block; */
+
+  width:25px;
+  height:25px;
   opacity: inherit;
   padding:10px;
   z-index:999;
@@ -384,14 +390,15 @@ code {
 }
 .regionNavBtnGroup.showing {
   opacity: 1;
-  
-
 }
 
 .regionNavBtn > * {
   pointer-events: none;
   vertical-align: middle;
+  transform:translate(-6px,-5px);
 }
+
+
 
 /* .regionElement {
   
@@ -465,83 +472,127 @@ code {
 
 
 .region-card-container {
+  position:absolute;
   display:block;
-  /* flex-wrap:wrap;
-  display:flex;
-  flex-direction:row;
-  flex-basis:250px; */
+  top:5px;
+  left:330px;
 
-  width:500px;
+  width:600px;
   height:100px;
 
-  position:absolute;
-  top:0px;
-  left:250px;
-  /* border:1px solid black; */
   
 }
+
+
 
 /* .region-card-container .region-card { */
-.region-card {
+.region-card .card {
   padding:4px;
   border: 1px solid #ccf;
-  /* margin:5px; */
-  display:block;
-
   z-index:100;
   position:absolute;
-  /* border-radius:3px; */
-  /* background:#f2f2f2; */
+  
   height:100px;
   width:100px;
-  opacity: .5;
-  transition: opacity 1s ease, left .5s ease;
-  
-  
-  
-  
+
 }
-.region-card-container .region-card > * {
+
+/* .region-card-container .region-card > * {
   z-index:100;
-}
+} */
 
 
-.region-card .first {
+
+.region-card.ord1 .card{
+  left:0px;
+  display:block;
   top:0px;
-  left:250px;
+  position:absolute;
   opacity:.25;
-  border: thick double #777777;
-}
-.region-card .second {
-  top:0px;
-  left:350px;
-  opacity:.50;
-  border: thick double #868686;
-}
-.region-card .third {
-  top:0px;
-  left:450px;
-  opacity:.60;
-  border: thick double #fff1ce;
-}
-.region-card .fourth {
-  top:0px;
-  left:550px;
-  opacity:.50;
-  border: thick double #868686;
-}
-.region-card .fifth {
-  top:0px;
-  left:650px;
-  opacity:.25;
-  border: thick double #777777;
+  pointer-events: all;
   
+  transform-style: preserve-3d;
+  transform: scale(.65, .65) translateX(25px);
+  /* transform: rotateX(0deg) rotateY(-80deg) translateX(325px); */
+  transition: opacity .5s ease, left .5s ease, transform .5s ease;
+  /* border: thick double #777777; */
+}
+.region-card.ord2 .card{
+  top:0px;
+  display:block;
+  left:110px;
+  position:absolute;
+  opacity:.50;
+  pointer-events: all;
+ 
+  transform-style: preserve-3d;
+  transform: scale(.85, .85);
+  /* transform: rotateX(0deg) rotateY(60deg) translateX(25px); */
+  transition: opacity .5s ease, left .5s ease, transform .5s ease;
+  /* border: thick double #868686; */
+}
+.region-card.ord3 .card{
+  position:absolute;
+  display:block;
+  top:0px;
+  left:220px;
+  opacity:.80;
+  pointer-events: all;
+ 
+  transition: opacity .5s ease, left .5s ease, transform .5s ease;
+  /* border: thick double #f0f0f0; */
+}
+.region-card.ord4 .card{
+  top:0px;
+  left:330px;
+  position:absolute;
+  display:block;
+  opacity:.50;
+  pointer-events: all;
+  transform-style: preserve-3d;
+  transform: scale(.85, .85);
+  /* transform:rotateX(0deg) rotateY(-60deg) translateX(-25px) ; */
+  transition: opacity .5s ease, left .5s ease, transform .5s ease;
+  
+  /* border: thick double #868686; */
+}
+.region-card.ord5 .card {
+  top:0px;
+  left:440px;
+  position:absolute;
+  opacity:.25;
+  pointer-events: all;
+  display:block;
+  transform: scale(.65, .65);
+  /* transform: rotateX(0deg) rotateY(-80deg) translateX(-325px); */
+  transform-style: preserve-3d;
+ 
+
+  transition: opacity .5s ease, left .5s ease, transform .5s ease;
+  
+  /* border: thick double #777777; */
+}
+.region-card.exit .card, .region-card.exit .card > *{
+  left:230px;
+  top:-50px;
+  opacity:0;
+ 
+  pointer-events: none;
+  transform:   scale(.65, .65) translateX(-25px);
+  /* transform:  rotateX(0deg) rotateY(-90deg) ; */
+  transition: opacity .5s ease, left .5s ease, transform .5s ease;
+  /* border: thick double #777777; */
 }
 
 
-.region-card:hover {
+.region-card:hover .card {
   opacity:1.0;
+
+  /* transform-style: preserve-3d;
+  transform:rotateX(20deg) rotateY(80deg); */
+  /* transform: rotateX(45deg); */
 }
+
 
 
 

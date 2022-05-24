@@ -581,19 +581,19 @@ export var Home = () => {
         }
         console.log("zoom", transformMatrix[0])
 
-        var numTiles = 1 << transformMatrix[0];
+        var numTiles = Math.round(transformMatrix[0]);
         x /= numTiles;
         y /= numTiles;
 
-        var tileSize = 256;
+        var tileSize = W*H;
         var pixelsPerLongDegree = tileSize / 360;
         var pixelsPerLongRad = tileSize / (2*Math.PI);
-        var origin = {x:0, y:0}
-        var long = (x -origin.x)/pixelsPerLongDegree
+    
+        var long = (W*x/360) - 180;
+        
 
-
-        var latRadians = (y -origin.y)/(-1*pixelsPerLongRad)
-        var lat = radToDegrees(Math.atan(Math.exp(latRadians)) - Math.PI/2);
+        var latRadians = y*(1 - W/H)
+        var lat = 2*Math.atan(Math.exp(latRadians))-(Math.PI/2)
         console.log("long,lat", long, lat);
 
 

@@ -504,84 +504,86 @@ code {
 
 
 .region-card.ord1 .card{
-  left:0px;
-  display:block;
   top:0px;
+  left:0px;
   position:absolute;
+  display:block;
+
   opacity:.25;
   pointer-events: all;
   
   transform-style: preserve-3d;
-  transform: scale(.65, .65) translateX(25px);
-  /* transform: rotateX(0deg) rotateY(-80deg) translateX(325px); */
+  transform: scale(.65, .65) translateX(25px);        /* transform: rotateX(0deg) rotateY(-80deg) translateX(325px); */
   transition: opacity .5s ease, left .5s ease, transform .5s ease;
-  /* border: thick double #777777; */
 }
 .region-card.ord2 .card{
   top:0px;
-  display:block;
   left:110px;
   position:absolute;
+  display:block;
+  
   opacity:.50;
   pointer-events: all;
  
   transform-style: preserve-3d;
-  transform: scale(.85, .85);
-  /* transform: rotateX(0deg) rotateY(60deg) translateX(25px); */
+  transform: scale(.85, .85);       /* transform: rotateX(0deg) rotateY(60deg) translateX(25px); */
   transition: opacity .5s ease, left .5s ease, transform .5s ease;
-  /* border: thick double #868686; */
+
 }
 .region-card.ord3 .card{
-  position:absolute;
-  display:block;
   top:0px;
   left:220px;
+  position:absolute;
+  display:block;
+
   opacity:.80;
   pointer-events: all;
- 
   transition: opacity .5s ease, left .5s ease, transform .5s ease;
-  /* border: thick double #f0f0f0; */
+
+  
+
 }
 .region-card.ord4 .card{
   top:0px;
   left:330px;
   position:absolute;
   display:block;
+  
+  transform: scale(.85, .85);
+  transform-style: preserve-3d;     /* transform:rotateX(0deg) rotateY(-60deg) translateX(-25px) ; */
   opacity:.50;
   pointer-events: all;
-  transform-style: preserve-3d;
-  transform: scale(.85, .85);
-  /* transform:rotateX(0deg) rotateY(-60deg) translateX(-25px) ; */
   transition: opacity .5s ease, left .5s ease, transform .5s ease;
-  
-  /* border: thick double #868686; */
+
 }
 .region-card.ord5 .card {
   top:0px;
   left:440px;
   position:absolute;
+  display:block;
+
+  transform: scale(.65, .65);       /* transform: rotateX(0deg) rotateY(-80deg) translateX(-325px); */
+  transform-style: preserve-3d;
   opacity:.25;
   pointer-events: all;
-  display:block;
-  transform: scale(.65, .65);
-  /* transform: rotateX(0deg) rotateY(-80deg) translateX(-325px); */
-  transform-style: preserve-3d;
- 
+  transition: opacity .5s ease, left .5s ease, transform .5s ease;
 
-  transition: opacity .5s ease, left .5s ease, transform .5s ease;
-  
-  /* border: thick double #777777; */
 }
-.region-card.exit .card, .region-card.exit .card > *{
-  left:230px;
-  top:-50px;
-  opacity:0;
- 
+.region-card.exitRight .card, .region-card.exitRight .card > *{
+  top:0px;
+  left:550px;
+  transform:   scale(.35, .35) translateX(-25px);     /* transform:  rotateX(0deg) rotateY(-90deg) ; */
+  transition: opacity .25s ease, left .5s ease, transform .5s ease;
   pointer-events: none;
-  transform:   scale(.65, .65) translateX(-25px);
-  /* transform:  rotateX(0deg) rotateY(-90deg) ; */
-  transition: opacity .5s ease, left .5s ease, transform .5s ease;
-  /* border: thick double #777777; */
+  opacity:0;
+}
+.region-card.exitLeft .card, .region-card.exitLeft .card > *{
+  top:0px;
+  left:-110px;
+  transform:   scale(.35, .35) translateX(-25px);     /* transform:  rotateX(0deg) rotateY(-90deg) ; */
+  transition: opacity .25s ease, left .5s ease, transform .5s ease;
+  pointer-events: none;
+  opacity:0;
 }
 
 

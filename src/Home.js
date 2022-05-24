@@ -173,7 +173,7 @@ export var Home = () => {
         e = e || window.event;
         var regionKeys = Object.keys(allRegionProperties);
 
-        // console.log(inverseMercator(e.offsetX, e.offsetY))
+        console.log(inverseMercator(e.offsetX, e.offsetY))
         if(regionKeys.includes(e.target.id)) {
             var regionA3 = allRegionProperties[e.target.id]["ADM0_A3"];
             
@@ -235,56 +235,74 @@ export var Home = () => {
                 if(regionCardQueue.length >= 5) {
                     regionCardQueue[regionCardQueue.length - 1 ].classList.add("ord3") 
 
-
-                    regionCardQueue[regionCardQueue.length - 2 ].classList.remove("exit");
+                    // regionCardQueue[regionCardQueue.length - 2 ].classList.remove("exit");
                     for(let c=1; c < 6; ++c) {
-                        regionCardQueue[regionCardQueue.length - 2 ].classList.replace(`ord${c}`, "ord2") 
+                        if(regionCardQueue[regionCardQueue.length-2].classList.contains(`ord${c}`)) {
+                            regionCardQueue[regionCardQueue.length-2].classList.replace(`ord${c}`, "ord2") 
+                            break;
+                        }
                     }
-
 
                     regionCardQueue[regionCardQueue.length - 3 ].classList.remove("exit");
                     for(let c=1; c < 6; ++c) {
-                        regionCardQueue[regionCardQueue.length - 3 ].classList.replace(`ord${c}`, "ord1") 
+                        if(regionCardQueue[regionCardQueue.length-3].classList.contains(`ord${c}`)) {
+                            regionCardQueue[regionCardQueue.length-3].classList.replace(`ord${c}`, "ord1") 
+                            break;
+                        }
                     }
 
-                    regionCardQueue[1].classList.remove("exit");
+                    // regionCardQueue[1].classList.remove("exit");
                     for(let c=1; c < 6; ++c) {
-                        regionCardQueue[1].classList.replace(`ord${c}`, "ord5") 
+                        if(regionCardQueue[1].classList.contains(`ord${c}`)) {
+                            regionCardQueue[1].classList.replace(`ord${c}`, "ord5") 
+                            break;
+                        }
                     }
 
-                    regionCardQueue[0].classList.remove("exit");
+                    // regionCardQueue[0].classList.remove("exit");
                     for(let c=1; c < 6; ++c) {
-                        regionCardQueue[0].classList.replace(`ord${c}`, "ord4") 
+                        if(regionCardQueue[0].classList.contains(`ord${c}`)) {
+                            regionCardQueue[0].classList.replace(`ord${c}`, "ord4") 
+                            break;
+                        }
                     }
-        
-                    if(2 != regionCardQueue.length - 4) {
-                        for(let c=2; c < regionCardQueue.length - 4; ++c) {
-                            regionCardQueue[c].classList.add("exit");
-                            regionCardQueue[c].classList.add("exit");
+                    // if difference b/w regionCardQueue.length-3 (left-most card) and 1 (right-most card) is greater than 0
+                    
+                    let leftMostIdx = 1;
+                    let rightMostIdx = regionCardQueue.length-3
+                    
+                    if(rightMostIdx-leftMostIdx >= 1) {  //      (this means there are cards b/w them that are currently exited)               
+                        for(let c=leftMostIdx+1; c < rightMostIdx; ++c) {
+                            
+                            if(regionCardQueue[c].classList.contains("exitLeft")) {
+                                // regionCardQueue[c].classList.replace("exitLeft", "exitRight") 
+                            }
+                            else {
+                                regionCardQueue[c].classList.replace("ord1","exitLeft");
+                            }
                         }
                     }
                 }
-                else {
-                    if(regionCardQueue.length==1) {
-                        document.getElementById("mapBtnGroup").classList.toggle("collapsed");
-                        regionCardQueue[0].classList.add("ord3");
-                    }
-                    else if(regionCardQueue.length==2) {
-                        regionCardQueue[1].classList.add("ord3");
-                        regionCardQueue[0].classList.replace("ord3", "ord2")
-                    }
-                    else if(regionCardQueue.length==3) {
-                        regionCardQueue[2].classList.add("ord3");
-                        regionCardQueue[1].classList.replace("ord3", "ord2")
-                        regionCardQueue[0].classList.replace("ord2", "ord4")
-                    }
-                    else if(regionCardQueue.length==4) {
-                        regionCardQueue[3].classList.add("ord3");
-                        regionCardQueue[2].classList.replace("ord3", "ord2")
-                        regionCardQueue[1].classList.replace("ord2", "ord4")
-                        regionCardQueue[0].classList.replace("ord4", "ord1")
-                    }
+                else if(regionCardQueue.length==1) {
+                    document.getElementById("mapBtnGroup").classList.toggle("collapsed");
+                    regionCardQueue[0].classList.add("ord3");
                 }
+                else if(regionCardQueue.length==2) {
+                    regionCardQueue[1].classList.add("ord3");
+                    regionCardQueue[0].classList.replace("ord3", "ord2")
+                }
+                else if(regionCardQueue.length==3) {
+                    regionCardQueue[2].classList.add("ord3");
+                    regionCardQueue[1].classList.replace("ord3", "ord2")
+                    regionCardQueue[0].classList.replace("ord2", "ord4")
+                }
+                else if(regionCardQueue.length==4) {
+                    regionCardQueue[3].classList.add("ord3");
+                    regionCardQueue[2].classList.replace("ord3", "ord2")
+                    regionCardQueue[1].classList.replace("ord2", "ord4")
+                    regionCardQueue[0].classList.replace("ord4", "ord1")
+                }
+                
             }
             else {
                 var selectedCardIdx = regionSelectHistory.indexOf(regionA3);
@@ -452,22 +470,94 @@ export var Home = () => {
 
 
     var backRegionBtnClicked =(e) => {
-        if(regHistQueueIdx-1 > 0) {
-            selectedRegion = regionSelectHistory[regHistQueueIdx-1];
-            setRegHistQueueIdx( --regHistQueueIdx)
+
+        var regionQueue = document.getElementById("regionHistoryCards");
+        var regionCardQueue = regionQueue.children;
+         
+        for(let c=0; c < regionCardQueue.length; ++c) {
+            // if(regionCardQueue[c].classList.contains('exitRight')) {
+            //     regionCardQueue[c].classList.replace('exitRight', "exitLeft")
+            // }
+            if(regionCardQueue.length>5 && regionCardQueue[c].classList.contains("exitRight")) {
+                
+                document.getElementsByClassName("exitRight")[0].classList.replace("exitRight","ord1");
+            }
+            else {
+                for(let i=1; i < 6; ++i) {
+                    var checkClass = `ord${i}`
+                    if(regionCardQueue[c].classList.contains(checkClass)) {
+                        if(regionCardQueue.length > 5) {
+                            if(i==5) regionCardQueue[c].classList.replace(checkClass, "exitRight")
+                            else regionCardQueue[c].classList.replace(checkClass, `ord${i+1}`)
+                        }
+                        else if(regionCardQueue.length==5 || regionCardQueue.length==4) {
+                            if(i==regionCardQueue.length) regionCardQueue[c].classList.replace(checkClass, `ord${1}`)
+                            else regionCardQueue[c].classList.replace(checkClass, `ord${i+1}`)
+
+                        }
+                        
+                        else if(regionCardQueue.length==2) {
+                            if(i==regionCardQueue.length+1) regionCardQueue[c].classList.replace(checkClass, `ord${2}`)
+                            else regionCardQueue[c].classList.replace(checkClass, `ord${i+1}`)
+                        }
+                        else if(regionCardQueue.length==3) {
+                            if(i==regionCardQueue.length + 1) regionCardQueue[c].classList.replace(checkClass, `ord${2}`)
+                            else regionCardQueue[c].classList.replace(checkClass, `ord${i+1}`)
+                        }
+
+                        break;
+                    }    
+                }
+            }
+            
         }
-        if(regHistQueueIdx == 0) {
-            document.getElementById("backRegionBtn").classList.add("disabled");
-        }
+        var nextIdx = regHistQueueIdx==0? regionSelectHistory.length-1 : regHistQueueIdx-1
+       
+        selectedRegion = regionSelectHistory[nextIdx];
+        setRegHistQueueIdx(nextIdx)
+
+
     }
     var fwdRegionBtnClicked =(e) => {
-        if(regHistQueueIdx+1 < regionSelectHistory.length-1) {
-            selectedRegion = regionSelectHistory[regHistQueueIdx+1];
-            setRegHistQueueIdx( ++regHistQueueIdx)
+        var regionQueue = document.getElementById("regionHistoryCards");
+        var regionCardQueue = regionQueue.children;
+         
+        for(let c=0; c < regionCardQueue.length; ++c) {
+            if(regionCardQueue[c].classList.contains('exitLeft') && regionCardQueue.length>5) {
+                regionCardQueue[c].classList.replace('exitLeft', "ord5")
+            }
+            // else if(regionCardQueue.length>5 && regionCardQueue[c].classList.contains('exitRight')) {
+            //     document.getElementsByClassName("exitRight")[0].classList.replace("exitRight","ord5");
+            // }
+            else {
+                for(let i=1; i < 6; ++i) {
+                    var checkClass = `ord${i}`
+                    if(regionCardQueue[c].classList.contains(checkClass)) {
+                        if(regionCardQueue.length > 5) {
+                            if(i==1) regionCardQueue[c].classList.replace(checkClass, "exitLeft")
+                            else regionCardQueue[c].classList.replace(checkClass, `ord${i-1}`)
+                        }
+                        else if(regionCardQueue.length==5 || regionCardQueue.length==4) {
+                            if(i==1) regionCardQueue[c].classList.replace(checkClass, `ord${regionCardQueue.length}`)
+                            else regionCardQueue[c].classList.replace(checkClass, `ord${i-1}`)
+                        }
+                        else if(regionCardQueue.length==3) {
+                            if(i==2) regionCardQueue[c].classList.replace(checkClass, `ord${4}`)
+                            else regionCardQueue[c].classList.replace(checkClass, `ord${i-1}`)
+                        }
+                        else if(regionCardQueue.length==2) {
+                            if(i==2) regionCardQueue[c].classList.replace(checkClass, `ord${3}`)
+                            else regionCardQueue[c].classList.replace(checkClass, `ord${i-1}`)
+                        }
+                        break;
+                    }    
+                }
+            }
+            
         }
-        if(regHistQueueIdx == regionSelectHistory.length-1) {
-            document.getElementById("fwdRegionBtn").classList.add("disabled");
-        }
+        var nextIdx = (regHistQueueIdx+1)%regionSelectHistory.length
+        selectedRegion = regionSelectHistory[nextIdx];
+        setRegHistQueueIdx(nextIdx)
 
     }
     var toGlobalBtnClicked =(e) => {
@@ -477,15 +567,43 @@ export var Home = () => {
         }
     }
 
-
+    
 
     function inverseMercator(x,y) {
         //https://mathworld.wolfram.com/MercatorProjection.html
-        let phi = 2*Math.atan(Math.exp(y)) - Math.PI/2;         // - 1.5707963267948966
-        
-        // let phi =  Math.atan(Math.sinh(y));         
-        let gamma = x;
-        return [Math.cos(y*0.0174533)*Math.sin(x*0.0174533), Math.sin(y*0.0174533)];
+        // let phi = 2*Math.atan(Math.exp(y)) - Math.PI/2;         // - 1.5707963267948966
+        // let gamma = x;
+        // return [Math.cos(y*0.0174533)*Math.sin(x*0.0174533), Math.sin(y*0.0174533)];
+
+
+        var radToDegrees = (rad) => {
+            return rad/(Math.PI/180);
+        }
+        console.log("zoom", transformMatrix[0])
+
+        var numTiles = 1 << transformMatrix[0];
+        x /= numTiles;
+        y /= numTiles;
+
+        var tileSize = 256;
+        var pixelsPerLongDegree = tileSize / 360;
+        var pixelsPerLongRad = tileSize / (2*Math.PI);
+        var origin = {x:0, y:0}
+        var long = (x -origin.x)/pixelsPerLongDegree
+
+
+        var latRadians = (y -origin.y)/(-1*pixelsPerLongRad)
+        var lat = radToDegrees(Math.atan(Math.exp(latRadians)) - Math.PI/2);
+        console.log("long,lat", long, lat);
+
+
+
+
+        //https://stackoverflow.com/questions/14329691/convert-latitude-longitude-point-to-a-pixels-x-y-on-mercator-projection
+        // var long = (W*x/360) - 180;     //degrees
+        // var lat = (Math.atan(Math.exp((2*y-H)/(-2*W)))*(4/Math.PI) - 1)*90;
+        // console.log("long,lat", long, lat);
+
 
     }
 

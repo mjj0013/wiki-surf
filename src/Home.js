@@ -147,7 +147,7 @@ export var Home = () => {
             transformMatrix[4] += (1-zoomVar)*(lastZoom.x);
             transformMatrix[5] += (1-zoomVar)*(lastZoom.y);
         }
-        
+        console.log('lastZoom',lastZoom)
 
         if(selectedRegion == "USA") {
             document.getElementById('usLocal').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
@@ -172,8 +172,9 @@ export var Home = () => {
     var dragMouseDown = (e) =>{
         e = e || window.event;
         var regionKeys = Object.keys(allRegionProperties);
+        
 
-        console.log(inverseMercator(e.offsetX, e.offsetY))
+        
         if(regionKeys.includes(e.target.id)) {
             var regionA3 = allRegionProperties[e.target.id]["ADM0_A3"];
             
@@ -224,8 +225,7 @@ export var Home = () => {
                 regionShape.setAttributeNS(null,'transform', `translate(${220-(100)-regionBBox.left} ${80-regionBBox.top})`) 
                 
               
-                cardImage.setAttributeNS(null, "viewBox",`0 0 100 100`);
-
+                cardImage.setAttributeNS(null, "viewBox",`0 0 100 100`)
                 cardImage.appendChild(regionShape)
                 card.appendChild(cardImage)
                 container.appendChild(card)
@@ -351,8 +351,9 @@ export var Home = () => {
         }
         lastZoom.x = e.offsetX;
         lastZoom.y = e.offsetY;
+        
         dragStart = getTransformedPt(lastZoom.x, lastZoom.y, transformMatrix);
-
+        inverseMercator(dragStart.x, dragStart.y)
         document.onmouseup = closeDragElement;
         document.onmousemove = elementDrag;
         return e.preventDefault() && false;
@@ -435,12 +436,13 @@ export var Home = () => {
         max = Math.floor(max);
         return Math.floor(Math.random() * (max - min) + min);
     }
-    var W =  1160;      //960 , 1160
-    var H = 1000;      // 500 , 1000
+    var W =  1208;      //960 , 1160
+    var H = 1160;      // 500 , 1000
     var projection = d3.geo.mercator()
-            .translate([W/2, H/2])
+            .translate([W/2, H/2 - 25])
+            .scale(192   ,192)
             // .clipAngle(30)
-
+    
     var path = d3.geo.path().projection(projection)
 
     var [allRegionProperties,setAllRegionProperties]  = useState({});
@@ -585,24 +587,39 @@ export var Home = () => {
         x /= numTiles;
         y /= numTiles;
 
-        var tileSize = W*H;
-        var pixelsPerLongDegree = tileSize / 360;
-        var pixelsPerLongRad = tileSize / (2*Math.PI);
-    
-        var long = (W*x/360) - 180;
+
+
+
+     
+        // var long = (W*x/360) - 180;
         
 
-        var latRadians = y*(1 - W/H)
-        var lat = 2*Math.atan(Math.exp(latRadians))-(Math.PI/2)
-        console.log("long,lat", long, lat);
+        // var latRadians = y*(1 - W/H)
+       
+        // var lat = 2*Math.atan(Math.exp(latRadians))-(Math.PI/2)
+        // var lat = Math.atan(y)
+        // console.log("long,lat", long, lat);
 
 
 
 
         //https://stackoverflow.com/questions/14329691/convert-latitude-longitude-point-to-a-pixels-x-y-on-mercator-projection
-        // var long = (W*x/360) - 180;     //degrees
+        // var lat = (Math.atan(Math.exp(2*y/H - 1)) - 1)*90;
+        // var lat = radToDegrees(Math.atan(2*y/H - 1)*Math.PI/2);
+        // var lat = radToDegrees((2*Math.atan(Math.exp((2*y/(-H)))))) - 90
+        var lat = radToDegrees(
+            (Math.atan(Math.sinh(2*Math.PI*(H/2 -y)/(H))
+            ))) - 8
         // var lat = (Math.atan(Math.exp((2*y-H)/(-2*W)))*(4/Math.PI) - 1)*90;
-        // console.log("long,lat", long, lat);
+        var long =(2*x/W - 1)*180;     //degrees
+
+        
+        
+
+        // as var inside exp approaches -4, exp approaches 0, which results in atan(0)
+        // atan(0) = 0, so this makes -90 the latitude (the top of map) 
+
+        console.log("at "+x+", "+y+": lat,long", lat, long);
 
 
     }

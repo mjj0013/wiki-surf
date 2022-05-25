@@ -66,33 +66,35 @@ code {
   position:relative;
 	display:block; */
   transition: transform 1s ease;  
-  
+  /* border:1px solid black; */
   /* transform: perspective(300px) rotateX(30deg); */
 }
-
-
-
 
 #continents.withEase {
   transition:transform .25s ease, opacity 1s ease, z-index 1s;
 }
 #continents.usLocal {
-  
   transform: matrix(5.6233461104160645, 0, 0, 5.6233461104160645, -648.7011198398013, -474.87611981788);
-
 }
 #continents {
   transition:transform .25s ease-out;
   width:100%;
   height:100%;
+  top:0%;
+  left:0%;
+  display:block;
   position:absolute;
-  
-
 }
-
-
-
-
+.ocean {
+  z-index:40;
+  fill:hsl(180, 100%, 50%);
+  top:0%;
+  left:0%;
+  width:100%;
+  height:100%;
+  display:block;
+  position:absolute;
+}
 
 #worldMap {
   z-index:10;
@@ -104,6 +106,8 @@ code {
   z-index:9;
   pointer-events:none;
 }
+
+
 
 #usCountyMap {
   width:1160px;
@@ -248,9 +252,11 @@ code {
   opacity:.95;
   width:100%;
   height:100%;
+
 }
 
 #inputSideBar {
+  
   opacity:.95;
   width:550px;
 }
@@ -329,6 +335,14 @@ code {
   vertical-align: middle;
 }
 
+
+/* both the map and the sidebar */
+#mapWidget {
+  width:fit-content;
+  height:fit-content;
+  
+}
+
 #sideBarHandle {
   position:absolute;
   display:block;
@@ -378,8 +392,6 @@ code {
 }
 
 .regionNavBtn {
-  /* position:absolute;
-  display:block; */
 
   width:25px;
   height:25px;
@@ -434,21 +446,6 @@ code {
   z-index:inherit;
 }
 
-
-.ocean {
-  z-index:40;
-  fill:hsl(180, 100%, 50%);
-  top:0%;
-  left:0%;
-  width:100%;
-  height:100%;
-  display:block;
-  position:absolute;
-}
-
-
-
-
 .region-container {
   width:500px;
   /* margin:50px; */
@@ -470,7 +467,6 @@ code {
 }
 
 
-
 .region-card-container {
   position:absolute;
   display:block;
@@ -484,7 +480,6 @@ code {
 }
 
 
-
 /* .region-card-container .region-card { */
 .region-card .card {
   padding:4px;
@@ -496,10 +491,6 @@ code {
   width:100px;
 
 }
-
-/* .region-card-container .region-card > * {
-  z-index:100;
-} */
 
 
 

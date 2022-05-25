@@ -398,7 +398,7 @@ export const SideBarWrapper = ({regionSelectHistory,setRegionSelectHistory,regHi
     }
     return (
         
-     <Sidebar.Pushable as={Segment}>
+     <Sidebar.Pushable id="mapWidget" as={Segment}>
         <Card id="sideBarHandle">
             <Card.Content>
                 <Container id="sideBarBtns" >

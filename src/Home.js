@@ -13,6 +13,8 @@ import { SideBarWrapper } from './sideBarForm.js';
 import {sendRequestToBackend} from './frontEndHelpers.js';
 import usMetroMap, {metrosByState, metroData} from './usMetroMap.js'
 
+import {MapInfoItem} from './mapInfoItems.js'
+
 
 import {abridgedCategories, regionCodes, regionCodesReformatted} from '../server/geoHelpers.js';        //regionData
 import { zoom } from 'd3-zoom';
@@ -131,7 +133,7 @@ export var Home = () => {
     var [transformMatrix, setTransformMatrix] = useState([1, 0, 0, 1, 0, 0]);
     var zoomIntensity = 0.2;
     var [dragStart, setDragStart] = useState({x:0, y:0})
-
+    var [allMapInfoItems, setAllMapInfoItems] = useState([]);
     var captureZoomEvent = (e) => {
         lastZoom.x = e.offsetX;
         lastZoom.y = e.offsetY;
@@ -154,8 +156,12 @@ export var Home = () => {
         }
         else {
             document.getElementById('continents').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
+            document.getElementById('mapInfoItems').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
         }
     }
+
+
+
 
     var closeDragElement = () =>{
         document.onmouseup = null;
@@ -173,11 +179,11 @@ export var Home = () => {
         e = e || window.event;
         var regionKeys = Object.keys(allRegionProperties);
         
-
+        var clickedOnRegion = regionKeys.includes(e.target.id)
         
-        if(regionKeys.includes(e.target.id)) {
+        if(clickedOnRegion) {
             var regionA3 = allRegionProperties[e.target.id]["ADM0_A3"];
-            
+            var regionAdminName = allRegionProperties[e.target.id]["ADMIN"];
             if(!regionSelectHistory.includes(regionA3)) {
                 
                 var regionQueue = document.getElementById("regionHistoryCards");
@@ -230,6 +236,10 @@ export var Home = () => {
                 card.appendChild(cardImage)
                 container.appendChild(card)
                 regionQueue.appendChild(container)
+                
+
+                
+
 
                 var regionCardQueue = regionQueue.children;
                 if(regionCardQueue.length >= 5) {
@@ -342,6 +352,8 @@ export var Home = () => {
                 }
                 setRegHistQueueIdx(selectedCardIdx);
             }       
+            
+
         }
         else {
             if(startListingCounties) {
@@ -352,6 +364,10 @@ export var Home = () => {
         lastZoom.x = e.offsetX;
         lastZoom.y = e.offsetY;
         
+        if(clickedOnRegion) {
+            var infoItem = new MapInfoItem(regionA3+"_info",lastZoom.x,lastZoom.y,"nodeOnly",regionAdminName);
+            allMapInfoItems.push(infoItem)
+        }
         dragStart = getTransformedPt(lastZoom.x, lastZoom.y, transformMatrix);
         inverseMercator(dragStart.x, dragStart.y)
         document.onmouseup = closeDragElement;
@@ -389,6 +405,7 @@ export var Home = () => {
         }
         else {
             document.getElementById('continents').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
+            document.getElementById('mapInfoItems').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
         }
 
     }
@@ -578,27 +595,11 @@ export var Home = () => {
         // return [Math.cos(y*0.0174533)*Math.sin(x*0.0174533), Math.sin(y*0.0174533)];
 
 
-        var radToDegrees = (rad) => {
-            return rad/(Math.PI/180);
-        }
-        console.log("zoom", transformMatrix[0])
+        var radToDegrees = (rad) => {return rad/(Math.PI/180);}
 
-        var numTiles = Math.round(transformMatrix[0]);
-        x /= numTiles;
-        y /= numTiles;
-
-
-
-
-     
-        // var long = (W*x/360) - 180;
-        
-
-        // var latRadians = y*(1 - W/H)
-       
         // var lat = 2*Math.atan(Math.exp(latRadians))-(Math.PI/2)
         // var lat = Math.atan(y)
-        // console.log("long,lat", long, lat);
+
 
 
 
@@ -607,12 +608,20 @@ export var Home = () => {
         // var lat = (Math.atan(Math.exp(2*y/H - 1)) - 1)*90;
         // var lat = radToDegrees(Math.atan(2*y/H - 1)*Math.PI/2);
         // var lat = radToDegrees((2*Math.atan(Math.exp((2*y/(-H)))))) - 90
+
+
+        // var lat = radToDegrees(
+        //     (Math.atan(Math.sinh(2*Math.PI*(H/2 -y)/(H))
+        //     ))) - 8
+        // from https://en.wikipedia.org/wiki/Mercator_projection, R = PI/y
+
         var lat = radToDegrees(
-            (Math.atan(Math.sinh(2*Math.PI*(H/2 -y)/(H))
-            ))) - 8
+            (Math.atan(Math.sinh(((H/(2) - y)/(H/(2*Math.PI))))
+            ))) -8;
+         // the -8 degrees corresponds to omitting the space for the arctic ocean 
         // var lat = (Math.atan(Math.exp((2*y-H)/(-2*W)))*(4/Math.PI) - 1)*90;
         var long =(2*x/W - 1)*180;     //degrees
-
+            
         
         
 
@@ -875,6 +884,7 @@ export var Home = () => {
             selectedRegionBox.height = box.height;
             transformMatrix = tempMatrix;
             document.getElementById('continents').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
+            document.getElementById('mapInfoItems').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
             console.log("moved to:", selectedRegion)
 
         }
@@ -1007,8 +1017,23 @@ export var Home = () => {
                         </g>
                     </svg>
                     <svg id="worldMap" className="map" width={W} height={H} >
+                        
+                        
                         <rect className="ocean"/>
                         <g id="continents"/>
+                        <g id="mapInfoItems">
+                        {
+                            allMapInfoItems.length>0 && allMapInfoItems.map((item,idx)=> {
+                                return (
+                                <g key={idx} id={item.id+"Unit"}>
+                                    <circle  style={{zIndex:99}} id={item.id+"Node"} cx={item.x} cy={item.y} r="5" fill="transparent" stroke="black" strokeWidth="4"></circle>
+                                    <path id={item.id+"Label"} d={`M ${item.x} ${item.y} l 1 -1 l 5 0 l 0 -4 l -12 0 l 0 4 l 5 0 l 1 1`} fill="grey"/>
+                                    <text x={item.x-10} y={item.y-2} fontFamily="Verdana" fontSize={6} fill="black">{item.labelText}</text>
+                                </g>
+                                )
+                            })
+                        }
+                        </g>
                     </svg>
                 </div>
 

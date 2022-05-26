@@ -11,7 +11,7 @@ import noUiSlider from 'nouislider';
 import {A3toA2, A2toA3} from './globalDb.js'
 
 import usMetroMap, {metrosByState, metroData} from './usMetroMap.js'
-console.log(A3toA2)
+import {insights} from './insightsIcon.js'
 
 
 var searchTerms = [];
@@ -409,7 +409,11 @@ export const SideBarWrapper = ({regionSelectHistory,setRegionSelectHistory,regHi
                     <Button id="trendsBtn" fluid className="sideBarBtn" attached onClick={(e)=>sideBarBtnClicked(e)}>
                         <Icon className="chart line large fitted"  />
                     </Button>
-                 
+                    <Button id="queryBtn"  fluid className="sideBarBtn" attached onClick={(e)=>sideBarBtnClicked(e)}>
+                        {insights()}
+                    </Button>
+
+                    
                 </Container>
             </Card.Content>
         </Card>

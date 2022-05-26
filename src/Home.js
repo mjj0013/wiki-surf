@@ -156,7 +156,7 @@ export var Home = () => {
         }
         else {
             document.getElementById('continents').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
-            document.getElementById('mapInfoItems').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
+            // document.getElementById('mapInfoItems').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
         }
     }
 
@@ -182,8 +182,13 @@ export var Home = () => {
         var clickedOnRegion = regionKeys.includes(e.target.id)
         
         if(clickedOnRegion) {
+            
             var regionA3 = allRegionProperties[e.target.id]["ADM0_A3"];
             var regionAdminName = allRegionProperties[e.target.id]["ADMIN"];
+            var regionContName = allRegionProperties[e.target.id]["CONTINENT"];
+            regionContName = regionContName.replace(/\(|\)/gi, '')
+            regionContName = regionContName.replace(/\s/gi, '_')
+            
             if(!regionSelectHistory.includes(regionA3)) {
                 
                 var regionQueue = document.getElementById("regionHistoryCards");
@@ -365,8 +370,48 @@ export var Home = () => {
         lastZoom.y = e.offsetY;
         
         if(clickedOnRegion) {
+            // allMapInfoItems.length>0 && allMapInfoItems.map((item,idx)=> {
+            //     return (
+            //     <g key={idx} id={item.id+"Unit"}>
+            //         <circle  style={{zIndex:99}} id={item.id+"Node"} cx={item.x} cy={item.y} r="5" fill="transparent" stroke="black" strokeWidth="4"></circle>
+            //         <path id={item.id+"Label"} d={`M ${item.x} ${item.y} l 1 -1 l 5 0 l 0 -4 l -12 0 l 0 4 l 5 0 l 1 1`} fill="grey"/>
+            //         <text x={item.x-10} y={item.y-2} fontFamily="Verdana" fontSize={6} fill="black">{item.labelText}</text>
+            //     </g>)
+            // })
+
+
+            
             var infoItem = new MapInfoItem(regionA3+"_info",lastZoom.x,lastZoom.y,"nodeOnly",regionAdminName);
-            allMapInfoItems.push(infoItem)
+            var new_g = document.createElementNS("http://www.w3.org/2000/svg","g");
+            new_g.setAttributeNS(null, "id",infoItem.id+"Unit");
+
+            var new_circle = document.createElementNS("http://www.w3.org/2000/svg","circle");
+            new_circle.setAttributeNS(null, "id",infoItem.id+"Node");
+            new_circle.setAttributeNS(null, "cx", infoItem.x);
+            new_circle.setAttributeNS(null, "cy", infoItem.y);
+            new_circle.setAttributeNS(null, "r",5);
+            new_circle.setAttributeNS(null, "fill","transparent");
+            new_circle.setAttributeNS(null, "stroke","black");
+            new_circle.setAttributeNS(null, "strokeWidth","4");
+
+            var new_path = document.createElementNS("http://www.w3.org/2000/svg","circle");
+            new_path.setAttributeNS(null, "id",infoItem.id+"Label");
+            new_path.setAttributeNS(null, "d", `M ${infoItem.x} ${infoItem.y} l 1 -1 l 5 0 l 0 -4 l -12 0 l 0 4 l 5 0 l 1 1`);
+            new_path.setAttributeNS(null, "fill", 'grey');
+
+            var new_text = document.createElementNS("http://www.w3.org/2000/svg","text");
+            new_text.setAttributeNS(null, "x",infoItem.x-10);
+            new_text.setAttributeNS(null, "y", infoItem.y-2);
+            new_text.setAttributeNS(null, "fontFamily", 'Verdana');
+            new_text.setAttributeNS(null, "fontSize", 6);
+            new_text.setAttributeNS(null,"fil","black");
+            new_text.innerHTML = infoItem.labelText
+            
+            new_g.appendChild(new_circle);
+            new_g.appendChild(new_path);
+            new_g.appendChild(new_text);
+           
+            document.getElementById(regionContName+"InfoItems").appendChild(new_g)
         }
         dragStart = getTransformedPt(lastZoom.x, lastZoom.y, transformMatrix);
         inverseMercator(dragStart.x, dragStart.y)
@@ -405,7 +450,7 @@ export var Home = () => {
         }
         else {
             document.getElementById('continents').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
-            document.getElementById('mapInfoItems').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
+            // document.getElementById('mapInfoItems').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
         }
 
     }
@@ -736,6 +781,7 @@ export var Home = () => {
                                         return `hsl( ${continentHues[contName]},${getRandomInt(40,55)}%, ${getRandomInt(30,45)}%)`;
                                     }
                                 })
+                        
                         continents.push(contName);
                         allRegionProperties[geometries.properties["ADM0_A3"]] = geometries.properties;
                     }
@@ -769,8 +815,16 @@ export var Home = () => {
                     }
                 }
                 var worldMapBBox = document.getElementById('continents').getBoundingClientRect();
-                console.log('worldMapBBox',worldMapBBox)
                 worldMapLimits = worldMapBBox
+
+
+
+                for(let c=0; c < continents.length; ++c) {
+                    var mapItemGroup = document.createElementNS("http://www.w3.org/2000/svg","g");
+                    mapItemGroup.setAttributeNS(null, "id",continents[c]+"InfoItems");
+
+                    document.getElementById(continents[c]).appendChild(mapItemGroup);
+                }
             })
             var worldMap = document.getElementById("worldMap")
             worldMap.addEventListener("wheel",captureZoomEvent,false);
@@ -884,7 +938,7 @@ export var Home = () => {
             selectedRegionBox.height = box.height;
             transformMatrix = tempMatrix;
             document.getElementById('continents').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
-            document.getElementById('mapInfoItems').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
+            // document.getElementById('mapInfoItems').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
             console.log("moved to:", selectedRegion)
 
         }
@@ -1020,20 +1074,23 @@ export var Home = () => {
                         
                         
                         <rect className="ocean"/>
-                        <g id="continents"/>
-                        <g id="mapInfoItems">
-                        {
-                            allMapInfoItems.length>0 && allMapInfoItems.map((item,idx)=> {
-                                return (
-                                <g key={idx} id={item.id+"Unit"}>
-                                    <circle  style={{zIndex:99}} id={item.id+"Node"} cx={item.x} cy={item.y} r="5" fill="transparent" stroke="black" strokeWidth="4"></circle>
-                                    <path id={item.id+"Label"} d={`M ${item.x} ${item.y} l 1 -1 l 5 0 l 0 -4 l -12 0 l 0 4 l 5 0 l 1 1`} fill="grey"/>
-                                    <text x={item.x-10} y={item.y-2} fontFamily="Verdana" fontSize={6} fill="black">{item.labelText}</text>
-                                </g>
-                                )
-                            })
-                        }
+                        <g id="continents">
+                        {/* {
+                                allMapInfoItems.length>0 && allMapInfoItems.map((item,idx)=> {
+                                    return (
+                                    <g key={idx} id={item.id+"Unit"}>
+                                        <circle  style={{zIndex:99}} id={item.id+"Node"} cx={item.x} cy={item.y} r="5" fill="transparent" stroke="black" strokeWidth="4"></circle>
+                                        <path id={item.id+"Label"} d={`M ${item.x} ${item.y} l 1 -1 l 5 0 l 0 -4 l -12 0 l 0 4 l 5 0 l 1 1`} fill="grey"/>
+                                        <text x={item.x-10} y={item.y-2} fontFamily="Verdana" fontSize={6} fill="black">{item.labelText}</text>
+                                    </g>)
+                                })
+                            } */}
                         </g>
+                        {/* <g id="mapInfoItems"> */}
+                           
+                        {/* </g> */}
+
+                        
                     </svg>
                 </div>
 

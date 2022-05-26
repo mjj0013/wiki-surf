@@ -126,7 +126,7 @@ function categoryChanged() {}
 
 
 
-export const SideBarWrapper = ({regionSelectHistory,setRegionSelectHistory,regHistQueueIdx , setRegHistQueueIdx, setRegionOptions, regionOptions, selectedRegion, setSelectedRegion, mapColorView, setMapColorView, sideBarVisible, setSideBarVisible,setInputData, inputData, setReadyResults, readyResults, setSearchClicked, searchClicked, setCurrentTab,  isVisible, setVisible,...props}) => {
+export const SideBarWrapper = ({regionSelectHistory,setRegionSelectHistory,regHistQueueIdx , setRegHistQueueIdx, setRegionOptions, regionOptions, selectedRegion, setSelectedRegion, mapColorView, setMapColorView, sideBarVisible, setSideBarVisible,setInputData, inputData, setReadyResults, readyResults, setSearchClicked, searchClicked,  isVisible, setVisible,...props}) => {
     
     // const [RegionOptions, setRegionOptions] = useState({region:"US" });       //, displayMode:"regions",resolution:"countries"
 

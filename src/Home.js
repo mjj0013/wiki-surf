@@ -3,7 +3,7 @@
 import './index.css'
 import React, { useEffect ,useState} from 'react';
 import {AppContext} from './AppContext.js';
-// import {chartEvents} from './chartEventHandlers.tsx'
+
 const userAgents = require("user-agents");
 import { ReactGoogleChartEvent, Chart } from 'react-google-charts';
 import {Container,Button} from 'semantic-ui-react';
@@ -13,13 +13,11 @@ import { SideBarWrapper } from './sideBarForm.js';
 import {sendRequestToBackend} from './frontEndHelpers.js';
 import {metrosByState, metroData} from './usMetroMap.js'
 
+import { guianaFrance,martiniqueFrance,guadeloupeFrance,reunionFrance,mayotteFrance,mainlandFrance  } from './franceTerritories';
 
 
-import {MapInfoItem} from './mapInfoItem.js'
+import {MapInfoItem, createSubInfoItem, createRegionInfoItem} from './mapInfoItem.js'
 
-
-// import {abridgedCategories, regionCodes, regionCodesReformatted} from '../server/geoHelpers.js';        //regionData
-import { zoom } from 'd3-zoom';
 
 // https://www.statista.com/statistics/262966/number-of-internet-users-in-selected-countries/
 // https://worldpopulationreview.com/countries
@@ -41,6 +39,7 @@ function getWikiTitleData(queryName) {
 
 export var Home = () => {   
     var worldMapLimits;
+    var xmlns = "http://www.w3.org/2000/svg";
     var [lastZoom, setLastZoom] = useState({x:0, y:0})
     var [transformMatrix, setTransformMatrix] = useState([1, 0, 0, 1, 0, 0]);
     var zoomIntensity = 0.2;
@@ -68,6 +67,123 @@ export var Home = () => {
         }
     }
 
+
+    var adjustRegionCardOrder = (targetId,isNew) => {
+        var regionQueue = document.getElementById("regionHistoryCards");
+        var regionA3 = allRegionProperties[targetId]["ADM0_A3"];
+        var regionAdminName = allRegionProperties[targetId]["ADMIN"];
+        var regionContName = allRegionProperties[targetId]["CONTINENT"];
+
+        regionContName = regionContName.replace(/\(|\)/gi, '')
+        regionContName = regionContName.replace(/\s/gi, '_')
+        var regionCardQueue = regionQueue.children;
+        if(isNew) {
+            
+            if(regionCardQueue.length >= 5) {
+                regionCardQueue[regionCardQueue.length - 1 ].classList.add("ord3") 
+                for(let c=1; c < 6; ++c) {
+                    if(regionCardQueue[regionCardQueue.length-2].classList.contains(`ord${c}`)) {
+                        regionCardQueue[regionCardQueue.length-2].classList.replace(`ord${c}`, "ord2") 
+                        break;
+                    }
+                }
+
+                regionCardQueue[regionCardQueue.length - 3 ].classList.remove("exit");
+                for(let c=1; c < 6; ++c) {
+                    if(regionCardQueue[regionCardQueue.length-3].classList.contains(`ord${c}`)) {
+                        regionCardQueue[regionCardQueue.length-3].classList.replace(`ord${c}`, "ord1") 
+                        break;
+                    }
+                }
+
+                for(let c=1; c < 6; ++c) {
+                    if(regionCardQueue[1].classList.contains(`ord${c}`)) {
+                        regionCardQueue[1].classList.replace(`ord${c}`, "ord5") 
+                        break;
+                    }
+                }
+
+                for(let c=1; c < 6; ++c) {
+                    if(regionCardQueue[0].classList.contains(`ord${c}`)) {
+                        regionCardQueue[0].classList.replace(`ord${c}`, "ord4") 
+                        break;
+                    }
+                }
+                // if difference b/w regionCardQueue.length-3 (left-most card) and 1 (right-most card) is greater than 0
+                
+                let leftMostIdx = 1;
+                let rightMostIdx = regionCardQueue.length-3
+                
+                if(rightMostIdx-leftMostIdx >= 1) {  //      (this means there are cards b/w them that are currently exited)               
+                    for(let c=leftMostIdx+1; c < rightMostIdx; ++c) {
+                        if(regionCardQueue[c].classList.contains("exitLeft")) {
+                            // regionCardQueue[c].classList.replace("exitLeft", "exitRight") 
+                        }
+                        else regionCardQueue[c].classList.replace("ord1","exitLeft");
+                    }
+                }
+            }
+            else if(regionCardQueue.length==1) {
+                document.getElementById("mapBtnGroup").classList.toggle("collapsed");
+                regionCardQueue[0].classList.add("ord3");
+            }
+            else if(regionCardQueue.length==2) {
+                regionCardQueue[1].classList.add("ord3");
+                regionCardQueue[0].classList.replace("ord3", "ord2")
+            }
+            else if(regionCardQueue.length==3) {
+                regionCardQueue[2].classList.add("ord3");
+                regionCardQueue[1].classList.replace("ord3", "ord2")
+                regionCardQueue[0].classList.replace("ord2", "ord4")
+            }
+            else if(regionCardQueue.length==4) {
+                regionCardQueue[3].classList.add("ord3");
+                regionCardQueue[2].classList.replace("ord3", "ord2")
+                regionCardQueue[1].classList.replace("ord2", "ord4")
+                regionCardQueue[0].classList.replace("ord4", "ord1")
+            }
+        }
+        else {
+            var selectedCardIdx = regionSelectHistory.indexOf(regionA3);
+            if(regionCardQueue.length >= 5) {
+                var firstIdx = selectedCardIdx-2<0? regionCardQueue.length+selectedCardIdx-2 : selectedCardIdx-2
+                var secondIdx = selectedCardIdx-1<0? regionCardQueue.length+selectedCardIdx-1 : selectedCardIdx-1
+                var thirdIdx = selectedCardIdx
+                var fourthIdx = (selectedCardIdx+1)%regionCardQueue.length
+                var fifthIdx = (selectedCardIdx+2)%regionCardQueue.length
+                
+                regionCardQueue[firstIdx].classList.classList[1] = "first";
+                regionCardQueue[secondIdx].classList.classList[1] = "second";
+                regionCardQueue[thirdIdx].classList.add("third");
+                regionCardQueue[fourthIdx].classList.classList[1] = "fourth";
+                regionCardQueue[fifthIdx].classList.classList[1] = "fifth";
+            }
+            else {
+                if(regionCardQueue.length == 4) {
+                    var firstIdx = selectedCardIdx-2<0? regionCardQueue.length+selectedCardIdx-2 : selectedCardIdx-2
+                    var secondIdx = selectedCardIdx-1<0?regionCardQueue.length+selectedCardIdx-1: selectedCardIdx-1
+                    var thirdIdx = selectedCardIdx
+                    var fourthIdx = (selectedCardIdx+1)%regionCardQueue.length
+                    var fifthIdx = (selectedCardIdx+2)%regionCardQueue.length
+                }
+
+                if(regionCardQueue.length == 3) {
+                    var secondIdx = selectedCardIdx-1<0?regionCardQueue.length+selectedCardIdx-1: selectedCardIdx-1
+                    var thirdIdx = selectedCardIdx
+                    var fourthIdx = (selectedCardIdx+1)%regionCardQueue.length
+                }
+                console.log('regionCardQueue[firstIdx].classList',regionCardQueue[firstIdx].classList)
+                regionCardQueue[firstIdx].classList.classList[1] = "first";
+                regionCardQueue[secondIdx].classList.classList[1] = "second";
+                regionCardQueue[thirdIdx].classList.add("third");
+                regionCardQueue[fourthIdx].classList.classList[1] = "fourth";
+                regionCardQueue[fifthIdx].classList.classList[1] = "fifth";
+            }
+            setRegHistQueueIdx(selectedCardIdx);
+        } 
+    }
+
+
     var closeDragElement = () =>{
         document.onmouseup = null;
         document.onmousemove = null;
@@ -79,14 +195,67 @@ export var Home = () => {
         var matrix = new DOMMatrix(transformMatrix)
         return focalPt.matrixTransform(matrix.inverse());
     }
+    var createRegionCard = (regionId) => {
+        return new Promise((resolve,reject)=> {
+            var regionQueue = document.getElementById("regionHistoryCards");  
+            regionSelectHistory.push(regionId);
+            var regionBBox = document.getElementById(regionId).getBoundingClientRect();
+            setRegHistQueueIdx(regionSelectHistory.length-1);
+    
+            var container = document.createElementNS("http://www.w3.org/1999/xhtml","container");
+            container.setAttributeNS(null,"class","region-card");
+    
+            var card = document.createElementNS("http://www.w3.org/1999/xhtml", "div");
+            card.setAttributeNS(null,"class","ui card");
+            // card.addEventListener("mouseover",(e)=> {}, false);
+            
+    
+            var cardImage = document.createElementNS(xmlns,"svg");
+            cardImage.setAttributeNS(null, "width","80");
+            cardImage.setAttributeNS(null, "height","80");
+            cardImage.style.display = "block"
+           
+            var regionShape = document.createElementNS(xmlns,"path");
+            var regionD = document.getElementById(regionId).getAttribute('d');
+            var regionFill = document.getElementById(regionId).getAttribute('fill')
+            
+            regionShape.setAttributeNS(null, "d", regionD);
+            regionShape.setAttributeNS(null,"fill",regionFill);
+            regionShape.setAttributeNS(null, "stroke", "#000")
+            
+            var pathStart = regionD.match(/(?<=M)[-+]?[0-9]+\.[0-9]+\,[-+]?[0-9]+\.[0-9]+/)[0].split(',')
+            var pathStartPt = {x:parseFloat(pathStart[0]), y:parseFloat(pathStart[1])}
+            
+            var thumbnailZoom = Math.sqrt((regionBBox.height*regionBBox.width)/(100*100))/2;
+            
+            var thumbnailMatrix = [1,0,0,1,0,0];
+            for(let i=0; i < 6; ++i) thumbnailMatrix[i] *=thumbnailZoom
+            thumbnailMatrix[4] += (1-thumbnailZoom)*(pathStartPt.x)      //429
+            thumbnailMatrix[5] += (1-thumbnailZoom)*(pathStartPt.y)                   //582
+    
+    
+            // issue: in order for slightly accurate thumbnail, you have to zoom back to global and then click on next region. Solve this
+            regionShape.setAttributeNS(null,'transform', `translate(${220-(100)-regionBBox.left} ${80-regionBBox.top})`) 
+            cardImage.setAttributeNS(null, "viewBox",`0 0 100 100`)
+            cardImage.appendChild(regionShape)
+            card.appendChild(cardImage)
+            container.appendChild(card)
+            regionQueue.appendChild(container)
+            resolve();
+        })
+        
+    }
+
+    
     
     var dragMouseDown = (e) =>{
         e = e || window.event;
         var regionKeys = Object.keys(allRegionProperties);
-        
         var clickedOnRegion = regionKeys.includes(e.target.id)
-        
+        lastZoom.x = e.offsetX;
+        lastZoom.y = e.offsetY;
         if(clickedOnRegion) {
+            console.log(e.target)
             var regionA3 = allRegionProperties[e.target.id]["ADM0_A3"];
             var regionAdminName = allRegionProperties[e.target.id]["ADMIN"];
             var regionContName = allRegionProperties[e.target.id]["CONTINENT"];
@@ -94,167 +263,13 @@ export var Home = () => {
             regionContName = regionContName.replace(/\s/gi, '_')
             
             if(!regionSelectHistory.includes(regionA3)) {
-                
-                var regionQueue = document.getElementById("regionHistoryCards");
-                
-                regionSelectHistory.push(regionA3)
-
-                var regionBBox = document.getElementById(regionA3).getBoundingClientRect();
-                setRegHistQueueIdx(regionSelectHistory.length-1);
-       
-                var container = document.createElementNS("http://www.w3.org/1999/xhtml","container");
-                container.setAttributeNS(null,"class","region-card");
-
-                var card = document.createElementNS("http://www.w3.org/1999/xhtml", "div");
-                card.setAttributeNS(null,"class","ui card");
-
-                // card.addEventListener("mouseover",(e)=> {}, false);
-
-                var xmlns = "http://www.w3.org/2000/svg";
-
-                var cardImage = document.createElementNS(xmlns,"svg");
-                cardImage.setAttributeNS(null, "width","80");
-                cardImage.setAttributeNS(null, "height","80");
-                cardImage.style.display = "block"
-               
-                var regionShape = document.createElementNS(xmlns,"path");
-                var regionD = document.getElementById(regionA3).getAttribute('d');
-                var regionFill = document.getElementById(regionA3).getAttribute('fill')
-                
-                regionShape.setAttributeNS(null, "d", regionD);
-                regionShape.setAttributeNS(null,"fill",regionFill);
-                regionShape.setAttributeNS(null, "stroke", "#000")
-                
-                var pathStart = regionD.match(/(?<=M)[-+]?[0-9]+\.[0-9]+\,[-+]?[0-9]+\.[0-9]+/)[0].split(',')
-                var pathStartPt = {x:parseFloat(pathStart[0]), y:parseFloat(pathStart[1])}
-                
-                var thumbnailZoom = Math.sqrt((regionBBox.height*regionBBox.width)/(100*100))/2;
-                
-                var thumbnailMatrix = [1,0,0,1,0,0];
-                for(let i=0; i < 6; ++i) thumbnailMatrix[i] *=thumbnailZoom
-                thumbnailMatrix[4] += (1-thumbnailZoom)*(pathStartPt.x)      //429
-                thumbnailMatrix[5] += (1-thumbnailZoom)*(pathStartPt.y)                   //582
-
-
-                // issue: in order for slightly accurate thumbnail, you have to zoom back to global and then click on next region. Solve this
-                regionShape.setAttributeNS(null,'transform', `translate(${220-(100)-regionBBox.left} ${80-regionBBox.top})`) 
-                
-                cardImage.setAttributeNS(null, "viewBox",`0 0 100 100`)
-                cardImage.appendChild(regionShape)
-                card.appendChild(cardImage)
-                container.appendChild(card)
-                regionQueue.appendChild(container)
-
-                var regionCardQueue = regionQueue.children;
-                if(regionCardQueue.length >= 5) {
-                    regionCardQueue[regionCardQueue.length - 1 ].classList.add("ord3") 
-                    for(let c=1; c < 6; ++c) {
-                        if(regionCardQueue[regionCardQueue.length-2].classList.contains(`ord${c}`)) {
-                            regionCardQueue[regionCardQueue.length-2].classList.replace(`ord${c}`, "ord2") 
-                            break;
-                        }
-                    }
-
-                    regionCardQueue[regionCardQueue.length - 3 ].classList.remove("exit");
-                    for(let c=1; c < 6; ++c) {
-                        if(regionCardQueue[regionCardQueue.length-3].classList.contains(`ord${c}`)) {
-                            regionCardQueue[regionCardQueue.length-3].classList.replace(`ord${c}`, "ord1") 
-                            break;
-                        }
-                    }
-
-                    // regionCardQueue[1].classList.remove("exit");
-                    for(let c=1; c < 6; ++c) {
-                        if(regionCardQueue[1].classList.contains(`ord${c}`)) {
-                            regionCardQueue[1].classList.replace(`ord${c}`, "ord5") 
-                            break;
-                        }
-                    }
-
-                    // regionCardQueue[0].classList.remove("exit");
-                    for(let c=1; c < 6; ++c) {
-                        if(regionCardQueue[0].classList.contains(`ord${c}`)) {
-                            regionCardQueue[0].classList.replace(`ord${c}`, "ord4") 
-                            break;
-                        }
-                    }
-                    // if difference b/w regionCardQueue.length-3 (left-most card) and 1 (right-most card) is greater than 0
-                    
-                    let leftMostIdx = 1;
-                    let rightMostIdx = regionCardQueue.length-3
-                    
-                    if(rightMostIdx-leftMostIdx >= 1) {  //      (this means there are cards b/w them that are currently exited)               
-                        for(let c=leftMostIdx+1; c < rightMostIdx; ++c) {
-                            
-                            if(regionCardQueue[c].classList.contains("exitLeft")) {
-                                // regionCardQueue[c].classList.replace("exitLeft", "exitRight") 
-                            }
-                            else {
-                                regionCardQueue[c].classList.replace("ord1","exitLeft");
-                            }
-                        }
-                    }
-                }
-                else if(regionCardQueue.length==1) {
-                    document.getElementById("mapBtnGroup").classList.toggle("collapsed");
-                    regionCardQueue[0].classList.add("ord3");
-                }
-                else if(regionCardQueue.length==2) {
-                    regionCardQueue[1].classList.add("ord3");
-                    regionCardQueue[0].classList.replace("ord3", "ord2")
-                }
-                else if(regionCardQueue.length==3) {
-                    regionCardQueue[2].classList.add("ord3");
-                    regionCardQueue[1].classList.replace("ord3", "ord2")
-                    regionCardQueue[0].classList.replace("ord2", "ord4")
-                }
-                else if(regionCardQueue.length==4) {
-                    regionCardQueue[3].classList.add("ord3");
-                    regionCardQueue[2].classList.replace("ord3", "ord2")
-                    regionCardQueue[1].classList.replace("ord2", "ord4")
-                    regionCardQueue[0].classList.replace("ord4", "ord1")
-                }
-                
+                createRegionCard(e.target.id).then(result=> {
+                    adjustRegionCardOrder(e.target.id, true);
+                })
             }
-            else {
-                var selectedCardIdx = regionSelectHistory.indexOf(regionA3);
-                if(regionCardQueue.length >= 5) {
-                    var firstIdx = selectedCardIdx-2<0? regionCardQueue.length+selectedCardIdx-2 : selectedCardIdx-2
-                    var secondIdx = selectedCardIdx-1<0? regionCardQueue.length+selectedCardIdx-1 : selectedCardIdx-1
-                    var thirdIdx = selectedCardIdx
-                    var fourthIdx = (selectedCardIdx+1)%regionCardQueue.length
-                    var fifthIdx = (selectedCardIdx+2)%regionCardQueue.length
-                    
-                    regionCardQueue[firstIdx].classList.classList[1] = "first";
-                    regionCardQueue[secondIdx].classList.classList[1] = "second";
-                    regionCardQueue[thirdIdx].classList.add("third");
-                    regionCardQueue[fourthIdx].classList.classList[1] = "fourth";
-                    regionCardQueue[fifthIdx].classList.classList[1] = "fifth";
-                }
-                else {
-                    
-                    if(regionCardQueue.length == 4) {
-                        var firstIdx = selectedCardIdx-2<0? regionCardQueue.length+selectedCardIdx-2 : selectedCardIdx-2
-                        var secondIdx = selectedCardIdx-1<0?regionCardQueue.length+selectedCardIdx-1: selectedCardIdx-1
-                        var thirdIdx = selectedCardIdx
-                        var fourthIdx = (selectedCardIdx+1)%regionCardQueue.length
-                        var fifthIdx = (selectedCardIdx+2)%regionCardQueue.length
-                    }
-
-                    if(regionCardQueue.length == 3) {
-                        var secondIdx = selectedCardIdx-1<0?regionCardQueue.length+selectedCardIdx-1: selectedCardIdx-1
-                        var thirdIdx = selectedCardIdx
-                        var fourthIdx = (selectedCardIdx+1)%regionCardQueue.length
-                    }
-                    regionCardQueue[firstIdx].classList.classList[1] = "first";
-                    regionCardQueue[secondIdx].classList.classList[1] = "second";
-                    regionCardQueue[thirdIdx].classList.add("third");
-                    regionCardQueue[fourthIdx].classList.classList[1] = "fourth";
-                    regionCardQueue[fifthIdx].classList.classList[1] = "fifth";
-                }
-                setRegHistQueueIdx(selectedCardIdx);
-            }       
+            else  adjustRegionCardOrder(e.target.id,false);
             
+            createRegionInfoItem({continentId:regionContName, regionA3:regionA3, regionAdmin:regionAdminName, bBox:document.getElementById(e.target.id).getBBox()})
 
         }
         else {
@@ -263,42 +278,9 @@ export var Home = () => {
                 e.target.setAttributeNS(null, "fill", 'rgb(0,0,0)');
             }
         }
-        lastZoom.x = e.offsetX;
-        lastZoom.y = e.offsetY;
         
-        if(clickedOnRegion) {
-            var infoItem = new MapInfoItem(regionA3+"_info",lastZoom.x,lastZoom.y,"nodeOnly",regionAdminName);
-            var new_g = document.createElementNS("http://www.w3.org/2000/svg","g");
-            new_g.setAttributeNS(null, "id",infoItem.id+"Unit");
+        
 
-            var new_circle = document.createElementNS("http://www.w3.org/2000/svg","circle");
-            new_circle.setAttributeNS(null, "id",infoItem.id+"Node");
-            new_circle.setAttributeNS(null, "cx", infoItem.x);
-            new_circle.setAttributeNS(null, "cy", infoItem.y);
-            new_circle.setAttributeNS(null, "r",5);
-            new_circle.setAttributeNS(null, "fill","transparent");
-            new_circle.setAttributeNS(null, "stroke","black");
-            new_circle.setAttributeNS(null, "strokeWidth","4");
-
-            var new_path = document.createElementNS("http://www.w3.org/2000/svg","circle");
-            new_path.setAttributeNS(null, "id",infoItem.id+"Label");
-            new_path.setAttributeNS(null, "d", `M ${infoItem.x} ${infoItem.y} l 1 -1 l 5 0 l 0 -4 l -12 0 l 0 4 l 5 0 l 1 1`);
-            new_path.setAttributeNS(null, "fill", 'grey');
-
-            var new_text = document.createElementNS("http://www.w3.org/2000/svg","text");
-            new_text.setAttributeNS(null, "x",infoItem.x-10);
-            new_text.setAttributeNS(null, "y", infoItem.y-2);
-            new_text.setAttributeNS(null, "fontFamily", 'Verdana');
-            new_text.setAttributeNS(null, "fontSize", 6);
-            new_text.setAttributeNS(null,"fil","black");
-            new_text.innerHTML = infoItem.labelText
-            
-            new_g.appendChild(new_circle);
-            new_g.appendChild(new_path);
-            new_g.appendChild(new_text);
-           
-            document.getElementById(regionContName+"InfoItems").appendChild(new_g)
-        }
         dragStart = getTransformedPt(lastZoom.x, lastZoom.y, transformMatrix);
         inverseMercator(dragStart.x, dragStart.y)
         document.onmouseup = closeDragElement;
@@ -568,6 +550,9 @@ export var Home = () => {
             lastMapColorView = mapColorView;
         }
     }
+
+
+    // or in general: if .SOVEREIGNT is not .ADMIN
     function createMap() {
         if(!mapCreated) {
             var svgConts = d3.select("#continents")
@@ -610,7 +595,7 @@ export var Home = () => {
                 // international level
                 for(let p=0; p < data.objects.admin.geometries.length; ++p) {
                     var geometries = data.objects.admin.geometries[p];
-                    
+                    if(geometries.properties["ADM0_A3"]=="FRA") continue;
                    //mercator , orthographic <-- types of projections
                     var contName = geometries.properties["CONTINENT"].replace(/\(|\)/gi, '').replace(/\s/gi, '_')
                     if(!continents.includes(contName)) {                // this section is for initializing continents and adding the region belonging to the newly created continent
@@ -647,6 +632,7 @@ export var Home = () => {
                             })
                             continue;
                         }
+                        console.log('topojson.feature(data, geometries)',topojson.feature(data, geometries))
                         group.append("path")
                             .datum(topojson.feature(data, geometries))
                             .attr("id", geometries.properties["ADM0_A3"])
@@ -662,10 +648,93 @@ export var Home = () => {
                         allRegionProperties[geometries.properties["ADM0_A3"]] = geometries.properties;
                     }
                 }
+                // guianaFrance,martiniqueFrance,guadeloupeFrance,reunionFrance,mayotteFrance,mainlandFrance 
+              
+                d3.selectAll(`#South_America`).append("path")
+                    .attr("id", guianaFrance["ADM0_A3"])
+                    .attr("d", guianaFrance.paths.join(" "))
+                    .attr("fill", ()=> {
+                        if(mapColorView=="default") {
+                            return `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
+                        }
+                        if(mapColorView=="continent") {
+                            return `hsl( ${continentHues["South_America"]}, ${getRandomInt(40,55)}%, ${getRandomInt(30,45)}%)`    
+                        }
+                    })
+                allRegionProperties[guianaFrance["ADM0_A3"]] = guianaFrance
+
+
+                d3.selectAll(`#South_America`).append("path")
+                    .attr("id", martiniqueFrance["ADM0_A3"])
+                    .attr("d", martiniqueFrance.paths.join(" "))
+                    .attr("fill", ()=> {
+                        if(mapColorView=="default") {
+                            return `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
+                        }
+                        if(mapColorView=="continent") {
+                            return `hsl( ${continentHues["South_America"]}, ${getRandomInt(40,55)}%, ${getRandomInt(30,45)}%)`    
+                        }
+                    })
+                allRegionProperties[martiniqueFrance["ADM0_A3"]] = martiniqueFrance
+
+
+                d3.selectAll(`#South_America`).append("path")
+                    .attr("id", guadeloupeFrance["ADM0_A3"])
+                    .attr("d", guadeloupeFrance.paths.join(" "))
+                    .attr("fill", ()=> {
+                        if(mapColorView=="default") {
+                            return `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
+                        }
+                        if(mapColorView=="continent") {
+                            return `hsl( ${continentHues["South_America"]}, ${getRandomInt(40,55)}%, ${getRandomInt(30,45)}%)`    
+                        }
+                    })
+                allRegionProperties[reunionFrance["ADM0_A3"]] = guadeloupeFrance
+
+
+                d3.selectAll(`#South_America`).append("path")
+                    .attr("id", reunionFrance["ADM0_A3"])
+                    .attr("d", reunionFrance.paths.join(" "))
+                    .attr("fill", ()=> {
+                        if(mapColorView=="default") {
+                            return `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
+                        }
+                        if(mapColorView=="continent") {
+                            return `hsl( ${continentHues["South_America"]}, ${getRandomInt(40,55)}%, ${getRandomInt(30,45)}%)`    
+                        }
+                    })
+                allRegionProperties[reunionFrance["ADM0_A3"]] = reunionFrance
+
+                d3.selectAll(`#South_America`).append("path")
+                    .attr("id", mayotteFrance["ADM0_A3"])
+                    .attr("d", mayotteFrance.paths.join(" "))
+                    .attr("fill", ()=> {
+                        if(mapColorView=="default") {
+                            return `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
+                        }
+                        if(mapColorView=="continent") {
+                            return `hsl( ${continentHues["South_America"]}, ${getRandomInt(40,55)}%, ${getRandomInt(30,45)}%)`    
+                        }
+                    })
+                allRegionProperties[mayotteFrance["ADM0_A3"]] = mayotteFrance
+
+
+                d3.selectAll(`#South_America`).append("path")
+                    .attr("id", mainlandFrance["ADM0_A3"])
+                    .attr("d", mainlandFrance.paths.join(" "))
+                    .attr("fill", ()=> {
+                        if(mapColorView=="default") {
+                            return `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
+                        }
+                        if(mapColorView=="continent") {
+                            return `hsl( ${continentHues["South_America"]}, ${getRandomInt(40,55)}%, ${getRandomInt(30,45)}%)`    
+                        }
+                    })
+                allRegionProperties[mainlandFrance["ADM0_A3"]] = mainlandFrance
+                    
+
                 var worldMapBBox = document.getElementById('continents').getBoundingClientRect();
                 worldMapLimits = worldMapBBox
-
-
 
                 for(let c=0; c < continents.length; ++c) {
                     var mapItemGroup = document.createElementNS("http://www.w3.org/2000/svg","g");
@@ -682,6 +751,7 @@ export var Home = () => {
             
         }
     }
+    
 
     function mapTransitionToUS() {
         var usCountyMap = document.getElementById("usCountyMap")

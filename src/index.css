@@ -285,6 +285,13 @@ code {
   display:block;
 }
 
+#insightsTab {
+  display:none;
+}
+#insightsTab.showing {
+  display:block;
+}
+
 #settingsTab {
   display:none;
 }
@@ -591,6 +598,13 @@ code {
   transform:rotateX(20deg) rotateY(80deg); */
   /* transform: rotateX(45deg); */
 }
+
+
+
+/* .regionInfoItem {
+  max-width: 8em;
+  max-height: 2em;
+} */
 
 
 

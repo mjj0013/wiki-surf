@@ -37,7 +37,7 @@ function createRegionInfoItem(regionInfo)  {
     var infoItem = new MapInfoItem(regionA3+"_info",center.x,center.y,"nodeOnly",regionAdmin);
     var new_g = document.createElementNS("http://www.w3.org/2000/svg","g");
     new_g.setAttributeNS(null, "id",infoItem.id+"Unit");
-
+    new_g.setAttributeNS(null, "className","regionInfoItem");
     var new_circle = document.createElementNS("http://www.w3.org/2000/svg","circle");
     new_circle.setAttributeNS(null, "id",infoItem.id+"Node");
     new_circle.setAttributeNS(null, "cx", infoItem.x);
@@ -57,12 +57,14 @@ function createRegionInfoItem(regionInfo)  {
     new_text.setAttributeNS(null, "y", infoItem.y-2);
     new_text.setAttributeNS(null, "fontFamily", 'Verdana');
     new_text.setAttributeNS(null, "fontSize", 6);
-    new_text.setAttributeNS(null,"fil","black");
+    new_text.setAttributeNS(null,"fill","black");
     new_text.innerHTML = infoItem.labelText
     
     new_g.appendChild(new_circle);
     new_g.appendChild(new_path);
     new_g.appendChild(new_text);
+
+
     document.getElementById(continentId+"InfoItems").appendChild(new_g)
 }
 

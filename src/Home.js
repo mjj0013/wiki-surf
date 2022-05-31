@@ -8,7 +8,7 @@ const userAgents = require("user-agents");
 import { ReactGoogleChartEvent, Chart } from 'react-google-charts';
 import {Container,Button} from 'semantic-ui-react';
 
-import {wikiDataSearch, WikiSubject, wikiTitleSearch} from './wikiSubject.js';
+import {findWikiDataID, wikiDataSearch, WikiSubject, wikiTitleSearch} from './wikiSubject.js';
 import { SideBarWrapper } from './sideBarForm.js';
 import {sendRequestToBackend} from './frontEndHelpers.js';
 import {metrosByState, metroData} from './usMetroMap.js'
@@ -44,6 +44,7 @@ export var Home = () => {
     var [transformMatrix, setTransformMatrix] = useState([1, 0, 0, 1, 0, 0]);
     var zoomIntensity = 0.2;
     var [dragStart, setDragStart] = useState({x:0, y:0})
+    findWikiDataID("England", "item");
     var captureZoomEvent = (e) => {
         lastZoom.x = e.offsetX;
         lastZoom.y = e.offsetY;
@@ -318,7 +319,7 @@ export var Home = () => {
         }
         else {
             document.getElementById('continents').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
-            // document.getElementById('mapInfoItems').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
+           
         }
 
     }
@@ -632,7 +633,7 @@ export var Home = () => {
                             })
                             continue;
                         }
-                        console.log('topojson.feature(data, geometries)',topojson.feature(data, geometries))
+                        // console.log('topojson.feature(data, geometries)',topojson.feature(data, geometries))
                         group.append("path")
                             .datum(topojson.feature(data, geometries))
                             .attr("id", geometries.properties["ADM0_A3"])
@@ -650,87 +651,7 @@ export var Home = () => {
                 }
                 // guianaFrance,martiniqueFrance,guadeloupeFrance,reunionFrance,mayotteFrance,mainlandFrance 
               
-                d3.selectAll(`#South_America`).append("path")
-                    .attr("id", guianaFrance["ADM0_A3"])
-                    .attr("d", guianaFrance.paths.join(" "))
-                    .attr("fill", ()=> {
-                        if(mapColorView=="default") {
-                            return `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
-                        }
-                        if(mapColorView=="continent") {
-                            return `hsl( ${continentHues["South_America"]}, ${getRandomInt(40,55)}%, ${getRandomInt(30,45)}%)`    
-                        }
-                    })
-                allRegionProperties[guianaFrance["ADM0_A3"]] = guianaFrance
-
-
-                d3.selectAll(`#South_America`).append("path")
-                    .attr("id", martiniqueFrance["ADM0_A3"])
-                    .attr("d", martiniqueFrance.paths.join(" "))
-                    .attr("fill", ()=> {
-                        if(mapColorView=="default") {
-                            return `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
-                        }
-                        if(mapColorView=="continent") {
-                            return `hsl( ${continentHues["South_America"]}, ${getRandomInt(40,55)}%, ${getRandomInt(30,45)}%)`    
-                        }
-                    })
-                allRegionProperties[martiniqueFrance["ADM0_A3"]] = martiniqueFrance
-
-
-                d3.selectAll(`#South_America`).append("path")
-                    .attr("id", guadeloupeFrance["ADM0_A3"])
-                    .attr("d", guadeloupeFrance.paths.join(" "))
-                    .attr("fill", ()=> {
-                        if(mapColorView=="default") {
-                            return `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
-                        }
-                        if(mapColorView=="continent") {
-                            return `hsl( ${continentHues["South_America"]}, ${getRandomInt(40,55)}%, ${getRandomInt(30,45)}%)`    
-                        }
-                    })
-                allRegionProperties[reunionFrance["ADM0_A3"]] = guadeloupeFrance
-
-
-                d3.selectAll(`#South_America`).append("path")
-                    .attr("id", reunionFrance["ADM0_A3"])
-                    .attr("d", reunionFrance.paths.join(" "))
-                    .attr("fill", ()=> {
-                        if(mapColorView=="default") {
-                            return `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
-                        }
-                        if(mapColorView=="continent") {
-                            return `hsl( ${continentHues["South_America"]}, ${getRandomInt(40,55)}%, ${getRandomInt(30,45)}%)`    
-                        }
-                    })
-                allRegionProperties[reunionFrance["ADM0_A3"]] = reunionFrance
-
-                d3.selectAll(`#South_America`).append("path")
-                    .attr("id", mayotteFrance["ADM0_A3"])
-                    .attr("d", mayotteFrance.paths.join(" "))
-                    .attr("fill", ()=> {
-                        if(mapColorView=="default") {
-                            return `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
-                        }
-                        if(mapColorView=="continent") {
-                            return `hsl( ${continentHues["South_America"]}, ${getRandomInt(40,55)}%, ${getRandomInt(30,45)}%)`    
-                        }
-                    })
-                allRegionProperties[mayotteFrance["ADM0_A3"]] = mayotteFrance
-
-
-                d3.selectAll(`#South_America`).append("path")
-                    .attr("id", mainlandFrance["ADM0_A3"])
-                    .attr("d", mainlandFrance.paths.join(" "))
-                    .attr("fill", ()=> {
-                        if(mapColorView=="default") {
-                            return `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
-                        }
-                        if(mapColorView=="continent") {
-                            return `hsl( ${continentHues["South_America"]}, ${getRandomInt(40,55)}%, ${getRandomInt(30,45)}%)`    
-                        }
-                    })
-                allRegionProperties[mainlandFrance["ADM0_A3"]] = mainlandFrance
+                partitionFrenchTerritories();
                     
 
                 var worldMapBBox = document.getElementById('continents').getBoundingClientRect();
@@ -751,7 +672,89 @@ export var Home = () => {
             
         }
     }
-    
+    function partitionFrenchTerritories() {
+        d3.selectAll(`#South_America`).append("path")
+        .attr("id", guianaFrance["ADM0_A3"])
+        .attr("d", guianaFrance.paths.join(" "))
+        .attr("fill", ()=> {
+            if(mapColorView=="default") {
+                return `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
+            }
+            if(mapColorView=="continent") {
+                return `hsl( ${continentHues["South_America"]}, ${getRandomInt(40,55)}%, ${getRandomInt(30,45)}%)`    
+            }
+        })
+        allRegionProperties[guianaFrance["ADM0_A3"]] = guianaFrance
+
+
+        d3.selectAll(`#South_America`).append("path")
+            .attr("id", martiniqueFrance["ADM0_A3"])
+            .attr("d", martiniqueFrance.paths.join(" "))
+            .attr("fill", ()=> {
+                if(mapColorView=="default") {
+                    return `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
+                }
+                if(mapColorView=="continent") {
+                    return `hsl( ${continentHues["South_America"]}, ${getRandomInt(40,55)}%, ${getRandomInt(30,45)}%)`    
+                }
+            })
+        allRegionProperties[martiniqueFrance["ADM0_A3"]] = martiniqueFrance
+
+
+        d3.selectAll(`#South_America`).append("path")
+            .attr("id", guadeloupeFrance["ADM0_A3"])
+            .attr("d", guadeloupeFrance.paths.join(" "))
+            .attr("fill", ()=> {
+                if(mapColorView=="default") {
+                    return `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
+                }
+                if(mapColorView=="continent") {
+                    return `hsl( ${continentHues["South_America"]}, ${getRandomInt(40,55)}%, ${getRandomInt(30,45)}%)`    
+                }
+            })
+        allRegionProperties[reunionFrance["ADM0_A3"]] = guadeloupeFrance
+
+
+        d3.selectAll(`#South_America`).append("path")
+            .attr("id", reunionFrance["ADM0_A3"])
+            .attr("d", reunionFrance.paths.join(" "))
+            .attr("fill", ()=> {
+                if(mapColorView=="default") {
+                    return `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
+                }
+                if(mapColorView=="continent") {
+                    return `hsl( ${continentHues["South_America"]}, ${getRandomInt(40,55)}%, ${getRandomInt(30,45)}%)`    
+                }
+            })
+        allRegionProperties[reunionFrance["ADM0_A3"]] = reunionFrance
+
+        d3.selectAll(`#South_America`).append("path")
+            .attr("id", mayotteFrance["ADM0_A3"])
+            .attr("d", mayotteFrance.paths.join(" "))
+            .attr("fill", ()=> {
+                if(mapColorView=="default") {
+                    return `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
+                }
+                if(mapColorView=="continent") {
+                    return `hsl( ${continentHues["South_America"]}, ${getRandomInt(40,55)}%, ${getRandomInt(30,45)}%)`    
+                }
+            })
+        allRegionProperties[mayotteFrance["ADM0_A3"]] = mayotteFrance
+
+
+        d3.selectAll(`#South_America`).append("path")
+            .attr("id", mainlandFrance["ADM0_A3"])
+            .attr("d", mainlandFrance.paths.join(" "))
+            .attr("fill", ()=> {
+                if(mapColorView=="default") {
+                    return `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
+                }
+                if(mapColorView=="continent") {
+                    return `hsl( ${continentHues["South_America"]}, ${getRandomInt(40,55)}%, ${getRandomInt(30,45)}%)`    
+                }
+            })
+        allRegionProperties[mainlandFrance["ADM0_A3"]] = mainlandFrance
+    }
 
     function mapTransitionToUS() {
         var usCountyMap = document.getElementById("usCountyMap")

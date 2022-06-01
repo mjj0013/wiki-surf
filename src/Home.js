@@ -19,6 +19,12 @@ import { guianaFrance,martiniqueFrance,guadeloupeFrance,reunionFrance,mayotteFra
 import {MapInfoItem, createSubInfoItem, createRegionInfoItem} from './mapInfoItem.js'
 
 
+
+const { Matrix, inverse } = require('ml-matrix');
+
+
+
+
 // https://www.statista.com/statistics/262966/number-of-internet-users-in-selected-countries/
 // https://worldpopulationreview.com/countries
 // also, https://www.cia.gov/the-world-factbook/field/internet-users/country-comparison/
@@ -44,6 +50,11 @@ export var Home = () => {
     var [transformMatrix, setTransformMatrix] = useState([1, 0, 0, 1, 0, 0]);
     var zoomIntensity = 0.2;
     var [dragStart, setDragStart] = useState({x:0, y:0})
+
+
+    var mapInfoItemObjs = {}
+
+
     findWikiDataID("England", "item");
     var captureZoomEvent = (e) => {
         lastZoom.x = e.offsetX;
@@ -55,17 +66,63 @@ export var Home = () => {
     var updateZoom = (delta) => {
         let wheelNorm = delta;
         let zoomVar = Math.pow(zoomIntensity,wheelNorm);
+        
+        var inverseMatrix = [...transformMatrix]
+
         if(transformMatrix[0]*zoomVar >=1) {
             for(var i =0; i < 6; ++i) {transformMatrix[i] *= zoomVar }
             transformMatrix[4] += (1-zoomVar)*(lastZoom.x);
             transformMatrix[5] += (1-zoomVar)*(lastZoom.y);
+
+
+            
+            
+            
+            
         }
+
+        
+  
+        // let infoItemMatrix = [1,0,0,1,...transformMatrix.slice(4)];
+        // for(var i =0; i < 6; ++i) {infoItemMatrix[i] *= zoomVar }
+        // infoItemMatrix[4] += (1-zoomVar)*(lastZoom.x);
+        // infoItemMatrix[5] += (1-zoomVar)*(lastZoom.y);
+        
         if(selectedRegion == "USA") {
             document.getElementById('usLocal').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
         }
         else {
+            var infoItems = document.getElementsByClassName('regionInfoItem');
+       
+            
             document.getElementById('continents').setAttributeNS(null, "transform", `matrix(${transformMatrix.join(' ')})`);
+            for(let i=0; i < infoItems.length; ++i) {
+                var innerCircle = infoItems[i].querySelector("circle");
+                let invM = [...inverseMatrix]
+                for(var j =0; j < 6; ++j) {invM[j] *= zoomVar }
+                invM[4] += (1-zoomVar)*(innerCircle.cx.baseVal.value);
+                invM[5] += (1-zoomVar)*(innerCircle.cy.baseVal.value);
+                infoItems[i].setAttributeNS(null, "transform", `matrix(${invM.join(' ')})`);
+                // inverseMatrix = [
+                //     [inverseMatrix[0], inverseMatrix[2], innerCircle.cx],
+                //     [inverseMatrix[1], inverseMatrix[3], innerCircle.cy],
+                //     [0,0, 1]
+                // ]
+        
+                // inverseMatrix = new Matrix(inverseMatrix);
+                // inverseMatrix = inverse(inverseMatrix,true)
+                
+                // var inverseTransform = [inverseMatrix.get(0,0), inverseMatrix.get(1,0),inverseMatrix.get(0,1), 
+                //     inverseMatrix.get(1,1), inverseMatrix.get(0,2), inverseMatrix.get(1,2) ]
+                
+                
+                
+                // infoItems[i].setAttributeNS(null, "transform", `matrix(${inverseMatrix.join(' ')})`);
+            }
+            
         }
+        
+        
     }
 
 
@@ -270,7 +327,8 @@ export var Home = () => {
             }
             else  adjustRegionCardOrder(e.target.id,false);
             
-            createRegionInfoItem({continentId:regionContName, regionA3:regionA3, regionAdmin:regionAdminName, bBox:document.getElementById(e.target.id).getBBox()})
+            var item = createRegionInfoItem({itemId:`${regionA3}MainItem`, continentId:regionContName, regionA3:regionA3, regionAdmin:regionAdminName, bBox:document.getElementById(e.target.id).getBBox()})
+            mapInfoItemObjs[`${regionA3}MainItem`] = item
 
         }
         else {
@@ -602,6 +660,7 @@ export var Home = () => {
                     if(!continents.includes(contName)) {                // this section is for initializing continents and adding the region belonging to the newly created continent
                         svgConts.append("g")
                             .attr("id",contName)
+                            .attr("class","continentElement")
                             .append("path")
                                 .datum(topojson.feature(data, geometries))
                                 .attr("id", geometries.properties["ADM0_A3"])

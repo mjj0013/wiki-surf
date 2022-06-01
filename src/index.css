@@ -599,6 +599,11 @@ code {
   /* transform: rotateX(45deg); */
 }
 
+.continentElement:hover .regionInfoItem {
+  transform:scale(.25,.25);
+  
+}
+
 
 
 /* .regionInfoItem {

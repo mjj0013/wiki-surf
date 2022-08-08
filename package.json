@@ -23,6 +23,7 @@
     "d3": "^7.4.4",
     "express": "^4.17.3",
     "express-rate-limit": "^6.4.0",
+    "express-slow-down": "^1.4.0",
     "file-loader": "^6.2.0",
     "fs": "^0.0.1-security",
     "google-trends-api": "^4.9.2",

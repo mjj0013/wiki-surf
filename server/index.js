@@ -1,5 +1,6 @@
 const express = require('express');
 const rateLimit = require('express-rate-limit');
+const slowDown = require("express-slow-down");
 
 
 
@@ -14,11 +15,17 @@ const path = require("path")
 const bodyParser = require("body-parser");      // a middleware
 // const {fetch} = require('node-fetch');
 
-// limit the number of requests to 10 QPS (queries per second)
-const apiReqLimiter = rateLimit({
-    windowMs:1000,
-    max:10
-})
+
+const speedLimiter = slowDown({
+    // windowMs: 15 * 60 * 1000, // 15 minutes
+    windowMs: 10*1000, // 15 minutes
+    delayAfter: 10, // allow 100 requests per 15 minutes, then...
+    // delayMs: 500 // begin adding 500ms of delay per request above 100:
+    // request # 101 is delayed by  500ms
+    // request # 102 is delayed by 1000ms
+    // request # 103 is delayed by 1500ms
+    // etc.
+  });
 
 
 
@@ -33,6 +40,7 @@ const {regionCodes, getDateObj, trendCategories} = require('./geoHelpers.js');
 const app = express();
 app.use(express.static(DIST_DIR));
 // app.use(apiReqLimiter);
+app.use(speedLimiter);
 app.use(bodyParser.urlencoded({extended:false}));
 app.use(bodyParser.json());
 app.listen(PORT, ()=> { console.log("Server running on port "+PORT); })
@@ -40,7 +48,7 @@ app.listen(PORT, ()=> { console.log("Server running on port "+PORT); })
 const permittedRegionsISOA2 = Object.entries(regionCodes).map(x=>{return x[1]})
 const {metroData} = require('../src/usMetroMap.js')
 
-
+const sleep = ms => new Promise(r => setTimeout(r, ms))
 
 
 // if 429 error: delete all cookies
@@ -149,21 +157,61 @@ var interestByRegionModule = (req, res) => {
     
 }
 
-var interestOverTimeModule = (req,res) =>{
+var interestOverTimeModule = async (req,res) =>{
     res.setHeader("Accept", "application/json");
     res.setHeader("Content-Type", "application/json");
+     var allMetroData = []
     var query = req.body;
     var geo = query.geo? query.geo : regionCodes["United States"];
     var startTime = query.startTime? new Date(query.startTime) : new Date('2004-01-01');
     var endTime = query.endTime? new Date(query.endTime) : new Date();
     var keyword = query.keyword;
-    googleTrends.interestOverTime({ keyword:keyword, startTime: startTime, endTime:endTime, geo:geo, category:418 }, (err,results)=> {
-
-        var data = results.toString();
-        console.log("data",data)
-        data = JSON.parse(data);
-        res.send({data:data.default, ok:true, moduleName:"interestOverTime"})
+    googleTrends.interestOverTime({ keyword:keyword, startTime: startTime, endTime:endTime, geo: "US-AL-691" }, (err,results)=> {
+            
+        if(err) console.log("error",err)
+        if(results) {
+            
+            var data = results.toString();
+            console.log(`for `,data)
+            data = JSON.parse(data);
+            allMetroData.push(data.default)
+        }
+        
     })
+   
+    // var metroKeys = Object.keys(metroData);
+   
+    // var promises = metroKeys.map(async (r,i) => {
+    //     if(i%10==0) {
+    //         sleep(5000);
+    //     }
+	// 	let key = metroKeys[i];
+    //     let metroObj = metroData[key];
+    //     let metroGeo = `US-${metroObj.state}-${key.slice(1)}`
+    //     googleTrends.interestOverTime({ keyword:keyword, startTime: startTime, endTime:endTime, geo:metroGeo, category:418 }, (err,results)=> {
+            
+    //         if(err) console.log("error",err)
+    //         if(results) {
+                
+    //             var data = results.toString();
+    //             console.log(`for ${metroGeo}`,data)
+    //             data = JSON.parse(data);
+    //             allMetroData.push(data.default)
+    //         }
+            
+    //     })
+    //     .catch(err=> {  console.log("err",err) })
+	// })
+  
+	// var finalR = await Promise.all(promises);
+    res.send({data:allMetroData, ok:true, moduleName:"interestOverTime"})
+
+
+
+
+
+
+    
     
 }
 
@@ -176,6 +224,9 @@ var realTimeTrendsModule = (req,res) => {
     var geo = query.geo? query.geo : regionCodes["United States"];
     var category = query.category? query.category : 'all'
     var optionsObj = { geo:geo, category:category}
+
+
+
 
     console.log('optionsObj',optionsObj)
     googleTrends.realTimeTrends(optionsObj)

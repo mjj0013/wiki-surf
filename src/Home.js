@@ -198,6 +198,7 @@ export var Home = () => {
     var createRegionCard = (regionId) => {
         return new Promise((resolve,reject)=> {
             var regionQueue = document.getElementById("regionHistoryCards");  
+            console.log("Clicked region: "+regionId)
             regionSelectHistory.push(regionId);
             var regionBBox = document.getElementById(regionId).getBoundingClientRect();
             setRegHistQueueIdx(regionSelectHistory.length-1);
@@ -827,6 +828,7 @@ export var Home = () => {
         if(selectedRegion=="USA")  mapTransitionToUS()
         else if(selectedRegion=="<global>") {}
         else {
+            console.log('selectedRegion', selectedRegion)
             // getWikiTitleData(allRegionProperties[selectedRegion]["ADMIN"])
             // zooming in:  zoomVar, and zoomVar>1  ;  zooming out: 1/zoomVar
             

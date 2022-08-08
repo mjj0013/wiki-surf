@@ -16,51 +16,6 @@ function findObjInArray(array, keyName, keyValue) {
 
 
 
-/*
-    important properties
-
-    thing in a series:
-        participant in : P1344
-        follow : P155
-        followed by : P156
-        replaces : P1365
-        replaced by : P1366
-        part of : P361
-
-
-    human
-        father : P22
-        mother : P25
-        sibling: P3373
-        spouse : P26
-        occupation : P106
-        child : P40
-        sex or gender: : P21
-        place of birth : P19
-        place of death : P20
-        
-
-
-        cause of death: P509
-
-    place or event:
-        instance of : P31
-        coordinate location : P625
-        significant event : P793
-
-        participant: P710
-        part of : P361
-        has part or parts : P527
-
-
-*/
-
-
-/*
-For all properties of human (Q5), go to
-    properties for this type
-
-*/
 
 
 function reformatURL(url) {
@@ -89,24 +44,8 @@ function reformatURL(url) {
 // https://doc.wikimedia.org/Wikibase/master/js/#!/api/Property
 // GraphQL queries are sent to https://tptools.toolforge.org/wdql.php
 
-
-
-
-// for searching WikiData by text entered and returing the ID for it
-function findWikiDataID(search, type, limit=10) {
-    var url = `https://www.wikidata.org/w/api.php?origin=*&action=wbsearchentities&type=${type}&language=en&search=${search}&limit=${limit}&format=json`
-    var req = new Request(url, {  method:"POST"   })
-    fetch(req)
-    .then(response => {  return response })
-    .then(result=>{
-       
-        result.text().then(r=> {
-           
-            var d = JSON.parse(r)
-            console.log('d',d)
-            // resolve(parseWikiDataResult(jsonData))
-        })
-    })
+function searchWikidataProperties(search) {
+    `https://www.wikidata.org/w/api.php?origin=*&action=wbsearchentities&type=property&language=en&search=${search}`
 }
 
 /*
@@ -700,6 +639,5 @@ module.exports ={
     wikiDataSearch: wikiDataSearch,
     WikiSubject:WikiSubject,
     reformatURL:reformatURL,
-    wikiTitleSearch:wikiTitleSearch,
-    findWikiDataID: findWikiDataID
+    wikiTitleSearch:wikiTitleSearch
 }

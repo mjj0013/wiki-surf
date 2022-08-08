@@ -35,7 +35,6 @@
     "jsonfile": "^6.1.0",
     "jsx": "^0.9.89",
     "mapbox-gl": "^2.7.1",
-    "ml-matrix": "^6.10.1",
     "node-cron": "^3.0.0",
     "node-fetch": "^3.2.3",
     "node-geocoder": "^4.0.0",

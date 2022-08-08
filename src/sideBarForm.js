@@ -1,6 +1,6 @@
 // import noUiSlider from 'nouislider';
 import React, { useEffect ,useState} from 'react';
-import {Header,Form, Icon,  Item,Card, Button, Input, Container, Dropdown, Grid, Image, Label, List, Menu, Segment, Sidebar , Transition} from 'semantic-ui-react'
+import {Icon,  Item,Card, Button, Input, Container, Dropdown, Grid, Image, Label, List, Menu, Segment, Sidebar , Transition} from 'semantic-ui-react'
 import './index.css'
 
 import {sendRequestToBackend} from './frontEndHelpers.js';
@@ -127,6 +127,8 @@ function categoryChanged() {}
 
 
 export const SideBarWrapper = ({regionSelectHistory,setRegionSelectHistory,regHistQueueIdx , setRegHistQueueIdx, setRegionOptions, regionOptions, selectedRegion, setSelectedRegion, mapColorView, setMapColorView, sideBarVisible, setSideBarVisible,setInputData, inputData, setReadyResults, readyResults, setSearchClicked, searchClicked,  isVisible, setVisible,...props}) => {
+    
+    // const [RegionOptions, setRegionOptions] = useState({region:"US" });       //, displayMode:"regions",resolution:"countries"
 
     const [data,setRegionData] = useState(regionData);
     const [moduleName, setModuleName] = useState("dailyTrends");
@@ -137,7 +139,10 @@ export const SideBarWrapper = ({regionSelectHistory,setRegionSelectHistory,regHi
     function regionChanged(e,data) {
         var selected = document.getElementById("regionElement")
         
-        if(!regionSelectHistory.includes(data.value)) {  
+        console.log('data.value',data.value)
+        
+        if(!regionSelectHistory.includes(data.value)) {
+            
             setRegHistQueueIdx({...regHistQueueIdx, next:regionSelectHistory.length})
             regionSelectHistory.push(data.value)
         }
@@ -243,8 +248,8 @@ export const SideBarWrapper = ({regionSelectHistory,setRegionSelectHistory,regHi
         }
         else if(modName=="interestByRegion") {
             // dateRangeSection --> block, trendDateSection--> none, keywordEntrySection-->flex,  categorySection-->block
-            document.getElementById("trendDateSlider").display='block'
-            createSlider("trendDateSlider");
+            document.getElementById("dateSlider").display='block'
+            createSlider();
         }
     }
    
@@ -304,53 +309,64 @@ export const SideBarWrapper = ({regionSelectHistory,setRegionSelectHistory,regHi
         {value:"sovereignty", key:"Sovereignty", text:"Sovereignty"},
         {value:"sphere", key:"Cultural Sphere", text:"Cultural Sphere"},
     ]
-    var sideBarTabItems = ["insights","trends","settings"]
+
     function sideBarBtnClicked(e){
         var sideBarHandle = document.getElementById('sideBarHandle');
         if(sideBarVisible) {
             if(e.target.id == sideBarTab) {
                 setSideBarVisible(sideBarVisible?false:true);
                 sideBarHandle.classList.toggle('showing')
-
-                for(let t=0; t < sideBarTabItems.length; ++t) {
-                    document.getElementById( sideBarTabItems[t]+"Btn").classList.remove("primary");
-                }
+                document.getElementById("settingsBtn").classList.remove("primary");
+                document.getElementById("trendsBtn").classList.remove("primary");
             }
             else {
                 // then don't toggle showing class
-                var excludingClicked = sideBarTabItems.filter(item=> {
-                   if(item != e.target.id.slice(0,e.target.id.length-3)) return item;
-                })
-                for(let t=0; t < excludingClicked.length; ++t) {
-                    document.getElementById(excludingClicked[t]+"Btn").classList.remove("primary");
-                    document.getElementById(excludingClicked[t]+"Tab").classList.remove("showing");
-                }
-                setSideBarTab(e.target.id)
-                document.getElementById(e.target.id).classList.add("primary")
-                document.getElementById(e.target.id.replace("Btn","Tab")).classList.add("showing")
+                if(e.target.id=="settingsBtn") {
+                    setSideBarTab("settingsBtn")
+                    document.getElementById("settingsBtn").classList.add("primary");
+                    document.getElementById("trendsBtn").classList.remove("primary");
 
+                    document.getElementById("trendsTab").classList.remove("showing")
+                    document.getElementById("settingsTab").classList.add("showing")
+
+                }
+                else if(e.target.id=="trendsBtn") {
+                    setSideBarTab("trendsBtn")
+                    document.getElementById("trendsBtn").classList.add("primary");
+                    document.getElementById("settingsBtn").classList.remove("primary");
+
+                    document.getElementById("trendsTab").classList.add("showing")
+                    document.getElementById("settingsTab").classList.remove("showing")
+                }
             }
         }
 
         else {
-            var excludingClicked = sideBarTabItems.filter(item=> {
-                if(item != e.target.id.slice(0,e.target.id.length-3)) return item;
-            })
-            for(let t=0; t < excludingClicked.length; ++t) {
-                document.getElementById(excludingClicked[t]+"Btn").classList.remove("primary");
-                document.getElementById(excludingClicked[t]+"Tab").classList.remove("showing");
+            if(e.target.id=="settingsBtn") {
+                setSideBarTab("settingsBtn")
+                document.getElementById("settingsBtn").classList.add("primary");
+                document.getElementById("trendsBtn").classList.remove("primary");
+
+                document.getElementById("trendsTab").classList.remove("showing")
+                document.getElementById("settingsTab").classList.add("showing")
             }
-            setSideBarTab(e.target.id)
-            document.getElementById(e.target.id).classList.add("showing")
+            else if(e.target.id=="trendsBtn") {
+                setSideBarTab("trendsBtn")
+
+                document.getElementById("trendsBtn").classList.add("primary");
+                document.getElementById("settingsBtn").classList.remove("primary");
+
+                document.getElementById("trendsTab").classList.add("showing")
+                document.getElementById("settingsTab").classList.remove("showing")
+            }
             setSideBarVisible(sideBarVisible?false:true);
             sideBarHandle.classList.toggle('showing')
         }
     }
 
-    function createSlider(id) {
-        if(!document.getElementById(id)) {
-            var dateSlider = document.createElement("div")
-            dateSlider.setAttribute("id",id)
+    function createSlider() {
+        if(!timeSliderCreated) {
+            var dateSlider = document.getElementById("dateSlider")
             noUiSlider.create(dateSlider, dateSliderOptions);
             dateSlider.noUiSlider.on('update', function (values, handle) {
                 var startDateObj = new Date(parseInt(values[0]));
@@ -358,7 +374,7 @@ export const SideBarWrapper = ({regionSelectHistory,setRegionSelectHistory,regHi
                 if(document.getElementById("startDateElement")) document.getElementById("startDateElement").value =  startDateObj.toISOString().substr(0,10)
                 if(document.getElementById("endDateElement")) document.getElementById("endDateElement").value = endDateObj.toISOString().substr(0,10)
             })
-            // setTimeSliderCreated(true)
+            setTimeSliderCreated(true)
             return dateSlider;
         }
     }
@@ -366,17 +382,15 @@ export const SideBarWrapper = ({regionSelectHistory,setRegionSelectHistory,regHi
     
 
     useEffect(()=>{
+        
         if(moduleName == "dailyTrends" || moduleName == "realTimeTrends") {
-            document.getElementById("trendDateSlider").classList.add('hidden')
+            document.getElementById("dateSlider").classList.add('hidden')
         }
-        else document.getElementById("trendDateSlider").classList.remove('hidden')
+        else document.getElementById("dateSlider").classList.remove('hidden')
     }, [sideBarTab,showSlider, selectedRegion]);
 
 
-    var [activeInsightItem, setActiveInsightItem] = useState("bySubject");
-    var insightsItemClicked = (e, {name}) => {
-        setActiveInsightItem(name)
-    }
+
  
     function regionViewChanged(e,data) {
         var choice = data.value;
@@ -388,24 +402,30 @@ export const SideBarWrapper = ({regionSelectHistory,setRegionSelectHistory,regHi
         <Card id="sideBarHandle">
             <Card.Content>
                 <Container id="sideBarBtns" >
+                
                     <Button id="settingsBtn" fluid className="sideBarBtn" attached onClick={(e)=>sideBarBtnClicked(e)} >
                        <Icon className="setting large fitted"  />
                     </Button>
                     <Button id="trendsBtn" fluid className="sideBarBtn" attached onClick={(e)=>sideBarBtnClicked(e)}>
                         <Icon className="chart line large fitted"  />
                     </Button>
-                    <Button id="insightsBtn"  fluid className="sideBarBtn" attached onClick={(e)=>sideBarBtnClicked(e)}>
+                    <Button id="queryBtn"  fluid className="sideBarBtn" attached onClick={(e)=>sideBarBtnClicked(e)}>
                         {insights()}
                     </Button>
+
+                    
                 </Container>
             </Card.Content>
         </Card>
         
+        
         <Sidebar id="inputSideBar" as={Menu} animation='overlay' icon='labeled' vertical visible={isVisible}  direction="right" >
+            
             <Menu.Header>Input Form</Menu.Header>
             <Menu.Item id="settingsTab">
                 <Segment>
                     <Dropdown fluid floating labeled button text="Map View" options={regionViewOptions} onChange={(e,d)=>regionViewChanged(e,d)} />
+
                 </Segment>
             </Menu.Item>
             <Menu.Item id="trendsTab" >
@@ -464,7 +484,7 @@ export const SideBarWrapper = ({regionSelectHistory,setRegionSelectHistory,regHi
                                 </Grid.Row>
 
                                 <Grid.Row id="sliderRow" stretched width={5} style={{maxWidth:"90%", marginLeft:"10px"}}>
-                                    <div id="trendDateSlider" />
+                                    <div id="dateSlider" />
                                 </Grid.Row>
                             </Grid>
                         </Item.Content>
@@ -480,74 +500,23 @@ export const SideBarWrapper = ({regionSelectHistory,setRegionSelectHistory,regHi
                
             
                 </Item.Group>
-            </Menu.Item>
-            <Menu.Item id="insightsTab">
-                <Menu pointing secondary>
-                    <Menu.Item name="bySubject" active={activeInsightItem==="bySubject"} onClick={insightsItemClicked} />
-                    <Menu.Item name="byLocation" active={activeInsightItem==="byLocation"} onClick={insightsItemClicked} />
-                    
-                </Menu>
-                <Container>
-                    {activeInsightItem==="bySubject"?
-                        <Container>
-                            <Header as="h1" >Query</Header> 
-                            <Form>
-                                <Form.Group inline widths="equal">
-                                    <Form.Input fluid label="Subject" placeholder="person/place/event/thing"/>
-                                    
-                                </Form.Group>
-                                <Form.Group>
-                                    <Form.Input fluid label="" placeholder=""/>
-                                    <Form.Input fluid label="" placeholder=""/>
-                                </Form.Group>
-                            </Form>
-                            
-                            <Container>
-                                <div id="dateSlider"> 
-                                   
-                                </div>
-                            </Container>                            
-                        </Container>
-                            :null
-                    }
-                    {activeInsightItem==="byLocation"?
-                        <Container>
-                           <Header as="h1" >Query</Header> 
-                            <Form>
-                                <Form.Group widths="equal">
-                                    <Form.Input fluid label="Coordinates" placeholder="Click anywhere on the map"/>
-                              
-                                </Form.Group>
-                                <Form.Group>
-                                    <Form.Input fluid label="" placeholder=""/>
-                                    <Form.Input fluid label="" placeholder=""/>
-                                </Form.Group>
-                            </Form>
-                            
-                        </Container>
-                            
-                            :null
-                    }
-                </Container>
-              
-
-            </Menu.Item>
-            <List id="resultItems" divided relaxed>
-                {readyResults && readyResults.moduleName=="dailyTrends" && readyResults.data.searches.map((item,key)=> {
-                    return (
-                        <List.Item key={key}>
-                            <img src={item.image.imgUrl}/>
-                            <List.Content>
-                                <List.Header>{item.title.query}</List.Header>
-                                {readyResults.moduleName=="dailyTrends" &&  <List.Description>{item.formattedTraffic + " views"}</List.Description>}
-                            </List.Content>
-                        </List.Item>
-                    )
-                })}
-            </List>
+                </Menu.Item>
+                <List id="resultItems" divided relaxed>
+                    {readyResults && readyResults.moduleName=="dailyTrends" && readyResults.data.searches.map((item,key)=> {
+                        return (
+                            <List.Item key={key}>
+                                <img src={item.image.imgUrl}/>
+                                <List.Content>
+                                    <List.Header>{item.title.query}</List.Header>
+                                    {readyResults.moduleName=="dailyTrends" &&  <List.Description>{item.formattedTraffic + " views"}</List.Description>}
+                                </List.Content>
+                            </List.Item>
+                        )
+                    })}
+                </List>
         
                 
-        </Sidebar>
+            </Sidebar>
 
         <Sidebar.Pusher>{props.children}</Sidebar.Pusher>
     </Sidebar.Pushable>)

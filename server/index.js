@@ -157,52 +157,99 @@ var interestByRegionModule = (req, res) => {
     
 }
 
+
+var sendMetroRequest = (searchParams)=> {
+    new Promise((resolve,reject)=> {
+        
+        googleTrends.interestOverTime(searchParams, (err,results)=> {
+            if(err)  {
+                console.log("error",err) 
+            }
+            if(results) {
+                var data = results.toString();
+                console.log(`for `,data)
+                data = JSON.parse(data);
+                resolve(data.default);
+                // allMetroData.push()
+                
+            }
+            
+        })
+        .catch(err=> {
+            console.log("err",err)
+            reject();
+        })
+           
+       
+        
+        
+    })
+}
+var sendRequestsToMetros = async(searchParams) => {
+    var metroKeys = Object.keys(metroData);
+    var i=0;
+    var allMetroData = []
+    var interval = setInterval(()=>{
+        var metro = metroKeys[i]
+        let metroObj = metroData[metro];
+        let metroGeo = `US-${metroObj.state}-${metro.slice(1)}`
+        const result = sendMetroRequest({...searchParams, geo:metroGeo});
+        allMetroData.push(result);
+        ++i;
+        if(i==202) clearInterval(interval);
+    }, 100);
+    
+   
+    // for(metro of metroKeys) {
+    //     let metroObj = metroData[metro];
+    //     let metroGeo = `US-${metroObj.state}-${metro.slice(1)}`
+    //     const result = await sendMetroRequest({...searchParams, geo:metroGeo});
+    // }
+}
+
 var interestOverTimeModule = async (req,res) =>{
     res.setHeader("Accept", "application/json");
     res.setHeader("Content-Type", "application/json");
-     var allMetroData = []
+    var allMetroData = []
     var query = req.body;
     var geo = query.geo? query.geo : regionCodes["United States"];
     var startTime = query.startTime? new Date(query.startTime) : new Date('2004-01-01');
     var endTime = query.endTime? new Date(query.endTime) : new Date();
     var keyword = query.keyword;
-    googleTrends.interestOverTime({ keyword:keyword, startTime: startTime, endTime:endTime, geo: "US-AL-691" }, (err,results)=> {
-            
-        if(err) console.log("error",err)
-        if(results) {
-            
-            var data = results.toString();
-            console.log(`for `,data)
-            data = JSON.parse(data);
-            allMetroData.push(data.default)
-        }
-        
-    })
-   
-    // var metroKeys = Object.keys(metroData);
+    // googleTrends.interestOverTime({ keyword:keyword, startTime: startTime, endTime:endTime, geo: "US-AL-691" }, (err,results)=> {
+    //     if(err) console.log("error",err)
+    //     if(results) {
+    //         var data = results.toString();
+    //         console.log(`for `,data)
+    //         data = JSON.parse(data);
+    //         allMetroData.push(data.default)
+    //     }
+    // })
+    var searchParams = { keyword:keyword, startTime: startTime, endTime:endTime }
+    var metroKeys = Object.keys(metroData);
+
+
+    await sendRequestsToMetros(searchParams);
+
    
     // var promises = metroKeys.map(async (r,i) => {
-    //     if(i%10==0) {
-    //         sleep(5000);
-    //     }
+    // for(let i =0; i < metroKeys.length; ++i) {
 	// 	let key = metroKeys[i];
     //     let metroObj = metroData[key];
     //     let metroGeo = `US-${metroObj.state}-${key.slice(1)}`
     //     googleTrends.interestOverTime({ keyword:keyword, startTime: startTime, endTime:endTime, geo:metroGeo, category:418 }, (err,results)=> {
-            
     //         if(err) console.log("error",err)
     //         if(results) {
-                
     //             var data = results.toString();
     //             console.log(`for ${metroGeo}`,data)
     //             data = JSON.parse(data);
     //             allMetroData.push(data.default)
     //         }
-            
     //     })
-    //     .catch(err=> {  console.log("err",err) })
-	// })
-  
+    //     .catch(err=> {    sleep(500);  })
+    //     .then(result=> {  sleep(500); })
+	// }
+    //)
 	// var finalR = await Promise.all(promises);
     res.send({data:allMetroData, ok:true, moduleName:"interestOverTime"})
 

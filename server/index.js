@@ -192,13 +192,16 @@ var sendRequestsToMetros = async(searchParams) => {
     var interval = setInterval(()=>{
         var metro = metroKeys[i]
         let metroObj = metroData[metro];
-        let metroGeo = `US-${metroObj.state}-${metro.slice(1)}`
+        let metroGeo = '';
+        if(metro=="H" || metro=="P") { metroGeo = `US-${metroObj.state}` }
+        else { metroGeo = `US-${metroObj.state}-${metro.slice(1)}` }
+       
         const result = sendMetroRequest({...searchParams, geo:metroGeo});
         allMetroData.push(result);
         ++i;
         if(i==202) clearInterval(interval);
-    }, 100);
-    
+    }, 5000/10);
+    // 1000/10
    
     // for(metro of metroKeys) {
     //     let metroObj = metroData[metro];

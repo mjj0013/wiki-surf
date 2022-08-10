@@ -252,7 +252,9 @@ export var Home = () => {
     var dragMouseDown = (e) =>{
         e = e || window.event;
         var regionKeys = Object.keys(allRegionProperties);
+        var countyKeys = Object.keys(allCountyProperties);
         var clickedOnRegion = regionKeys.includes(e.target.id)
+        var clickedOnCounty = countyKeys.includes(e.target.id)
         lastZoom.x = e.offsetX;
         lastZoom.y = e.offsetY;
         if(clickedOnRegion) {
@@ -273,6 +275,14 @@ export var Home = () => {
             createRegionInfoItem({continentId:regionContName, regionA3:regionA3, regionAdmin:regionAdminName, bBox:document.getElementById(e.target.id).getBBox()})
 
         }
+        else if(clickedOnCounty) {
+            
+            var metroName = document.getElementById(allCountyProperties[e.target.id]["WIKIDATAID"])
+            metroName = metroName? metroName.parentElement.id : null;
+            // var county = allCountyProperties[e.target.id]
+           
+            console.log(metroData[metroName])
+        }
         else {
             if(startListingCounties) {
                 currentSelectedCounties.push(e.target.id)
@@ -283,7 +293,7 @@ export var Home = () => {
         
 
         dragStart = getTransformedPt(lastZoom.x, lastZoom.y, transformMatrix);
-        inverseMercator(dragStart.x, dragStart.y)
+        // inverseMercator(dragStart.x, dragStart.y)
         document.onmouseup = closeDragElement;
         document.onmousemove = elementDrag;
         return e.preventDefault() && false;
@@ -560,11 +570,12 @@ export var Home = () => {
             d3.json("./world_w_us_counties.json", function(error, data) {
                 // *********************************************************************************
                 // US county level
+                console.log('data',data)
                 for(let p=0; p < data.objects.admin_counties.geometries.length; ++p) {
                     var geometries = data.objects.admin_counties.geometries[p];
-                   
+                    
                     var stateName = geometries.properties["REGION"].replace(/\(|\)/gi, '').replace(/\s/gi, '_')
-
+                   
                     // human-readable county name
                     var countyName = geometries.properties["NAME_ALT"].replace(/\(|\)/gi, '').replace(/\s/gi, '_')
 
@@ -580,6 +591,9 @@ export var Home = () => {
                             if(metroName) return metroData[metroName].color
                             else return 'black'  
                         })
+                        .attr("onmousedown", (e)=> {
+                            console.log(countyName)
+                        })
                     }
                     else {
                         d3.select(`#${stateName}`)
@@ -590,6 +604,7 @@ export var Home = () => {
                             .attr("fill", ()=> { return `hsl( ${0}, 40%, 90%)` })
                     }
                     allCountyProperties[geometries.properties["WIKIDATAID"]] = geometries.properties;
+                    
                 }
 
                 // *********************************************************************************
@@ -633,7 +648,7 @@ export var Home = () => {
                             })
                             continue;
                         }
-                        console.log('topojson.feature(data, geometries)',topojson.feature(data, geometries))
+                        
                         group.append("path")
                             .datum(topojson.feature(data, geometries))
                             .attr("id", geometries.properties["ADM0_A3"])

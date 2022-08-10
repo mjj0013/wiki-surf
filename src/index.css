@@ -115,7 +115,8 @@ code {
 }
 
 #usCountyMap.showing {
-  pointer-events:initial;
+  /* pointer-events:initial; */
+  pointer-events:all;
   opacity:100%;
   z-index:10;
   /* transform: matrix(5.41899193367184, 0, 0, 5.41899193367184, -558.2234489304034, -523.9899405924403); */

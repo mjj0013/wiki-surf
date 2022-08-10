@@ -1,3 +1,6 @@
+var nielsentopo = require('../nielsentopo.json')
+
+
 /*
 **************************************************************************************************************
 ALABAMA  (691, 630, 606, 698, 686, 711, 522)
@@ -578,6 +581,10 @@ var usMetroMap = {
 }
 console.log("There are " + Object.keys(usMetroMap).length + " metros")
 
+
+
+
+
 var metroKeys = Object.keys(usMetroMap);
 var countyToMetroData = {}
 var metrosByState = {}
@@ -602,6 +609,9 @@ for(let k=0; k < metroKeys.length; ++k) {
     }
     
 }
+
+
+
 metrosByState["MI"] = [];       //temporary
 metrosByState["DC"] = [];
 metrosByState["DE"] = []
@@ -612,6 +622,16 @@ metrosByState["VT"] = []
 metrosByState["UT"] = []
 
 
+
+//puts population statistics on each DMA (or metro) into their entries in usMetroMap
+
+
+var geometries = nielsentopo.objects.nielsen_dma.geometries
+var nKeys = Object.keys(geometries)
+for(let n=0; n < nKeys.length; ++n) {
+    var {adsperc, cableperc, dma, dma1, tvperc} = geometries[nKeys[n]].properties;
+    usMetroMap[`M${dma}`] = {...usMetroMap[`M${dma}`], adsperc, cableperc, dma, dma1, tvperc}
+}
 
 
 module.exports = {

@@ -1,9 +1,4 @@
 const express = require('express');
-const rateLimit = require('express-rate-limit');
-const slowDown = require("express-slow-down");
-
-
-
 const schedule = require('node-schedule')
 const googleTrends = require('google-trends-api');
 
@@ -16,16 +11,6 @@ const bodyParser = require("body-parser");      // a middleware
 // const {fetch} = require('node-fetch');
 
 
-const speedLimiter = slowDown({
-    // windowMs: 15 * 60 * 1000, // 15 minutes
-    windowMs: 10*1000, // 15 minutes
-    delayAfter: 10, // allow 100 requests per 15 minutes, then...
-    // delayMs: 500 // begin adding 500ms of delay per request above 100:
-    // request # 101 is delayed by  500ms
-    // request # 102 is delayed by 1000ms
-    // request # 103 is delayed by 1500ms
-    // etc.
-  });
 
 
 
@@ -39,8 +24,8 @@ const {regionCodes, getDateObj, trendCategories} = require('./geoHelpers.js');
 
 const app = express();
 app.use(express.static(DIST_DIR));
-// app.use(apiReqLimiter);
-app.use(speedLimiter);
+
+
 app.use(bodyParser.urlencoded({extended:false}));
 app.use(bodyParser.json());
 app.listen(PORT, ()=> { console.log("Server running on port "+PORT); })
@@ -48,7 +33,7 @@ app.listen(PORT, ()=> { console.log("Server running on port "+PORT); })
 const permittedRegionsISOA2 = Object.entries(regionCodes).map(x=>{return x[1]})
 const {metroData} = require('../src/usMetroMap.js')
 
-const sleep = ms => new Promise(r => setTimeout(r, ms))
+const delay = ms => new Promise(r => setTimeout(r, ms))
 
 
 // if 429 error: delete all cookies
@@ -92,7 +77,6 @@ const jobCentUS = schedule.scheduleJob(ruleCentUS, ()=>{usDailyTrendsJob()})
 const jobMountUS = schedule.scheduleJob(ruleMountUS, ()=>{usDailyTrendsJob()})
 const jobPacifUS = schedule.scheduleJob(rulePacifUS, ()=>{usDailyTrendsJob()})
 
-
 const refFilePath = "./server/createdDB/tableUrlRefs.json"
 
 var dateWithinRange = (dateObj) => {        //tests if specified date is more than 15 days in the past OR if date is in future.
@@ -110,158 +94,171 @@ var relatedQueriesModule = (req, res) => {
     var endTime = query.endTime? new Date(query.endTime) : new Date();
     var geo = query.geo? query.geo : regionCodes["United States"];
     var keyword = query.keyword;
-
-    
     googleTrends.relatedQueries({keyword: keyword, startTime: startTime, endTime: endTime, geo: geo}, function(err,results) {
-        if(err) {
-            console.log("err", err)
-        }
+        if(err) { console.log("err", err) }
         else {
             console.log('results',results)
             var data = results.toString();
             data = JSON.parse(data);
             res.send({data:data.default, ok:true, moduleName:"relatedQueries"})
         }
-        
     })
-
 }
 
-
-
 var interestByRegionModule = (req, res) => {
+    //************************ */
+    //THIS WORKS for all 210 DMAs.
+    //Idea: for searching for long strings of text, first do a 'relatedQueries', 
+    //to find related queries and then plug them back into this
+
+
+    // to see trends over time: you will have to call this function for each interval
+ //************************ */
+
+
+
     res.setHeader("Accept", "application/json");
     res.setHeader("Content-Type", "application/json");
     var query = req.body;
-    
     var startTime = query.startTime? new Date(query.startTime) : new Date('2004-01-01');
     var endTime = query.endTime? new Date(query.endTime) : new Date();
     var keyword = query.keyword;
-   
-    
-        //all categories might be supported
-         // , category:418
-         
-    googleTrends.interestByRegion({resolution: 'CITY', keyword:keyword, startTime: startTime, endTime:endTime , category:7}, (err, results)=> {
-        if(err) {
-            console.log("err", err)
-        }
+        //all categories might be supported, category:418
+        // DMA
+    googleTrends.interestByRegion({geo:'US', resolution: 'DMA', keyword:keyword, startTime: startTime, endTime:endTime , category:7}, (err, results)=> {
+        if(err) {  console.log("err", err) }
         else {
-            
             var data = results.toString();
             data = JSON.parse(data);
             res.send({data:data.default, ok:true, moduleName:"interestByRegion"})
         }
     })
-    
-    
 }
 
-
-var sendMetroRequest = (searchParams)=> {
-    new Promise((resolve,reject)=> {
-        
-        googleTrends.interestOverTime(searchParams, (err,results)=> {
-            if(err)  {
-                console.log("error",err) 
-            }
-            if(results) {
-                var data = results.toString();
-                console.log(`for `,data)
-                data = JSON.parse(data);
-                resolve(data.default);
-                // allMetroData.push()
-                
-            }
-            
-        })
-        .catch(err=> {
-            console.log("err",err)
-            reject();
-        })
-           
-       
-        
+var sendMetroRequest = async (searchParams)=> {
+    return new Promise((resolve,reject)=> {
+        if(searchParams.mode='interestOverTime') {
+            googleTrends.interestOverTime(searchParams, (err,results)=> {
+                if(err)  { console.log("error",err); reject();}
+                if(results) {
+                    var data = results.toString();
+                    console.log(`for `,data)
+                    data = JSON.parse(data);
+                    resolve(data.default);
+                    // allMetroData.push() 
+                }
+            })
+            .catch(err=> {reject();})
+        }
         
     })
 }
+
 var sendRequestsToMetros = async(searchParams) => {
-    var metroKeys = Object.keys(metroData);
+   
     var i=0;
-    var allMetroData = []
-    var interval = setInterval(()=>{
-        var metro = metroKeys[i]
+    
+    // var interval = setInterval(()=>{
+    //     var metro = metroKeys[i]
+    //     let metroObj = metroData[metro];
+    //     let metroGeo = '';
+    //     if(metro=="H" || metro=="P") { metroGeo = `US-${metroObj.state}` }
+    //     else { metroGeo = `US-${metroObj.state}-${metro.slice(1)}` }
+       
+    //     const result = sendMetroRequest({...searchParams, geo:metroGeo});
+    //     allMetroData.push(result);
+    //     ++i;
+    //     if(i==202) clearInterval(interval);
+    // }, 5000/10);
+    // 1000/10
+    var metroKeys = Object.keys(metroData);
+    for(metro of metroKeys) {
         let metroObj = metroData[metro];
-        let metroGeo = '';
+        let metroGeo = `US-${metroObj.state}-${metro.slice(1)}`
         if(metro=="H" || metro=="P") { metroGeo = `US-${metroObj.state}` }
         else { metroGeo = `US-${metroObj.state}-${metro.slice(1)}` }
+        delay(1000).then(res=> {
+            sendMetroRequest({...searchParams, geo:metroGeo})
+            .catch((err)=>{})
+        })
+        .catch((err)=>{})
        
-        const result = sendMetroRequest({...searchParams, geo:metroGeo});
-        allMetroData.push(result);
-        ++i;
-        if(i==202) clearInterval(interval);
-    }, 5000/10);
-    // 1000/10
-   
-    // for(metro of metroKeys) {
-    //     let metroObj = metroData[metro];
-    //     let metroGeo = `US-${metroObj.state}-${metro.slice(1)}`
-    //     const result = await sendMetroRequest({...searchParams, geo:metroGeo});
-    // }
+       
+    }
+
 }
+
+var allMetroData = []
+var metroSearchStatus = 'ready';
 
 var interestOverTimeModule = async (req,res) =>{
     res.setHeader("Accept", "application/json");
     res.setHeader("Content-Type", "application/json");
-    var allMetroData = []
     var query = req.body;
     var geo = query.geo? query.geo : regionCodes["United States"];
     var startTime = query.startTime? new Date(query.startTime) : new Date('2004-01-01');
     var endTime = query.endTime? new Date(query.endTime) : new Date();
     var keyword = query.keyword;
-    // googleTrends.interestOverTime({ keyword:keyword, startTime: startTime, endTime:endTime, geo: "US-AL-691" }, (err,results)=> {
-    //     if(err) console.log("error",err)
-    //     if(results) {
-    //         var data = results.toString();
-    //         console.log(`for `,data)
-    //         data = JSON.parse(data);
-    //         allMetroData.push(data.default)
-    //     }
-    // })
-    var searchParams = { keyword:keyword, startTime: startTime, endTime:endTime }
-    var metroKeys = Object.keys(metroData);
-
-
-    await sendRequestsToMetros(searchParams);
-
-   
-    // var promises = metroKeys.map(async (r,i) => {
-    // for(let i =0; i < metroKeys.length; ++i) {
-	// 	let key = metroKeys[i];
-    //     let metroObj = metroData[key];
-    //     let metroGeo = `US-${metroObj.state}-${key.slice(1)}`
-    //     googleTrends.interestOverTime({ keyword:keyword, startTime: startTime, endTime:endTime, geo:metroGeo, category:418 }, (err,results)=> {
-    //         if(err) console.log("error",err)
-    //         if(results) {
-    //             var data = results.toString();
-    //             console.log(`for ${metroGeo}`,data)
-    //             data = JSON.parse(data);
-    //             allMetroData.push(data.default)
-    //         }
-    //     })
-    //     .catch(err=> {    sleep(500);  })
-    //     .then(result=> {  sleep(500); })
-	// }
-    //)
-	// var finalR = await Promise.all(promises);
-    res.send({data:allMetroData, ok:true, moduleName:"interestOverTime"})
-
-
-
-
-
-
     
+    var searchParams = {mode:'interestOverTime',  startTime: startTime, endTime:endTime }
+   
+    // const result = sendMetroRequests(searchParams)
+    // var metroKeys = Object.keys(metroData);
+    // var i=0;
+    
+    // var interval = setInterval(()=>{
+    //     var metro = metroKeys[i]
+    //     let metroObj = metroData[metro];
+    //     let metroGeo = '';
+    //     if(metro=="H" || metro=="P") { metroGeo = `US-${metroObj.state}` }
+    //     else { metroGeo = `US-${metroObj.state}-${metro.slice(1)}` }
+       
+    //     const result = sendMetroRequest({...searchParams, geo:metroGeo});
+    //     allMetroData.push(result);
+    //     ++i;
+    //     if(i==202) {
+    //         clearInterval(interval);
+    //         res.send({data:allMetroData, ok:true, moduleName:"interestOverTime"})
+    //     }
+    // }, 5000/10);
+    var allMetroGeoCodes = []
+    var allKeyWords = []
+    var metroKeys = Object.keys(metroData);
+    for(let i =0; i < 7; ++i ) {
+        var metro = metroKeys[i];
+        let metroObj = metroData[metro];
+        let metroGeo = `US-${metroObj.state}-${metro.slice(1)}`       
+        if(metro=="H" || metro=="P") { metroGeo = `US-${metroObj.state}` }
+        else { metroGeo = `US-${metroObj.state}-${metro.slice(1)}` }
+
+        allMetroGeoCodes.push(metroGeo)
+       
+        allKeyWords = allKeyWords.concat(keyword)
+    }
+
+    searchParams = {...searchParams, geo:allMetroGeoCodes, keyword:allKeyWords}
+    console.log('searchParams', searchParams)
+    googleTrends.interestOverTime(searchParams, (err,results)=> {
+        if(err)  { console.log("error",err);}
+        if(results) {
+            var data = results.toString();
+            console.log(`for `,data)
+            data = JSON.parse(data);
+            res.send({data:data, ok:true, moduleName:"interestOverTime"})
+            // allMetroData.push() 
+        }
+    })
+    .catch((err)=> console.log("err",err))
+    
+
+    // sendRequestsToMetros(searchParams)
+    // .then(result=> {
+        //  res.send({data:allMetroData, ok:true, moduleName:"interestOverTime"})
+    // })
+    // .catch(err=>console.log("err",err))
+    
+   
+
     
 }
 

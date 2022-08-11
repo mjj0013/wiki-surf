@@ -26,20 +26,46 @@ var childIdExistsD3 = (parent, queryStr) => {
     else return selection[0][0]; 
 }
 export var US_Map = () => {
+    const ctx = React.useContext(AppContext)
     var worldMapLimits;
     var xmlns = "http://www.w3.org/2000/svg";
+    // var [lastZoom, setLastZoom] = useState({x:0, y:0})
+    // var [transformMatrix, setTransformMatrix] = useState([1, 0, 0, 1, 0, 0]);
+    // var zoomIntensity = 0.2;
+    // var [dragStart, setDragStart] = useState({x:0, y:0})
+    // const [data,setRegionData] = useState(null);
+    // const [sideBarVisible, setSideBarVisible] = useState(false);
+    // const [regionOptions, setRegionOptions] = useState([]);       //, displayMode:"continents",resolution:"countries"
+    // const [searchClicked, setSearchClicked] = useState(false);
+    // const [readyResults, setReadyResults] = useState(null);
+    // const [inputData, setInputData] = useState(null);
+    // const [mapColorView, setMapColorView] = useState("default");
+    // const [mapCreated, setMapCreated] = useState(false);
+
+    // const [regionSelectHistory, setRegionSelectHistory] = useState(false);
+    // const [regHistQueueIdx, setRegHistQueueIdx] = useState(false);
+    // const [selectedRegion, setSelectedRegion] = useState(false);
+
+
     var [lastZoom, setLastZoom] = useState({x:0, y:0})
     var [transformMatrix, setTransformMatrix] = useState([1, 0, 0, 1, 0, 0]);
     var zoomIntensity = 0.2;
     var [dragStart, setDragStart] = useState({x:0, y:0})
-    const [data,setRegionData] = useState(null);
-    const [sideBarVisible, setSideBarVisible] = useState(false);
-    const [regionOptions, setRegionOptions] = useState([]);       //, displayMode:"continents",resolution:"countries"
+    const [regionData,setRegionData] = useState(ctx.regionData);
+    const [sideBarVisible, setSideBarVisible] = useState(ctx.sideBarVisible);
+    const [regionOptions, setRegionOptions] = useState(ctx.regionOptions);       //, displayMode:"continents",resolution:"countries"
     const [searchClicked, setSearchClicked] = useState(false);
-    const [readyResults, setReadyResults] = useState(null);
-    const [inputData, setInputData] = useState(null);
+    const [readyResults, setReadyResults] = useState(ctx.readyResults);
+    const [inputData, setInputData] = useState(ctx.inputData);
     const [mapColorView, setMapColorView] = useState("default");
+    var [allRegionProperties,setAllRegionProperties]  = useState(null);
+    var [allCountyProperties,setAllCountyProperties]  = useState(null);
     const [mapCreated, setMapCreated] = useState(false);
+    var [selectedRegion, setSelectedRegion] = useState("<global>");
+    const [regionOptionsLoaded, setRegionOptionsLoaded] = useState(false)
+    var [regionSelectHistory,setRegionSelectHistory] = useState(["<global>"]);
+    var [regHistQueueIdx,setRegHistQueueIdx] = useState(0);    
+
     var lastMapColorView = "default"
     function getRandomInt(min, max) {
         min = Math.ceil(min);
@@ -186,24 +212,23 @@ export var US_Map = () => {
     function updateMap(svg) {
        
         if(lastMapColorView != mapColorView) {
-            // for(let k=0; k < regionKeys.length; ++k) {
-            //     var key = regionKeys[k];
-             
-            //     var contName = regionObj["CONTINENT"];
-            //     contName = contName.replace(/\(|\)/gi, '')
-            //     contName = contName.replace(/\s/gi, '_')
+            for(let k=0; k < regionKeys.length; ++k) {
+                var key = regionKeys[k];
+                var contName = regionObj["CONTINENT"];
+                contName = contName.replace(/\(|\)/gi, '')
+                contName = contName.replace(/\s/gi, '_')
 
-            //     svg.select("#continents").select(`#${contName}`)
-            //     .select(`#${key}`)
-            //     .attr("fill", ()=> {
-            //         if(mapColorView=="default") {
-            //             return `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
-            //         }
-            //         if(mapColorView=="continent") {
-            //             return `hsl( ${continentHues[contName]}, ${getRandomInt(40,55)}%, ${getRandomInt(30,45)}%)`    
-            //         }
-            //     })
-            // }
+                svg.select("#continents").select(`#${contName}`)
+                .select(`#${key}`)
+                .attr("fill", ()=> {
+                    if(mapColorView=="default") {
+                        return `hsl( 120, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
+                    }
+                    if(mapColorView=="continent") {
+                        return `hsl( ${continentHues[contName]}, ${getRandomInt(40,55)}%, ${getRandomInt(30,45)}%)`    
+                    }
+                })
+            }
             lastMapColorView = mapColorView;
         }
     }
@@ -226,6 +251,7 @@ export var US_Map = () => {
                     var countyName = geometries.properties["NAME_ALT"].replace(/\(|\)/gi, '').replace(/\s/gi, '_')
 
                     var countyObj = childIdExistsD3(`#usCountyMap`,`#${geometries.properties["WIKIDATAID"]}`)
+                    console.log('countyObj', countyObj)
                     if(countyObj) {
                         var metroName = document.getElementById(`${geometries.properties["WIKIDATAID"]}`)           //getting metro name by finding parent element of county
                         metroName = metroName? metroName.parentElement.id : null;
@@ -269,32 +295,43 @@ export var US_Map = () => {
     useEffect(()=> {
         var usCountyMap = document.getElementById("usCountyMap")
         // make alternative map that includes all states compactly
-        
-     
         // usCountyMap.classList.toggle("showing")
-        
 
         // adjust Hawaii, Alaska, Puerto Rico
         var stateHI = document.getElementById("HI");
-        stateHI.setAttributeNS(null, "transform","translate(125 0)")
+        stateHI.setAttributeNS(null, "transform","translate(200 0)")
         var statePR = document.getElementById("PR");
         statePR.setAttributeNS(null, "transform","translate(-50 0)")
         var stateAK = document.getElementById("AK");
-        stateAK.setAttributeNS(null, "transform",  "translate(125 175) scale(.3 .3)")
+        stateAK.setAttributeNS(null, "transform",  "translate(165 385) scale(.3 .3)")
 
         transformMatrix = [5.751490340144962, 0, 0 ,5.751490340144962 ,-656.582896430975,-514.5546459430193]
-       
-        document.getElementById("usLocal").setAttributeNS(null, "transform","matrix(5.751490340144962 0 0 5.751490340144962 -656.582896430975 -514.5546459430193)")
+        transformMatrix = [4.87289, 0, 0, 4.87289, -680.644, -1736.87]
+        document.getElementById("usLocal").setAttributeNS(null, "transform",`matrix(${transformMatrix.join(" ")})`)
         usCountyMap.addEventListener("wheel",(e)=>captureZoomEvent(e),false);
         usCountyMap.addEventListener("DOMMouseScroll", (e)=> captureZoomEvent(e),false);
         usCountyMap.addEventListener("mousedown", (e)=>dragMouseDown(e), false);
+
+        
     }, []);
         
+    var metroKeys = Object.keys(metroData);
+    for(let m=0; m < metroKeys.length; ++m) {
+        metroData[metroKeys[m]]["color"] = `hsl( ${getRandomInt(0,359)}, ${getRandomInt(1,99)}%, ${getRandomInt(20,75)}%)`
+    }
+
     
+
+
+    // <SideBarWrapper regionSelectHistory={regionSelectHistory} setRegionSelectHistory={setRegionSelectHistory} regHistQueueIdx={regHistQueueIdx}  setRegHistQueueIdx={setRegHistQueueIdx} selectedRegion={selectedRegion} setSelectedRegion={setSelectedRegion}  mapColorView={mapColorView} setMapColorView={setMapColorView} sideBarVisible={sideBarVisible} setSideBarVisible={setSideBarVisible} setInputData={setInputData} inputData={inputData} readyResults={readyResults} setReadyResults={setReadyResults} searchClicked={searchClicked} setSearchClicked={setSearchClicked} regionOptions={regionOptions} setRegionOptions={setRegionOptions} isVisible={sideBarVisible} setVisible={setSideBarVisible}></SideBarWrapper>
+     {/* <div id="globalSearch"> */}
+              {/* </div> */}
+            {/* </SideBarWrapper> */}
     return (
-        // <SideBarWrapper  mapColorView={mapColorView} setMapColorView={setMapColorView} sideBarVisible={sideBarVisible} setSideBarVisible={setSideBarVisible} setInputData={setInputData} inputData={inputData} readyResults={readyResults} setReadyResults={setReadyResults} searchClicked={searchClicked} setSearchClicked={setSearchClicked} regionOptions={regionOptions} setRegionOptions={setRegionOptions} isVisible={sideBarVisible} setVisible={setSideBarVisible}>
-                
-                // <div id="globalSearch">
+        
+        <SideBarWrapper regionSelectHistory={regionSelectHistory} setRegionSelectHistory={setRegionSelectHistory} regHistQueueIdx={regHistQueueIdx}  setRegHistQueueIdx={setRegHistQueueIdx} selectedRegion={selectedRegion} setSelectedRegion={setSelectedRegion} mapColorView={mapColorView} setMapColorView={setMapColorView} sideBarVisible={sideBarVisible} setSideBarVisible={setSideBarVisible} setInputData={setInputData} inputData={inputData} readyResults={readyResults} setReadyResults={setReadyResults} searchClicked={searchClicked} setSearchClicked={setSearchClicked} regionOptions={regionOptions} setRegionOptions={setRegionOptions} isVisible={sideBarVisible} setVisible={setSideBarVisible}>
+             <div id="globalSearch">
+                    
                     <svg id="usCountyMap" className="map showing" width={W} height={H} >
                         <filter id="landShadows">
                             <feGaussianBlur stdDeviation={1} result="shadowBlur" />
@@ -375,8 +412,9 @@ export var US_Map = () => {
                             </g>
                         </g>
                     </svg>
-                  
-                // </div>
-            // </SideBarWrapper>
+                    <div style={{width:W, height:H}}></div>
+                    </div>
+                    </SideBarWrapper>
+           
     )
 }

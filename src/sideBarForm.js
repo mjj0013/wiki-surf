@@ -13,7 +13,7 @@ import {A3toA2, A2toA3} from './globalDb.js'
 import usMetroMap, {metrosByState, metroData} from './usMetroMap.js'
 import {insights} from './insightsIcon.js'
 
-
+import {AppContext} from './AppContext.js';
 var searchTerms = [];
 var searchTermColors = []
 var prependArray = (val, arr) => {
@@ -125,17 +125,25 @@ var dateSliderOptions = {
 function categoryChanged() {}
 
 
-
-export const SideBarWrapper = ({regionSelectHistory,setRegionSelectHistory,regHistQueueIdx , setRegHistQueueIdx, setRegionOptions, regionOptions, selectedRegion, setSelectedRegion, mapColorView, setMapColorView, sideBarVisible, setSideBarVisible,setInputData, inputData, setReadyResults, readyResults, setSearchClicked, searchClicked,  isVisible, setVisible,...props}) => {
+// {regionSelectHistory,setRegionSelectHistory,regHistQueueIdx , setRegHistQueueIdx, setRegionOptions, regionOptions, selectedRegion, setSelectedRegion, mapColorView, setMapColorView, sideBarVisible, setSideBarVisible,setInputData, inputData, setReadyResults, readyResults, setSearchClicked, searchClicked,  isVisible, setVisible,...props}
+export const SideBarWrapper = (props) => {
     
-    // const [RegionOptions, setRegionOptions] = useState({region:"US" });       //, displayMode:"regions",resolution:"countries"
-
-    const [data,setRegionData] = useState(regionData);
+   
+    const ctx = React.useContext(AppContext)
+   
+    const [selectedRegion,setSelectedRegion] = useState("US");
+    const [regionData,setRegionData] = useState(ctx.regionData);
     const [moduleName, setModuleName] = useState("dailyTrends");
     const [timeSliderCreated, setTimeSliderCreated] = useState(false);
-    const [showSlider, setHideSlider] = useState(false)
-    const [sideBarTab,setSideBarTab] = useState("trendsBtn");
-
+    const [showSlider, setHideSlider] = useState(ctx.showSlider)
+    const [sideBarTab,setSideBarTab] = useState(ctx.sideBarTab);
+    // const [sideBarTab,setSideBarTab] = useState("trendsBtn");
+    const [sideBarVisible, setSideBarVisible] = useState(ctx.sideBarVisible)
+    const [isVisible, setVisible] = useState(ctx.sideBarVisible)
+    const [regionOptions, setRegionOptions] = useState({region:"US" });       //, displayMode:"regions",resolution:"countries"
+    const [readyResults, setReadyResults] = useState(ctx.readyResults);
+    const [searchClicked, setSearchClicked] = useState(false);
+    const [inputData, setInputData] = useState(null);
     function regionChanged(e,data) {
         var selected = document.getElementById("regionElement")
         
@@ -287,11 +295,11 @@ export const SideBarWrapper = ({regionSelectHistory,setRegionSelectHistory,regHi
     //regionCodesReformatted.map((obj,idx)=>{return (<Dropdown.Item key={idx} text={obj.name} value={obj.code} selected={obj.name=="United States"?true:false}></Dropdown.Item>)})
     
     
-    var regionDropdownOptions  = regionOptions.map((obj,idx)=>{ 
-        return {key:idx+1, text:obj.ADMIN, value:obj.ADM0_A3}          //, selected:obj.ADMIN=="United States"?true:false
-    })
+    // var regionDropdownOptions  = regionOptions.map((obj,idx)=>{ 
+    //     return {key:idx+1, text:obj.ADMIN, value:obj.ADM0_A3}          //, selected:obj.ADMIN=="United States"?true:false
+    // })
     
-    regionDropdownOptions = prependArray({key:0, text:"All", value:"<global>"}, regionDropdownOptions)
+    // regionDropdownOptions = prependArray({key:0, text:"All", value:"<global>"}, regionDropdownOptions)
     
 
     var moduleOptions = [
@@ -315,6 +323,7 @@ export const SideBarWrapper = ({regionSelectHistory,setRegionSelectHistory,regHi
         if(sideBarVisible) {
             if(e.target.id == sideBarTab) {
                 setSideBarVisible(sideBarVisible?false:true);
+                setVisible(sideBarVisible?false:true);
                 sideBarHandle.classList.toggle('showing')
                 document.getElementById("settingsBtn").classList.remove("primary");
                 document.getElementById("trendsBtn").classList.remove("primary");
@@ -339,6 +348,7 @@ export const SideBarWrapper = ({regionSelectHistory,setRegionSelectHistory,regHi
                     document.getElementById("settingsTab").classList.remove("showing")
                 }
             }
+            
         }
 
         else {
@@ -346,20 +356,18 @@ export const SideBarWrapper = ({regionSelectHistory,setRegionSelectHistory,regHi
                 setSideBarTab("settingsBtn")
                 document.getElementById("settingsBtn").classList.add("primary");
                 document.getElementById("trendsBtn").classList.remove("primary");
-
                 document.getElementById("trendsTab").classList.remove("showing")
                 document.getElementById("settingsTab").classList.add("showing")
             }
             else if(e.target.id=="trendsBtn") {
                 setSideBarTab("trendsBtn")
-
                 document.getElementById("trendsBtn").classList.add("primary");
                 document.getElementById("settingsBtn").classList.remove("primary");
-
                 document.getElementById("trendsTab").classList.add("showing")
                 document.getElementById("settingsTab").classList.remove("showing")
             }
             setSideBarVisible(sideBarVisible?false:true);
+            setVisible(sideBarVisible?false:true);
             sideBarHandle.classList.toggle('showing')
         }
     }
@@ -378,11 +386,7 @@ export const SideBarWrapper = ({regionSelectHistory,setRegionSelectHistory,regHi
             return dateSlider;
         }
     }
-
-    
-
     useEffect(()=>{
-        
         if(moduleName == "dailyTrends" || moduleName == "realTimeTrends") {
             document.getElementById("dateSlider").classList.add('hidden')
         }
@@ -402,7 +406,6 @@ export const SideBarWrapper = ({regionSelectHistory,setRegionSelectHistory,regHi
         <Card id="sideBarHandle">
             <Card.Content>
                 <Container id="sideBarBtns" >
-                
                     <Button id="settingsBtn" fluid className="sideBarBtn" attached onClick={(e)=>sideBarBtnClicked(e)} >
                        <Icon className="setting large fitted"  />
                     </Button>
@@ -440,7 +443,7 @@ export const SideBarWrapper = ({regionSelectHistory,setRegionSelectHistory,regHi
                                 </Grid.Row>
                                 <Grid.Row>
                                     <Grid.Column  id="regionSection" >
-                                        <Dropdown scrolling floating labeled button placeholder='Select Region' fluid id="regionElement" onChange={(e,d)=> regionChanged(e,d)} options={regionDropdownOptions} />  
+                                        {/* <Dropdown scrolling floating labeled button placeholder='Select Region' fluid id="regionElement" onChange={(e,d)=> regionChanged(e,d)} options={regionDropdownOptions} />   */}
                                     </Grid.Column>    
                                     <Grid.Column id="categorySection">
                                             <Dropdown fluid floating labeled button text="Category" id="categoryElement" onChange={categoryChanged}>

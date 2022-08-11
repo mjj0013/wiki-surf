@@ -38,12 +38,31 @@ function getWikiTitleData(queryName) {
 }
 
 export var Home = () => {   
+    const ctx = React.useContext(AppContext)
+
+
     var worldMapLimits;
     var xmlns = "http://www.w3.org/2000/svg";
     var [lastZoom, setLastZoom] = useState({x:0, y:0})
     var [transformMatrix, setTransformMatrix] = useState([1, 0, 0, 1, 0, 0]);
     var zoomIntensity = 0.2;
     var [dragStart, setDragStart] = useState({x:0, y:0})
+    const [data,setRegionData] = useState(ctx.regionData);
+    const [sideBarVisible, setSideBarVisible] = useState(ctx.sideBarVisible);
+    const [regionOptions, setRegionOptions] = useState(ctx.regionOptions);       //, displayMode:"continents",resolution:"countries"
+    const [searchClicked, setSearchClicked] = useState(false);
+    const [readyResults, setReadyResults] = useState(ctx.readyResults);
+    const [inputData, setInputData] = useState(ctx.inputData);
+    const [mapColorView, setMapColorView] = useState("default");
+    var [allRegionProperties,setAllRegionProperties]  = useState(null);
+    var [allCountyProperties,setAllCountyProperties]  = useState(null);
+    const [mapCreated, setMapCreated] = useState(false);
+    var [selectedRegion, setSelectedRegion] = useState("<global>");
+    const [regionOptionsLoaded, setRegionOptionsLoaded] = useState(false)
+    var [regionSelectHistory,setRegionSelectHistory] = useState(["<global>"]);
+    var [regHistQueueIdx,setRegHistQueueIdx] = useState(0);    
+
+
     var captureZoomEvent = (e) => {
         lastZoom.x = e.offsetX;
         lastZoom.y = e.offsetY;
@@ -363,13 +382,7 @@ export var Home = () => {
             }
         })
     }
-    const [data,setRegionData] = useState(null);
-    const [sideBarVisible, setSideBarVisible] = useState(false);
-    const [regionOptions, setRegionOptions] = useState([]);       //, displayMode:"continents",resolution:"countries"
-    const [searchClicked, setSearchClicked] = useState(false);
-    const [readyResults, setReadyResults] = useState(null);
-    const [inputData, setInputData] = useState(null);
-    const [mapColorView, setMapColorView] = useState("default");
+    
 
     function getRandomInt(min, max) {
         min = Math.ceil(min);
@@ -384,14 +397,10 @@ export var Home = () => {
 
     
     var path = d3.geo.path().projection(projection)
-
-    var [allRegionProperties,setAllRegionProperties]  = useState({});
-    var [allCountyProperties,setAllCountyProperties]  = useState({});
+    
     var continents = []
 
-    const [mapCreated, setMapCreated] = useState(false);
-
-    var [selectedRegion, setSelectedRegion] = useState("<global>");
+    
     var continentHues = {"Asia":0, "South_America":90, "Africa":180, "Europe":120, "North_America":60, "Oceania":180, "Antarctica":300, "Seven_seas_open_ocean":240}
     
     
@@ -401,15 +410,9 @@ export var Home = () => {
     var swStates=['TX','NM','OK','CA','NV','CO','UT','AZ']
     var nwStates = ['WA','OR','ID','MT','AK','HI', 'WY']
     
-
-    const [regionOptionsLoaded, setRegionOptionsLoaded] = useState(false)
+         
     var lastMapColorView = "default"
     var lastRegionHistoryIdx = 0
-
-
-    var [regionSelectHistory,setRegionSelectHistory] = useState(["<global>"]);
-    var [regHistQueueIdx,setRegHistQueueIdx] = useState(0);         
-
 
     var backRegionBtnClicked =(e) => {
 

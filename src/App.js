@@ -16,12 +16,24 @@ import {TrendsPage} from './searchTrends.js'
 export function App() {
   // var req = new Request('/server')
   // sendRequestToBackend(req);
-  
+  var [dragStart, setDragStart] = useState({x:0, y:0})
+  const [regionData,setRegionData] = useState(null);
+  const [sideBarVisible, setSideBarVisible] = useState(false);
+  const [regionOptions, setRegionOptions] = useState([]);       //, displayMode:"continents",resolution:"countries"
+  const [searchClicked, setSearchClicked] = useState(false);
+  const [readyResults, setReadyResults] = useState(null);
+  const [inputData, setInputData] = useState(null);
+  const [mapColorView, setMapColorView] = useState("default");
+  const [mapCreated, setMapCreated] = useState(false);
+  const [sideBarTab,setSideBarTab] = useState("trendsBtn");
+  const [regionSelectHistory, setRegionSelectHistory] = useState(false);
+  const [regHistQueueIdx, setRegHistQueueIdx] = useState(false);
+  const [selectedRegion, setSelectedRegion] = useState(false);
   return (
     <HashRouter>
       <NavBar />
 
-      <AppContextProvider value={{currentUserIdx:0,users:[{name:'abel',email:'abel@mit.edu',password:'secret',balance:100, id:0}]}}>
+      <AppContextProvider value={{regionData, setRegionData, dragStart, setDragStart, sideBarVisible, setSideBarVisible, setRegionOptions,regionOptions, searchClicked, setSearchClicked, readyResults, setReadyResults, inputData, setInputData, mapColorView,setMapColorView, mapCreated, setMapCreated, regionSelectHistory, setRegionSelectHistory, regHistQueueIdx, setRegHistQueueIdx, selectedRegion, setSelectedRegion}}>
         <div className="container" style={{padding: "20px"}}>
           <Routes>
             <Route path="/WikiSearchPage" exact element={<WikiSearchPage />} />

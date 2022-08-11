@@ -1,7 +1,7 @@
-import React from 'react';
+import React,{useState} from 'react';
 import {AppContext} from './AppContext.js';
 import './App.css'
-
+import {SideBarWrapper} from './sideBarForm.js'
 
 function changeCurrentPage(e) {
     var allListItems = document.querySelectorAll(".nav-item.activePage");
@@ -13,10 +13,12 @@ function changeCurrentPage(e) {
 
 
 export const NavBar =(intUser) => {
-
-    const ctx = React.useContext(AppContext)
+  
+  
 
     return(
+       
+       
         <nav className="navbar navbar-expand-lg navbar-dark bg-dark navBarMain">
           <a id="homeLink" className="navbar-brand" href="#"    onMouseDown={(e)=>{changeCurrentPage(e)}}
             data-bs-trigger="hover" data-bs-toggle="popover" title="Return to Bad-Bank landing page">Home</a>
@@ -37,6 +39,8 @@ export const NavBar =(intUser) => {
           </div>
         
         </nav>
+       
+        
   
     );
 }

@@ -7,7 +7,7 @@ const INIT_STATE = {user};
 
 const AppContextProvider = ({children}) => {
     const [app, setApp] = useState(INIT_STATE);
-
+    
     return(
         <AppContext.Provider value={{app, setApp}}>
             {children}

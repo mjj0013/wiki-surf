@@ -61,6 +61,11 @@ function searchWikidataProperties(search) {
     coordinate location : P625
 */
 
+
+function us_DMA_queries(dmaList) {
+    
+}
+
 function wikiDataSearch(queryClass,params={}) {
     return new Promise((resolve,reject)=>{
 
@@ -103,8 +108,6 @@ function wikiDataSearch(queryClass,params={}) {
                     FILTER( (?time >="${params.startingTimeStr}"^^xsd:dateTime) && (?time <="${params.endingTimeStr}"^^xsd:dateTime)).`
                 }
             }
-            
-
             baseQuery = [...baseQuery.slice(0,insertIdx),timeSubQuery,...baseQuery.slice(insertIdx)]
             ++insertIdx;
 

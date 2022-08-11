@@ -2,6 +2,7 @@ import './App.css';
 import React, {Component, useState, useEffect} from 'react';
 
 import {Home} from './Home.js';
+import {US_Map} from './US_Map.js'
 import {NavBar} from './NavBar.js';
 import {HashRouter, Route, Routes} from 'react-router-dom'
 import * as d3 from "d3";
@@ -24,6 +25,7 @@ export function App() {
         <div className="container" style={{padding: "20px"}}>
           <Routes>
             <Route path="/WikiSearchPage" exact element={<WikiSearchPage />} />
+            <Route path="/US_Map" exact element={<US_Map />} />
             <Route path="/" exact element={<Home />} />
           </Routes>
         </div>

@@ -1,0 +1,20 @@
+#usCountyMap {
+    width:1160px;
+    height:1000px; 
+    position:absolute;
+    
+    opacity:0%;
+    z-index:9;
+    display:block;
+    pointer-events:none;
+  }
+  
+  #usCountyMap.showing {
+    /* pointer-events:initial; */
+    pointer-events:all;
+    opacity:100%;
+    z-index:10;
+    /* transform: matrix(5.41899193367184, 0, 0, 5.41899193367184, -558.2234489304034, -523.9899405924403); */
+    /* transform: matrix(5.6233461104160645, 0, 0, 5.6233461104160645, -648.7011198398013, -474.87611981788); */
+  
+  }

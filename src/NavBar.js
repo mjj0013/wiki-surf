@@ -28,6 +28,8 @@ export const NavBar =(intUser) => {
               <li className="nav-item ">
                 <a className="nav-link" href="#/WikiSearchPage/"   onMouseDown={(e)=>{changeCurrentPage(e)}}
                   data-bs-trigger="hover" data-bs-toggle="popover">Wiki Search</a>
+                <a className="nav-link" href="#/US_Map/"   onMouseDown={(e)=>{changeCurrentPage(e)}}
+                  data-bs-trigger="hover" data-bs-toggle="popover">US Map</a>
               </li>
               
             </ul>

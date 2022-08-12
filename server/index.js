@@ -89,10 +89,12 @@ var dateWithinRange = (dateObj) => {        //tests if specified date is more th
 
 //US-AL-691
 var relatedQueriesModule = (req, res) => {
+    res.setHeader("Accept", "application/json");
+    res.setHeader("Content-Type", "application/json");
     var query = req.body;
     var startTime = query.startTime? new Date(query.startTime) : new Date('2004-01-01');
     var endTime = query.endTime? new Date(query.endTime) : new Date();
-    var geo = query.geo? query.geo : regionCodes["United States"];
+    var geo = query.geo? query.geo : "US-AL";
     var keyword = query.keyword;
     googleTrends.relatedQueries({keyword: keyword, startTime: startTime, endTime: endTime, geo: geo}, function(err,results) {
         if(err) { console.log("err", err) }
@@ -101,6 +103,26 @@ var relatedQueriesModule = (req, res) => {
             var data = results.toString();
             data = JSON.parse(data);
             res.send({data:data.default, ok:true, moduleName:"relatedQueries"})
+        }
+    })
+    .catch(err=> {
+        console.log("err",err)
+    })
+}
+var autoCompleteModule = async(req,res) => {
+    res.setHeader("Accept", "application/json");
+    res.setHeader("Content-Type", "application/json");
+    var query = req.body;
+    
+    var keyword = query.keyword;
+
+
+    googleTrends.autoComplete({keyword:keyword}, (err, results)=> {
+        if(err) {  console.log("err", err) }
+        else {
+            var data = results.toString();
+            data = JSON.parse(data);
+            res.send({data:data.default, ok:true, moduleName:"interestByRegion"})
         }
     })
 }
@@ -120,6 +142,7 @@ var interestByRegionModule = (req, res) => {
     res.setHeader("Accept", "application/json");
     res.setHeader("Content-Type", "application/json");
     var query = req.body;
+    console.log('query',query)
     var startTime = query.startTime? new Date(query.startTime) : new Date('2004-01-01');
     var endTime = query.endTime? new Date(query.endTime) : new Date();
     var keyword = query.keyword;
@@ -154,42 +177,7 @@ var sendMetroRequest = async (searchParams)=> {
     })
 }
 
-var sendRequestsToMetros = async(searchParams) => {
-   
-    var i=0;
-    
-    // var interval = setInterval(()=>{
-    //     var metro = metroKeys[i]
-    //     let metroObj = metroData[metro];
-    //     let metroGeo = '';
-    //     if(metro=="H" || metro=="P") { metroGeo = `US-${metroObj.state}` }
-    //     else { metroGeo = `US-${metroObj.state}-${metro.slice(1)}` }
-       
-    //     const result = sendMetroRequest({...searchParams, geo:metroGeo});
-    //     allMetroData.push(result);
-    //     ++i;
-    //     if(i==202) clearInterval(interval);
-    // }, 5000/10);
-    // 1000/10
-    var metroKeys = Object.keys(metroData);
-    for(metro of metroKeys) {
-        let metroObj = metroData[metro];
-        let metroGeo = `US-${metroObj.state}-${metro.slice(1)}`
-        if(metro=="H" || metro=="P") { metroGeo = `US-${metroObj.state}` }
-        else { metroGeo = `US-${metroObj.state}-${metro.slice(1)}` }
-        delay(1000).then(res=> {
-            sendMetroRequest({...searchParams, geo:metroGeo})
-            .catch((err)=>{})
-        })
-        .catch((err)=>{})
-       
-       
-    }
 
-}
-
-var allMetroData = []
-var metroSearchStatus = 'ready';
 
 var interestOverTimeModule = async (req,res) =>{
     res.setHeader("Accept", "application/json");

@@ -4,8 +4,8 @@ import {Icon,  Item,Card, Button, Input, Container, Dropdown, Grid, Image, Label
 import './index.css'
 
 import {sendRequestToBackend} from './frontEndHelpers.js';
-
-import {abridgedCategories, regionCodes, regionData, regionCodesReformatted} from '../server/geoHelpers.js';
+// import {allCategories} from '../server/geoHelpers.js'
+import {allCategories, abridgedCategories, regionCodes, regionData, regionCodesReformatted} from '../server/geoHelpers.js';
 import noUiSlider from 'nouislider';
 
 import {A3toA2, A2toA3} from './globalDb.js'
@@ -126,24 +126,24 @@ function categoryChanged() {}
 
 
 // {regionSelectHistory,setRegionSelectHistory,regHistQueueIdx , setRegHistQueueIdx, setRegionOptions, regionOptions, selectedRegion, setSelectedRegion, mapColorView, setMapColorView, sideBarVisible, setSideBarVisible,setInputData, inputData, setReadyResults, readyResults, setSearchClicked, searchClicked,  isVisible, setVisible,...props}
-export const SideBarWrapper = (props) => {
+export const SideBarWrapper = ({regionSelectHistory,setRegionSelectHistory,regHistQueueIdx , setRegHistQueueIdx, setRegionOptions, regionOptions, selectedRegion, setSelectedRegion, mapColorView, setMapColorView, sideBarVisible, setSideBarVisible,setInputData, inputData, setReadyResults, readyResults, setSearchClicked, searchClicked,  isVisible, setVisible,...props}) => {
     
    
     const ctx = React.useContext(AppContext)
    
-    const [selectedRegion,setSelectedRegion] = useState("US");
-    const [regionData,setRegionData] = useState(ctx.regionData);
+    // const [selectedRegion,setSelectedRegion] = useState("US");
+    // const [regionData,setRegionData] = useState(ctx.regionData);
     const [moduleName, setModuleName] = useState("dailyTrends");
     const [timeSliderCreated, setTimeSliderCreated] = useState(false);
     const [showSlider, setHideSlider] = useState(ctx.showSlider)
-    const [sideBarTab,setSideBarTab] = useState(ctx.sideBarTab);
-    // const [sideBarTab,setSideBarTab] = useState("trendsBtn");
-    const [sideBarVisible, setSideBarVisible] = useState(ctx.sideBarVisible)
-    const [isVisible, setVisible] = useState(ctx.sideBarVisible)
-    const [regionOptions, setRegionOptions] = useState({region:"US" });       //, displayMode:"regions",resolution:"countries"
-    const [readyResults, setReadyResults] = useState(ctx.readyResults);
-    const [searchClicked, setSearchClicked] = useState(false);
-    const [inputData, setInputData] = useState(null);
+    // const [sideBarTab,setSideBarTab] = useState(ctx.sideBarTab);
+    const [sideBarTab,setSideBarTab] = useState("trendsBtn");
+    // const [sideBarVisible, setSideBarVisible] = useState(ctx.sideBarVisible)
+    // const [isVisible, setVisible] = useState(ctx.sideBarVisible)
+    // const [regionOptions, setRegionOptions] = useState({region:"US" });       //, displayMode:"regions",resolution:"countries"
+    // const [readyResults, setReadyResults] = useState(ctx.readyResults);
+    // const [searchClicked, setSearchClicked] = useState(ctx.searchClicked);
+    // const [inputData, setInputData] = useState(ctx.inputData);
     function regionChanged(e,data) {
         var selected = document.getElementById("regionElement")
         
@@ -200,6 +200,7 @@ export const SideBarWrapper = (props) => {
                     console.log(A3toA2)
                     body["geo"] = A3toA2[selectedRegion];
                 }
+                // body["geo"] = 'US'
                 console.log('selectedRegion',selectedRegion)
                 console.log("body", body)
                 body["keyword"] = searchTerms;

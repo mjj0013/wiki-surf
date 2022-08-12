@@ -54,9 +54,9 @@ export var US_Map = () => {
     const [regionData,setRegionData] = useState(ctx.regionData);
     const [sideBarVisible, setSideBarVisible] = useState(ctx.sideBarVisible);
     const [regionOptions, setRegionOptions] = useState(ctx.regionOptions);       //, displayMode:"continents",resolution:"countries"
-    const [searchClicked, setSearchClicked] = useState(false);
+    const [searchClicked, setSearchClicked] = useState(ctx.searchClicked);
     const [readyResults, setReadyResults] = useState(ctx.readyResults);
-    const [inputData, setInputData] = useState(ctx.inputData);
+    const [inputData, setInputData] = useState({geo:"US"});
     const [mapColorView, setMapColorView] = useState("default");
     var [allRegionProperties,setAllRegionProperties]  = useState(null);
     var [allCountyProperties,setAllCountyProperties]  = useState(null);
@@ -186,12 +186,13 @@ export var US_Map = () => {
             var headers = {"Content-Type":"application/json", "Accept":"application/json"}
             var req;
             if(action=="searchClicked") {
+                console.log("searchClicked")
                 req = new Request(path, {  method:"POST",  headers:headers,    body: JSON.stringify(body)   });
                 sendRequestToBackend(req).then(result=>{
                     if(result.ok) {
                         setReadyResults(result);
                         console.log('result',result)
-                        resolve();
+                        resolve(result);
                         // if(result.moduleName=="dailyTrends") displayResults(result.data.searches)
                         // else if(result.moduleName=="realTimeTrends") displayResults(result.data.searches)
                         // else if(result.moduleName=="interestByRegion") displayMapValues(result.data);
@@ -251,8 +252,9 @@ export var US_Map = () => {
                     var countyName = geometries.properties["NAME_ALT"].replace(/\(|\)/gi, '').replace(/\s/gi, '_')
 
                     var countyObj = childIdExistsD3(`#usCountyMap`,`#${geometries.properties["WIKIDATAID"]}`)
-                    console.log('countyObj', countyObj)
+                    // console.log('countyObj', countyObj)
                     if(countyObj) {
+                        
                         var metroName = document.getElementById(`${geometries.properties["WIKIDATAID"]}`)           //getting metro name by finding parent element of county
                         metroName = metroName? metroName.parentElement.id : null;
                         
@@ -286,9 +288,48 @@ export var US_Map = () => {
 
     //create map
     useEffect(()=> {
-        if(mapCreated) updateMap(activeSVG)
-        else createMap();
+        // if(mapCreated) updateMap(activeSVG)
+        // else createMap();
+        createMap();
     },[mapColorView]);
+    useEffect(()=> {
+        if(searchClicked) {
+            
+            processClientRequest("searchClicked","/server",inputData).then(result=> {
+                if(result!=undefined) {
+                    console.log("result",result)
+                    console.log("result.ok", result.ok)
+                    if(result.ok) {
+                        var geoMapData = result.data.geoMapData;
+                        // var dmaKeys = Object.keys(geoMapData)
+                        console.log('geoMapData',geoMapData)
+                        // console.log('al metros', document.getElementById("AL").children)
+                       
+                        for(let i =0; i < geoMapData.length; ++i) {
+                            if(geoMapData[i].hasData[0]) {
+                                var metroId = `M${geoMapData[i].geoCode}`;
+                                d3.select(`#${metroId}`)
+                                .selectAll("g, path")
+                                .style("fill", `hsl(0, 70%, ${100 - geoMapData[i].value[0] + 5}%)`)
+                                // metroData[metroId]
+                              
+                           
+                            }
+                            else {
+                                var metroId = `M${geoMapData[i].geoCode}`;
+                                d3.select(`#${metroId}`)
+                                .selectAll("g, path")
+                                .style("fill", `hsl(0, 70%, ${90}%)`)
+                    
+                            
+                            }
+                        }
+                    }
+                }
+                
+            })
+        }
+    },[searchClicked]); 
 
 
     //initialize map

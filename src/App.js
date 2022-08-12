@@ -22,7 +22,7 @@ export function App() {
   const [regionOptions, setRegionOptions] = useState([]);       //, displayMode:"continents",resolution:"countries"
   const [searchClicked, setSearchClicked] = useState(false);
   const [readyResults, setReadyResults] = useState(null);
-  const [inputData, setInputData] = useState(null);
+  const [inputData, setInputData] = useState({geo:"US"});
   const [mapColorView, setMapColorView] = useState("default");
   const [mapCreated, setMapCreated] = useState(false);
   const [sideBarTab,setSideBarTab] = useState("trendsBtn");

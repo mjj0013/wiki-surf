@@ -17,6 +17,7 @@ import { guianaFrance,martiniqueFrance,guadeloupeFrance,reunionFrance,mayotteFra
 
 
 import {MapInfoItem, createSubInfoItem, createRegionInfoItem} from './mapInfoItem.js'
+ 
 
 
 // https://www.statista.com/statistics/262966/number-of-internet-users-in-selected-countries/

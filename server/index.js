@@ -14,7 +14,6 @@ const bodyParser = require("body-parser");      // a middleware
 
 
 
-
 const {rulePacifUS, ruleCentUS, ruleEastUS, ruleMountUS} = require('./fetchDailyScheduler.js');
 
 const PORT = process.env.PORT || 3000;
@@ -37,6 +36,9 @@ const delay = ms => new Promise(r => setTimeout(r, ms))
 
 
 // if 429 error: delete all cookies
+
+
+
 
 
                                 

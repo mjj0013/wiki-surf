@@ -439,9 +439,9 @@ code {
 
 } 
 .metro:hover {
-  transform:translateY(-.5px);
+  /* transform:translateY(-.5px); */
   z-index:51;
-  filter:url("#landShadows");
+  /* filter:url("#landShadows"); */
 
 }
 .county {
